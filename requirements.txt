@@ -1,0 +1,9 @@
+mypy
+yapf
+pylint
+pytest
+pytest-cov
+pynvim
+black==20.08b
+pre-commit
+commitizen

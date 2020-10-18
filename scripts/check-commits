@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cz check --rev-range master..HEAD

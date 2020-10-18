@@ -1,0 +1,10 @@
+#!/bin/sh
+
+PYTHON_DIR="rplugin/python3/ultest"
+
+pytest \
+    --cov-branch \
+    --cov=${PYTHON_DIR} \
+    --cov-report xml:coverage/coverage.xml \
+    --cov-report term \
+    --cov-report html:coverage

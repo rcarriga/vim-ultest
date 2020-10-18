@@ -1,0 +1,123 @@
+*ultest.txt*
+                                                             *Ultest* *ultest*
+
+==============================================================================
+CONTENTS                                                     *ultest-contents*
+  1. Introduction........................................|ultest-introduction|
+  2. Configuration.............................................|ultest-config|
+  3. Commands................................................|ultest-commands|
+  4. Highlights............................................|ultest-highlights|
+  5. Mappings................................................|ultest-mappings|
+
+==============================================================================
+INTRODUCTION                                             *ultest-introduction*
+
+
+The ultimate testing plugin for NeoVim
+
+Running tests should be as quick and painless as possible.
+[vim-test](https://github.com/janko/vim-test) is a very powerful and extensive
+testing plugin, but it can be cumbersome to configure and lacks some features
+to make it feel like an integrated piece of your editor. Rather than replacing
+vim-test altogether, Ultest makes it even better while maintaining the ability
+to use your existing configuration. If you're already using vim-test then
+switching to Ultest is as easy as installing and... well, that's pretty much
+it.
+
+The goal behind Ultest is to make running tests as seamless as possible.
+
+  * Tests are run individually so that any errors can be addressed
+    individually.
+  * Tests are run in seperate threads (not just asynchronously on the same
+    thread) so your Vim session will never be blocked.
+  * When tests are complete, results can be viewed immediately or on command.
+  * Utilise the existing power of vim-test by extending upon it.
+
+==============================================================================
+CONFIGURATION                                                  *ultest-config*
+
+                                                          *g:ultest_positions*
+Enable positions processor for tests to allow jumping between tests.
+
+                                                      *g:ultest_output_on_run*
+Show failed outputs when completed run (int)
+
+                                                     *g:ultest_output_on_line*
+Show failed outputs when cursor is on first line of test (int)
+
+                                                              *g:ultest_icons*
+Use unicode icons for results signs/virtual text (int)
+
+                                                       *g:ultest_show_in_file*
+Enable sign/virtual text processor for tests
+
+                                                          *g:ultest_pass_sign*
+Sign for passing tests (string)
+
+                                                          *g:ultest_fail_sign*
+Sign for failing tests (string)
+
+                                                       *g:ultest_running_sign*
+Sign for running tests (string)
+
+                                                          *g:ultest_pass_text*
+Virtual text for passing tests (string)
+
+                                                          *g:ultest_fail_text*
+Virtual text for failing tests (string)
+
+                                                       *g:ultest_running_text*
+Virtual text for passing tests (string)
+
+                                                  *g:ultest_custom_processors*
+Custom list of receivers for test events. This is experimental and could
+change! Receivers are dictionaries with any of the following keys: 'start': A
+function which takes a test which has been run. 'exit': A function which takes
+a test result once it has completed. 'clear': A function which takes a test
+which has been removed for some reason.
+
+==============================================================================
+COMMANDS                                                     *ultest-commands*
+
+:Ultest                                                              *:Ultest*
+  Run all tests in the current file
+
+:UltestNearest                                                *:UltestNearest*
+  Run nearest test in the current file
+
+:UltestOutput                                                  *:UltestOutput*
+  Show the output of the nearest test in the current file
+
+==============================================================================
+HIGHLIGHTS                                                 *ultest-highlights*
+
+
+Define the following highlight groups to override their values by copying
+these commands and changing their colours.
+
+hi UltestPass ctermfg=Green guifg=#96F291
+
+hi UltestFail ctermfg=Red guifg=#F70067
+
+hi UltestRunning ctermfg=Yellow guifg=#FFEC63
+
+hi UltestBorder ctermfg=Red guifg=#F70067
+
+==============================================================================
+MAPPINGS                                                     *ultest-mappings*
+
+
+<Plug>(ultest-next-fail)         Jump to next failed test.
+
+<Plug>(ultest-prev-fail)         Jump to previous failed test.
+
+<Plug>(ultest-run-file)          Run all tests in a file.
+
+<Plug>(ultest-run-nearest)       Run test closest to the cursor.
+
+<Plug>(ultest-output-show)       Show error output of the nearest test.
+
+<Plug>(ultest-output-jump)       Show error output of the nearest test.
+
+
+vim:tw=78:ts=8:ft=help:norl:
