@@ -23,12 +23,16 @@ function! ultest#output#close() abort
   let g:ultest#output_windows = []
 endfunction
 function! s:OutputIsOpen()
+
   return !empty(get(g:, "ultest#output_windows", []))
 endfunction
 
 function ultest#output#jumpto() abort
   if !s:OutputIsOpen()
-    return
+    call ultest#output#open(ultest#handler#nearest_output(expand("%"), v:false))
+    if !s:OutputIsOpen()
+      return
+    endif
   endif
   call nvim_set_current_win(g:ultest#output_windows[0])
 endfunction
