@@ -25,7 +25,7 @@ _The ultimate testing plugin for NeoVim_
 
 Running tests should be as quick and painless as possible.
 [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
-Rather than replacing vim-test altogether, Ultest makes it even better while maintaining the ability to use your existing configuration.
+Rather than replacing vim-test altogether, Ultest (in name and practice) builds upon vim-test to make it even better while maintaining the ability to use your existing configuration.
 If you're already using vim-test then switching to Ultest is as easy as installing and... well, that's pretty much it.
 
 The goal behind Ultest is to make running tests as seamless as possible.
@@ -71,6 +71,16 @@ call dein#add('rcarriga/vim-ultest', {"depends": "vim-test"})
 Any vim-test configuration should carry over to Ultest.
 See the vim-test documentation on further details for changing test runner and options.
 If you have compatibility issues please raise an issue.
+
+One change you will notice is that test output is not coloured.
+This is due to the way the command is run.
+To work around this you can simply tell your test runner to always output with colour.
+For example
+```python
+let test#python#pytest#options = "--color=yes"
+
+let test#javascript#jest#options = "--color=always"
+```
 
 ### Commands
 
