@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Iterable
 
 from ultest.models import Position, Result, Test
@@ -60,3 +61,4 @@ class Results:
         old_result = self._results.get(test.file, {}).pop(test.name, None)
         if old_result:
             self._processors.clear(old_result, sync=False)
+            os.remove(old_result.output)
