@@ -4,6 +4,12 @@ augroup UltestOutputClose
   autocmd User UltestOutputOpen  call ultest#output#close()
 augroup END
 
+augroup UltestOutputMappings
+  autocmd!
+  autocmd FileType UltestOutput tnoremap <buffer> q <C-\><C-N><C-W><C-K>
+  autocmd FileType UltestOutput nnoremap <buffer> q <C-W><C-K>
+augroup END
+
 function! ultest#output#open(output) abort
   if empty(a:output) | return | endif
   doautocmd User UltestOutputOpen
@@ -64,6 +70,7 @@ function! s:OpenFloat(path) abort
   let user_window = nvim_get_current_win()
   let output_window = nvim_open_win(out_buffer, v:true, opts)
   call termopen('less -R -Ps '.a:path)
+  setfiletype UltestOutput
   call nvim_set_current_win(user_window)
   let output_win_id = nvim_win_get_number(output_window)
   call setwinvar(output_win_id, "&winhl", "Normal:Normal")
