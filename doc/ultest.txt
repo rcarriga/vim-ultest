@@ -37,37 +37,45 @@ The goal behind Ultest is to make running tests as seamless as possible.
 CONFIGURATION                                                  *ultest-config*
 
                                                           *g:ultest_positions*
-Enable positions processor for tests to allow jumping between tests.
+Enable positions processor for tests to allow jumping between tests. (default:
+1)
 
                                                       *g:ultest_output_on_run*
-Show failed outputs when completed run (int)
+Show failed outputs when completed run. (default: 1)
 
                                                      *g:ultest_output_on_line*
-Show failed outputs when cursor is on first line of test (int)
+Show failed outputs when cursor is on first line of test. (default: 1)
 
                                                               *g:ultest_icons*
-Use unicode icons for results signs/virtual text (int)
+Use unicode icons for results signs/virtual text. (default: 1)
 
                                                        *g:ultest_show_in_file*
-Enable sign/virtual text processor for tests
+Enable sign/virtual text processor for tests. (default: 1)
+
+                                                       *g:ultest_virtual_text*
+Use virtual text (if available) instead of signs to show test results in file.
+(default: 0)
 
                                                           *g:ultest_pass_sign*
-Sign for passing tests (string)
+Sign for passing tests. (default: g:ultest_icons ? "●" : "O")
 
                                                           *g:ultest_fail_sign*
-Sign for failing tests (string)
+Sign for failing tests. (default: g:ultest_icons ? "●" : "X")
 
                                                        *g:ultest_running_sign*
-Sign for running tests (string)
+Sign for running tests (string) (default: g:ultest_icons ? "●" : "X")
 
                                                           *g:ultest_pass_text*
-Virtual text for passing tests (string)
+Virtual text for passing tests (string) (default: g:ultest_icons?
+"●":"Passing")
 
                                                           *g:ultest_fail_text*
-Virtual text for failing tests (string)
+Virtual text for failing tests (string) (default: g:ultest_icons?
+"●":"Failing")
 
                                                        *g:ultest_running_text*
-Virtual text for passing tests (string)
+Virtual text for passing tests (string) (default: g:ultest_icons?
+"●":"Running")
 
                                                   *g:ultest_custom_processors*
 Custom list of receivers for test events. This is experimental and could

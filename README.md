@@ -1,9 +1,7 @@
 # Ultest
 
-**Currently in beta**
-
-This plugin is in very early stages of development so there will likely be bugs!
-If you experience any issues please open an issue with as much detail as possible i.e. error messages, file type, test runner and minimal example.
+This plugin is in the early stages of development so there will likely be bugs!
+If you experience any problems please open an issue with as much detail as possible i.e. error messages, file type, test runner and minimal example.
 Only NeoVim is supported right as that is what I use myself.
 There are no features absent from Vim that are required, so I plan to add Vim support at some stage.
 
@@ -70,13 +68,13 @@ call dein#add('rcarriga/vim-ultest', {"depends": "vim-test"})
 
 Any vim-test configuration should carry over to Ultest.
 See the vim-test documentation on further details for changing test runner and options.
-If you have compatibility issues please raise an issue.
+If you have compatibility problems please raise an issue.
 
 One change you will notice is that test output is not coloured.
 This is due to the way the command is run.
 To work around this you can simply tell your test runner to always output with colour.
 For example
-```python
+```vim
 let test#python#pytest#options = "--color=yes"
 
 let test#javascript#jest#options = "--color=always"
@@ -115,13 +113,6 @@ nmap <leader>uk <Plug>(ultest-prev-fail)
 
 Features are able to be enabled/disabled individually.
 For toggling any feature check the help: `:h ultest`
-
-## Known Issues
-
-### Virtual Text
-
-Using treesitter with NeoVim breaks virtual text.
-This issue has been flagged with the NeoVim team but until it is fixed, signs must be used.
 
 ## Feedback
 

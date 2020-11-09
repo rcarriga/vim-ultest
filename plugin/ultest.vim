@@ -44,41 +44,58 @@ hi default UltestBorder ctermfg=Red guifg=#F70067
 
 ""
 " Enable positions processor for tests to allow jumping between tests.
+" (default: 1)
 let g:ultest_positions = get(g:, "ultest_positions", 1)
 
 ""
-" Show failed outputs when completed run (int)
+" Show failed outputs when completed run.
+" (default: 1)
 let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
+
 ""
-" Show failed outputs when cursor is on first line of test (int)
+" Show failed outputs when cursor is on first line of test.
+" (default: 1)
 let g:ultest_output_on_line = get(g:, "ultest_output_on_line", 1)
 
 ""
-" Use unicode icons for results signs/virtual text (int)
-let g:ultest_icons = get(g:, "ultest_icons", 0)
+" Use unicode icons for results signs/virtual text.
+" (default: 1)
+let g:ultest_icons = get(g:, "ultest_icons", 1)
 
 ""
-" Enable sign/virtual text processor for tests
+" Enable sign/virtual text processor for tests.
+" (default: 1)
 let g:ultest_show_in_file = get(g:, "ultest_show_in_file", 1)
+""
+" Use virtual text (if available) instead of signs to show test results in file.
+" (default: 0)
+let g:ultest_virtual_text = 0
 
 ""
-" Sign for passing tests (string)
+" Sign for passing tests.
+" (default: g:ultest_icons ? "●" : "O")
 let g:ultest_pass_sign = get(g:, "ultest_pass_sign", g:ultest_icons ? "●" : "O")
 ""
-" Sign for failing tests (string)
+" Sign for failing tests.
+" (default: g:ultest_icons ? "●" : "X")
 let g:ultest_fail_sign = get(g:, "ultest_fail_sign", g:ultest_icons ? "●" : "X")
+
 ""
 " Sign for running tests (string)
+" (default: g:ultest_icons ? "●" : "X")
 let g:ultest_running_sign = get(g:, "ultest_running_sign", g:ultest_icons ? "●" : "X")
 
 ""
 " Virtual text for passing tests (string)
+" (default: g:ultest_icons? "●":"Passing")
 let g:ultest_pass_text = get(g:, "ultest_pass_text", g:ultest_icons? "●":"Passing")
 ""
 " Virtual text for failing tests (string)
+" (default: g:ultest_icons? "●":"Failing")
 let g:ultest_fail_text = get(g:, "ultest_fail_text", g:ultest_icons? "●":"Failing")
 ""
 " Virtual text for passing tests (string)
+" (default: g:ultest_icons? "●":"Running")
 let g:ultest_running_text = get(g:, "ultest_running_text", g:ultest_icons? "●":"Running")
 
 ""
@@ -132,7 +149,7 @@ command! -bar UltestOutput call ultest#output#open(ultest#handler#nearest_output
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
-nnoremap <silent><Plug>(ultest-run-all) :Ultest<CR>
+nnoremap <silent><Plug>(ultest-run-file) :Ultest<CR>
 nnoremap <silent><Plug>(ultest-run-nearest) :UltestNearest<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>
 nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
