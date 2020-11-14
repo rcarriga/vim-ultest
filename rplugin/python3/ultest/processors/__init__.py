@@ -1,4 +1,4 @@
-from typing import List, Callable, Any, Type
+from typing import List, Type
 
 from ultest.processors.processor import Processor
 from ultest.processors.vimscript import VimscriptProcessor
@@ -12,18 +12,8 @@ PYTHON_PROCESSORS: List[Type[Processor]] = []
 class Processors:
     def __init__(self, vim: VimClient):
         self._vim = vim
-        vim_processors: List[Processor] = [
-            VimscriptProcessor(spec, vim)
-            for spec in self._vim.sync_call("nvim_get_var", PROCESSORS_VAR) or []
-        ]
-        python_processors = [
-            constructor(vim) for constructor in PYTHON_PROCESSORS
-        ]  # pylint: disable=E1120
-        self._processors: List[Processor] = [
-            processor
-            for processor in (vim_processors + python_processors)
-            if processor.condition
-        ]
+        vim_processor = VimscriptProcessor(vim)
+        self._processors: List[Processor] = [vim_processor]
 
     def clear(self, test: Test, sync: bool = True):
         for processor in self._processors:

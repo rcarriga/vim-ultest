@@ -1,4 +1,4 @@
-let s:strategy = "status"
+let s:strategy = "ultest"
 let g:test#custom_strategies = get(g:, "test#custom#strategies", {})
 let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
 

@@ -1,5 +1,3 @@
-from typing import Dict
-
 from ultest.vim import VimClient
 from ultest.processors.processor import Processor
 
@@ -11,13 +9,17 @@ EXIT = "exit"
 
 
 class VimscriptProcessor(Processor):
-    def __init__(self, spec: Dict, vim: VimClient):
-        self._spec = spec
+    def __init__(self, vim: VimClient):
+        self._spec = {
+            START: "ultest#process#start",
+            CLEAR: "ultest#process#clear",
+            EXIT: "ultest#process#exit",
+        }
         super().__init__(vim)
 
     @property
-    def condition(self) -> bool:
-        return self._spec.get(CONDITION, True)
+    def condition(self):
+        return True
 
     def clear(self, test, sync: bool = True):
         self._pass_to_processor(CLEAR, test, sync=sync)

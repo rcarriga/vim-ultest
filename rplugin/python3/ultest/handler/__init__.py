@@ -30,9 +30,10 @@ class Handler:
         :param cmd: Command to run with file name, test name and line no appended.
         :type cmd: str
         """
-        test_args = re.search(r"{.*}$", cmd)[0]  # type: ignore
-        command = split(cmd[: -len(test_args)])
-        test = Test(**json.loads(test_args))
+        custom_args = re.search(r"\[.*\]$", cmd)[0]  # type: ignore
+        test_args = json.loads(bytes(json.loads(custom_args)).decode())
+        command = split(cmd[: -len(custom_args)])
+        test = Test(**test_args)
         self._vim.launch(self.runner, command, test)
 
     def runner(self, cmd: List[str], test: Test):
