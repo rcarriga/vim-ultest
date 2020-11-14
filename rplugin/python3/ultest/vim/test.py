@@ -16,21 +16,8 @@ class TestClient:
         self._vim = vim
         self._patterns: Dict[str, Dict[str, List[str]]] = {}
 
-    def runner(self, file_name: str):
-        return self._vim.sync_call("test#determine_runner", file_name)
-
-    def build_position(self, runner: str, test: Test):
-        return self._vim.sync_call("test#base#build_position", runner, "nearest", test)
-
-    def prepare_options(self, runner: str, args: List):
-        return self._vim.sync_call("test#base#options", runner, args, "nearest")
-
     def run(self, test: Test):
-        runner = self.runner(test.file)
-        base_args = self.build_position(runner, test)
-        args = base_args + [str(test).replace("'", r"\'")]
-        options = self.prepare_options(runner, args)
-        self._vim.call("test#execute", runner, options, "status")
+        self._vim.call("ultest#adapter#run_test", str(test))
 
     def patterns(self, file_name: str):
         runner = self._vim.sync_call("test#determine_runner", file_name)
