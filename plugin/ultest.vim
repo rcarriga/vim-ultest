@@ -71,7 +71,7 @@ let g:ultest_show_in_file = get(g:, "ultest_show_in_file", 1)
 ""
 " Use virtual text (if available) instead of signs to show test results in file.
 " (default: 0)
-let g:ultest_virtual_text = 0
+let g:ultest_virtual_text = get(g:, "ultest_virtual_text", 0)
 
 ""
 " Sign for passing tests.
