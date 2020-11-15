@@ -13,7 +13,11 @@ augroup END
 function! ultest#output#open(output) abort
   if empty(a:output) | return | endif
   doautocmd User UltestOutputOpen
-  call s:OpenFloat(a:output)
+  if has("nvim")
+    call s:NvimOpenFloat(a:output)
+  else
+    call s:VimOpenFloat(a:output)
+  endif
 endfunction
 
 function! ultest#output#close() abort
@@ -28,8 +32,8 @@ function! ultest#output#close() abort
   endfor
   let g:ultest#output_windows = []
 endfunction
-function! s:OutputIsOpen()
 
+function! s:OutputIsOpen()
   return !empty(get(g:, "ultest#output_windows", []))
 endfunction
 
@@ -40,15 +44,42 @@ function ultest#output#jumpto() abort
       return
     endif
   endif
-  call nvim_set_current_win(g:ultest#output_windows[0])
+  if has("nvim")
+    call nvim_set_current_win(g:ultest#output_windows[0])
+  endif
 endfunction
 
-function! s:OpenFloat(path) abort
+function! s:CalculateBounds(path) abort
   let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".a:path." | wc -L"))[0])
   let height = str2nr(split(system("wc -l ".a:path))[0])
 
   let height = min([height, &lines/2])
   let width =  min([width, &columns/2])
+  return [width, height]
+endfunction
+
+function! s:VimOpenFloat(path) abort
+  let [width, height] = s:CalculateBounds(a:path)
+  " TODO: Background shows as solid when highlight has bg=NONE
+  " See: https://github.com/vim/vim/issues/2361
+  let popup_options =  {
+    \ "highlight": "Normal",
+    \ "border": [1,1,1,1],
+    \ "maxheight": height,
+    \ "maxwidth": width,
+    \ "minheight": height,
+    \ "minwidth": width,
+    \ "borderhighlight": ["UltestBorder"],
+    \ "borderchars": ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+    \ "mapping": 1
+    \}
+  let buf = term_start(['less', "-R", "-Ps", a:path], {"hidden": 1, "term_kill": "term", "term_finish": 'close', "term_highlight": "Normal"})
+  let winid = popup_atcursor(buf, popup_options)
+  exec "tnoremap <buffer><silent> q <C-W>N:call popup_close(".winid.")<CR>"
+endfunction
+
+function! s:NvimOpenFloat(path) abort
+  let [width, height] = s:CalculateBounds(a:path)
 
   let lineNo = screenrow()
   let colNo = screencol()
@@ -94,10 +125,12 @@ function! s:OpenFloat(path) abort
 endfunction
 
 function! s:CloseFloat(window)
-  try
-    let output_buffer = nvim_win_get_buf(a:window)
-    exec "bd! ".output_buffer
-    call nvim_win_close(a:window, v:true)
-  catch /Invalid/
-  endtry
+  if has("nvim")
+    try
+      let output_buffer = nvim_win_get_buf(a:window)
+      exec "bd! ".output_buffer
+      call nvim_win_close(a:window, v:true)
+    catch /Invalid/
+    endtry
+  endif
 endfunction

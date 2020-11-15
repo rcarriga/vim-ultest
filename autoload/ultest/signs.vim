@@ -29,6 +29,7 @@ endfunction
 
 function! s:PlaceSign(test, test_icon) abort
     call sign_place(0, a:test.name, a:test_icon, a:test.file, {"lnum": a:test.line, "priority": 1000})
+    redraw
 endfunction
 
 function! s:PlaceVirtualText(test, text, highlight) abort
@@ -42,6 +43,7 @@ function! ultest#signs#unplace(test)
         call nvim_buf_clear_namespace(0, namespace, 0, -1)
     else
         call sign_unplace(a:test.name, {"buffer": a:test.file})
+      redraw
     endif
 endfunction
 
