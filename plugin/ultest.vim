@@ -65,9 +65,21 @@ let g:ultest_output_on_line =  get(g:, "ultest_output_on_line", has("nvim"))
 let g:ultest_icons = get(g:, "ultest_icons", 1)
 
 ""
-" Enable sign/virtual text processor for tests.
+" Number of rows for terminal size where tests are run (default: 0)
+" Set to zero to not instruct runner on size of terminal.
+" Note: It is up to the test runner to respect these bounds
+let g:ultest_output_rows = get(g:, "ultest_output_rows", 0)
+
+""
+" Number of columns for terminal size where tests are run (default: 0)
+" Set to zero to not instruct runner on size of terminal.
+" Note: It is up to the test runner to respect these bounds
+let g:ultest_output_cols = get(g:, "ultest_output_cols", 0)
+
+"" Enable sign/virtual text processor for tests.
 " (default: 1)
 let g:ultest_show_in_file = get(g:, "ultest_show_in_file", 1)
+
 ""
 " Use virtual text (if available) instead of signs to show test results in file.
 " (default: 0)

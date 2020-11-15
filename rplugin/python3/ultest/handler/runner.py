@@ -29,9 +29,6 @@ class Runner:
         :return: Result of test running.
         :rtype: Result
         """
-        if "COLUMNS" in os.environ:
-            os.environ.pop("COLUMNS")
-            os.environ.pop("ROWS")
         completed = subprocess.run(
             cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, check=False
         )

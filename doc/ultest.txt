@@ -51,6 +51,16 @@ handles terminal popups, this is disabled by default as it can be annoying.
                                                               *g:ultest_icons*
 Use unicode icons for results signs/virtual text. (default: 1)
 
+                                                        *g:ultest_output_rows*
+Number of rows for terminal size where tests are run (default: 0) Set to zero
+to not instruct runner on size of terminal. Note: It is up to the test runner
+to respect these bounds
+
+                                                        *g:ultest_output_cols*
+Number of columns for terminal size where tests are run (default: 0) Set to
+zero to not instruct runner on size of terminal. Note: It is up to the test
+runner to respect these bounds
+
                                                        *g:ultest_show_in_file*
 Enable sign/virtual text processor for tests. (default: 1)
 
