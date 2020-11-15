@@ -1,3 +1,4 @@
+import os
 import json
 import re
 from shlex import split
@@ -21,6 +22,19 @@ class Handler:
         self._runner = runner
         self._positions = positions
         self._results = results
+        self._prepare_env()
+
+    def _prepare_env(self):
+        rows = self._vim.sync_eval("g:ultest_output_rows")
+        if rows:
+            os.environ["ROWS"] = str(rows)
+        elif "ROWS" in os.environ:
+            os.environ.pop("ROWS")
+        cols = self._vim.sync_eval("g:ultest_output_cols")
+        if cols:
+            os.environ["COLUMNS"] = str(cols)
+        elif "COLUMNS" in os.environ:
+            os.environ.pop("COLUMNS")
 
     def strategy(self, cmd: str):
         """
