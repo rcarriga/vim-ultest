@@ -19,6 +19,8 @@ If you experience any problems please open an issue with as much detail as possi
 
 _The ultimate testing plugin for Vim/NeoVim_
 
+![example](https://user-images.githubusercontent.com/24252670/99190810-8ebc9780-2760-11eb-8420-2aaf2c25798e.gif)
+
 Running tests should be as quick and painless as possible.
 [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
 Rather than replacing vim-test altogether, Ultest (in name and practice) builds upon vim-test to make it even better while maintaining the ability to use your existing configuration.
