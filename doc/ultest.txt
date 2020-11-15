@@ -44,7 +44,9 @@ Enable positions processor for tests to allow jumping between tests. (default:
 Show failed outputs when completed run. (default: 1)
 
                                                      *g:ultest_output_on_line*
-Show failed outputs when cursor is on first line of test. (default: 1)
+Show failed outputs when cursor is on first line of test. Due to how Vim
+handles terminal popups, this is disabled by default as it can be annoying.
+(default: has("nvim"))
 
                                                               *g:ultest_icons*
 Use unicode icons for results signs/virtual text. (default: 1)
@@ -123,9 +125,11 @@ MAPPINGS                                                     *ultest-mappings*
 
 <Plug>(ultest-run-nearest)       Run test closest to the cursor.
 
-<Plug>(ultest-output-show)       Show error output of the nearest test.
+<Plug>(ultest-output-show)       Show error output of the nearest test. (Will
+jump to popup window in Vim)
 
-<Plug>(ultest-output-jump)       Show error output of the nearest test.
+<Plug>(ultest-output-jump)       Show error output of the nearest test. (Same
+behabviour as <Plug>(ultest-output-show) in Vim)
 
 
 vim:tw=78:ts=8:ft=help:norl:

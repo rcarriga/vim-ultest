@@ -54,8 +54,10 @@ let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
 
 ""
 " Show failed outputs when cursor is on first line of test.
-" (default: 1)
-let g:ultest_output_on_line = get(g:, "ultest_output_on_line", 1)
+" Due to how Vim handles terminal popups, this is disabled by default as it
+" can be annoying.
+" (default: has("nvim"))
+let g:ultest_output_on_line =  get(g:, "ultest_output_on_line", has("nvim"))
 
 ""
 " Use unicode icons for results signs/virtual text.
@@ -143,9 +145,11 @@ command! -bar UltestOutput call ultest#output#open(ultest#handler#nearest_output
 "
 " <Plug>(ultest-run-nearest)	 Run test closest to the cursor.
 "
-" <Plug>(ultest-output-show) 	 Show error output of the nearest test.
+" <Plug>(ultest-output-show) 	 Show error output of the nearest test. (Will
+" jump to popup window in Vim)
 "
-" <Plug>(ultest-output-jump) 	 Show error output of the nearest test.
+" <Plug>(ultest-output-jump) 	 Show error output of the nearest test. (Same
+" behabviour as <Plug>(ultest-output-show) in Vim)
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>

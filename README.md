@@ -2,8 +2,6 @@
 
 This plugin is in the early stages of development so there will likely be bugs!
 If you experience any problems please open an issue with as much detail as possible i.e. error messages, file type, test runner and minimal example.
-Only NeoVim is supported right as that is what I use myself.
-There are no features absent from Vim that are required, so I plan to add Vim support at some stage.
 
 
 1. [Introduction](#introduction)
@@ -19,7 +17,7 @@ There are no features absent from Vim that are required, so I plan to add Vim su
 
 ## Introduction
 
-_The ultimate testing plugin for NeoVim_
+_The ultimate testing plugin for Vim/NeoVim_
 
 Running tests should be as quick and painless as possible.
 [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
@@ -47,19 +45,30 @@ If you have any ideas, feel free to open an issue!
 
 **Requirements**:
 
+All users:
+
 - Python >= 3.7
-- NeoVim >= 0.5
 - [Pynvim library](https://pynvim.readthedocs.io/en/latest/installation.html)
 - [vim-test](https://github.com/janko/vim-test)
 
-These are simply what I can guarantee work, I have not tested NeoVim < 0.5 or Python < 3.7.
+Vim only:
+- [nvim-yarp](https://github.com/roxma/nvim-yarp)
+- [vim-hug-neovim-rpc](https://github.com/roxma/vim-hug-neovim-rpc)
+
+I have not had the chance to extensively test Vim/NeoVim versions.
+If you have issues with missing features, please open an issue with your editor version.
 
 Ultest can be installed as usual with your favourite plugin manager.
 
 For example with [dein](https://github.com/Shougo/dein.vim):
 ```vim
+" Vim Only
+call dein#add("roxma/nvim-yarp")
+call dein#add("roxma/vim-hug-neovim-rpc")
+
 call dein#add('janko/vim-test')
 call dein#add('rcarriga/vim-ultest', {"depends": "vim-test"})
+
 ```
 
 ## Usage

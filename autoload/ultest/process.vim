@@ -38,7 +38,6 @@ endfunction
 function ultest#process#pre(position) abort
   if len(get(a:position, "name", []))
     let newName = list2str(a:position.name)
-    echom newName
     let a:position.name = newName
   endif
 endfunction

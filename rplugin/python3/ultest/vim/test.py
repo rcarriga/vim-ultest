@@ -33,16 +33,10 @@ class TestClient:
         return patterns
 
     def _get_vim_patterns(self, file_type: str) -> Dict[str, List[str]]:
-        vim_patterns = self._vim.sync_eval(f"get(g:,'test#{file_type}#patterns')")
-        if not vim_patterns:
-            try:
-                self._vim.sync_call(f"test#{file_type}#noop")
-            except Exception:
-                vim_patterns = self._vim.sync_eval(
-                    f"get(g:,'test#{file_type}#patterns')"
-                )
-        if not isinstance(vim_patterns, dict):
-            return {}
+        try:
+            vim_patterns = self._vim.sync_eval(f"g:test#{file_type}#patterns")
+        except Exception:
+            vim_patterns = {}
         return vim_patterns
 
     def _convert_patterns(self, vim_patterns: Dict[str, List[str]]):
