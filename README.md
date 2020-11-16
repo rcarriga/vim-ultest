@@ -69,7 +69,7 @@ call dein#add("roxma/nvim-yarp")
 call dein#add("roxma/vim-hug-neovim-rpc")
 
 call dein#add('janko/vim-test')
-call dein#add('rcarriga/vim-ultest', {"depends": "vim-test"})
+call dein#add('rcarriga/vim-ultest')
 
 ```
 
