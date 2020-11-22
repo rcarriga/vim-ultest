@@ -11,8 +11,6 @@ If you experience any problems please open an issue with as much detail as possi
 	1. [Configuration](#configuration)
 	2. [Commands](#commands)
 	3. [Plug mappings](#plug-mappings)
-5. [Known Issues](#known-issues)
-	1. [Virtual Text](#virtual-text)
 6. [Feedback](#feedback)
 
 ## Introduction
