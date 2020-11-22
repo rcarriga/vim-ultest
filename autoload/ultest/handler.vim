@@ -38,6 +38,14 @@ function! ultest#handler#clear_old(file_name) abort
     endif
 endfunction
 
+function! ultest#handler#clear_all(file_name) abort
+    if s:is_nvim
+        call _ultest_clear_all(a:file_name)
+    else
+        call s:yarp.call('_ultest_clear_all', a:file_name)
+    endif
+endfunction
+
 function! ultest#handler#save_positions(file_name) abort
     if s:is_nvim
         call _ultest_set_positions(a:file_name)

@@ -1,3 +1,3 @@
-from ultest.models.position import Position
-from ultest.models.test import Test
-from ultest.models.result import Result
+from .position import Position
+from .test import Test
+from .result import Result

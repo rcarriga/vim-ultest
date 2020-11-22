@@ -1,107 +1,71 @@
 import re
-from typing import Callable, Dict, List, Optional, Iterable
-from itertools import tee, zip_longest
+from typing import Callable, Dict, List, Optional
 
-from ultest.models import Position
-from ultest.vim import VimClient
+from ..models import Position
+from ..vim import VimClient
+
+REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 
 
 class Positions:
     def __init__(self, vim: VimClient):
         self._vim = vim
         self._positions: Dict[str, List[Position]] = {}
-        self._last_runs: Dict[str, List[Positions]] = {}
 
-    def all_stored(self, file_name: str) -> List[Position]:
-        """
-        Get the last known test positions for a file.
-        Can be run on main thread.
-
-        :param file_name: Name of file to check.
-        :type file_name: str
-        :rtype: Dict[str, Position]
-        """
+    def get_stored(self, file_name: str) -> List[Position]:
         return self._positions.get(file_name, [])
 
-    def get_all(
-        self, file_name: str, receiver: Callable[[Iterable[Position]], None] = None
+    def calculate_all(
+        self, file_name: str, receiver: Callable[[List[Position]], None] = None
     ):
-        """
-        Calculate the test positions of a file and supply the result to a callback.
-        This will also update the stored positions.
-        Must be started on main Vim thread.
-        The receiver will be started on a seperate thread.
+        vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
 
-        :param file_name: Name of file to get positions of
-        :type file_name: str
-        :param receiver: Function to supply result to.
-        :type receiver: Callable[[Iterable[Position]], None]
-        """
-        patterns = self._vim.test.patterns(file_name)
-        if patterns:
-            lines = self._vim.buffers.contents(file_name)
+        def runner():
+            patterns = self._convert_patterns(vim_patterns)
+            with open(file_name, "r") as test_file:
+                lines = test_file.readlines()
+            positions = self._calculate_positions(file_name, patterns, lines)
+            self._positions[file_name] = positions
+            if receiver:
+                receiver(positions)
 
-            def runner():
-                positions = self._calculate_positions(file_name, patterns, lines)
+        self._vim.launch(runner)
 
-                to_send, to_store = tee(positions)
-                self._vim.launch(self._store_positions, file_name, to_store)
-                if receiver:
-                    receiver(to_send)
+    def _convert_patterns(self, vim_patterns: Dict[str, List[str]]):
+        return [
+            self._convert_regex(pattern) for pattern in vim_patterns.get("test", "")
+        ]
 
-            self._vim.launch(runner)
+    def _convert_regex(self, vim_regex: str) -> str:
+        regex = vim_regex
+        for pattern, repl in REGEX_CONVERSIONS.items():
+            regex = re.sub(pattern, repl, regex)
+        return regex
 
-    def nearest_stored(self, file_name: str, strict: bool) -> Optional[Position]:
-        """
-        Get the nearest position from the last known positions.
-        The nearest position is the first position found above the cursor.
+    def get_nearest_stored(self, file_name: str, strict: bool) -> Optional[Position]:
+        current_line = self._vim.sync_call("getbufinfo", file_name)[0].get("lnum")
+        positions = self.get_stored(file_name)
+        return self._get_nearest_from(positions, current_line, strict)
 
-        :param file_name: File to get position from.
-        :type file_name: str
-        :param strict: Only return position if on current line.
-        :type strict: bool
-        :return: Position closest to cursor.
-        :rtype: Optional[Position]
-        """
-        current_line = self._vim.buffers.current_line(file_name)
-        positions = self.all_stored(file_name)
-        if not positions:
-            return None
-        first_test_line = positions[0].line
-        offset = current_line - first_test_line
-        if offset < 0:
-            return None
-        nearest = positions[offset] if offset < len(positions) else positions[-1]
-        return nearest if nearest.line == current_line or not strict else None
-
-    def get_nearest(
+    def calculate_nearest(
         self,
         file_name: str,
         receiver: Callable[[Optional[Position]], None],
         strict: bool,
     ):
-        """
-        Calculate all the positions in a file and et the nearest.
-        The nearest position is the first position found above the cursor.
-        This will also update the stored positions.
-
-        :param file_name: File to get position from.
-        :type file_name: str
-        :param strict: Only return position if on current line.
-        :type strict: bool
-        :param receiver: Function to receive positions.
-        :type receiver: Callable[[Optional[Position]], None]
-        """
-        current_line = self._vim.buffers.current_line(file_name)
+        current_line = self._vim.sync_call("getbufinfo", file_name)[0].get("lnum")
 
         def runner(positions):
-            nearest = self._nearest(positions, current_line, strict)
+            nearest = self._get_nearest_from(positions, current_line, strict)
             if nearest:
                 receiver(nearest)
 
-        self.get_all(file_name, runner)
+        self.calculate_all(file_name, runner)
 
-    def _nearest(self, positions: Iterable[Position], current_line: int, strict: bool):
+    def _get_nearest_from(
+        self, positions: List[Position], current_line: int, strict: bool
+    ):
+        # TODO: Binary search
         last = None
         for nearest in positions:
             if nearest.line == current_line:
@@ -113,36 +77,25 @@ class Positions:
             return last
         return None
 
-    def _store_positions(self, file_name: str, positions: Iterable[Position]):
-        positions = list(positions)
-        if positions:
-            future_positions = positions[1:]
-            pos_list = []
-            for current, next_pos in zip_longest(positions, future_positions):
-                next_line = next_pos.line if next_pos else current.line + 1
-                for position in (next_line - current.line) * [current]:
-                    pos_list.append(position)
-            self._positions[file_name] = pos_list
-
     def _calculate_positions(
         self,
         file_name: str,
-        patterns: Dict,
+        patterns: List[str],
         lines: List[str],
-        is_reversed: bool = False,
-    ) -> Iterable[Position]:
-        last_position = None
-        num_lines = len(lines)
+    ) -> List[Position]:
+        positions = []
         for line_index, line in enumerate(lines):
-            test_name = self._find_test_name(line, patterns["test"])
-            if test_name and last_position != test_name:
-                last_position = test_name
-                line_no = num_lines - line_index if is_reversed else line_index + 1
-                yield Position(file=file_name, line=line_no, col=1, name=test_name)
+            test_name = self._find_test_name(line, patterns)
+            if test_name:
+                line_no = line_index + 1
+                positions.append(
+                    Position(file=file_name, line=line_no, col=1, name=test_name)
+                )
+        return positions
 
     def _find_test_name(self, line: str, patterns: List[str]) -> Optional[str]:
-        matches: List[str] = []
         for pattern in patterns:
             matched = re.match(pattern, line)
-            matches = matches + list(matched.groups()) if matched else []
-        return matches[0] if matches else None
+            if matched:
+                return matched[0]
+        return None

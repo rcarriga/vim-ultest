@@ -43,6 +43,11 @@ hi default UltestRunning ctermfg=Yellow guifg=#FFEC63
 hi default UltestBorder ctermfg=Red guifg=#F70067
 
 ""
+" Number of workers that are used for running and processing tests.
+" (default: 4)
+let g:ultest_max_threads = get(g:, "ultest_max_threads", 4)
+
+""
 " Enable positions processor for tests to allow jumping between tests.
 " (default: 1)
 let g:ultest_positions = get(g:, "ultest_positions", 1)
@@ -177,3 +182,8 @@ if g:ultest_output_on_line
         au CursorHold * call ultest#output#open(ultest#handler#nearest_output(expand("%"), v:true))
     augroup END
 endif
+
+augroup UltestCleanup
+    au!
+    au BufUnload * call ultest#handler#clear_all(expand("<afile>"))
+augroup END

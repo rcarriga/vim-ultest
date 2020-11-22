@@ -4,11 +4,11 @@ from typing import Callable, List
 
 
 class Threader:
-    def __init__(self):
+    def __init__(self, num_threds: int):
         self._queue: "Queue[Callable]" = Queue()
         self._threads: List[Thread] = []
         self._running = True
-        self._start_workers(2)
+        self._start_workers(num_threds)
 
     def set_threads(self, num: int):
         self._start_workers(num)
