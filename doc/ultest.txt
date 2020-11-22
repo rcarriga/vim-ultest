@@ -36,6 +36,9 @@ The goal behind Ultest is to make running tests as seamless as possible.
 ==============================================================================
 CONFIGURATION                                                  *ultest-config*
 
+                                                        *g:ultest_max_threads*
+Number of workers that are used for running and processing tests. (default: 4)
+
                                                           *g:ultest_positions*
 Enable positions processor for tests to allow jumping between tests. (default:
 1)

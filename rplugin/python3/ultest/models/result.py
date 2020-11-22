@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ultest.models.test import Test
+from .test import Test
 
 
 @dataclass(repr=False)

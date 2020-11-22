@@ -6,12 +6,21 @@ from typing import Dict, List
 
 from pynvim import Nvim
 
-from ultest.handler.positions import Positions
-from ultest.handler.results import Results
-from ultest.handler.runner import Runner
-from ultest.models import Position, Result, Test
-from ultest.processors import Processors
-from ultest.vim import VimClient
+from .positions import Positions
+from .results import Results
+from .runner import Runner
+from ..models import Test
+from ..vim import VimClient
+
+
+class HandlerFactory:
+    @staticmethod
+    def create(vim: Nvim) -> "Handler":
+        client = VimClient(vim)
+        positions = Positions(client)
+        runner = Runner(client)
+        results = Results(client)
+        return Handler(client, runner, positions, results)
 
 
 class Handler:
@@ -44,20 +53,25 @@ class Handler:
         :param cmd: Command to run with file name, test name and line no appended.
         :type cmd: str
         """
-        custom_args = re.search(r"\[.*\]$", cmd)[0]  # type: ignore
-        test_args = json.loads(bytes(json.loads(custom_args)).decode())
-        command = split(cmd[: -len(custom_args)])
-        test = Test(**test_args)
-        self._vim.launch(self.runner, command, test)
+
+        def runner():
+            custom_args = re.search(r"\[.*\]$", cmd)[0]  # type: ignore
+            test_args = json.loads(bytes(json.loads(custom_args)).decode())
+            command = split(cmd[: -len(custom_args)])
+            test = Test(**test_args)
+            self.runner(command, test)
+
+        self._vim.launch(runner)
 
     def runner(self, cmd: List[str], test: Test):
-        result = self._runner.test(cmd, test)
-        self._results.handle(result)
+        result = self._runner.execute_test(cmd, test)
+        self._results.store(result)
+        self._vim.call("ultest#process#exit", result)
         self._vim.schedule(self._present_output, result)
 
     def _present_output(self, result):
         if result.code and self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)"):
-            nearest = self._positions.nearest_stored(result.file, False)
+            nearest = self._positions.get_nearest_stored(result.file, False)
             if nearest and nearest.name == result.name:
                 self._vim.sync_call("ultest#output#open", result.output)
 
@@ -68,7 +82,7 @@ class Handler:
         :param file_name: File to run in.
         :type file_name: str
         """
-        self._positions.get_all(file_name, self._runner.positions)
+        self._positions.calculate_all(file_name, self._runner.run_positions)
 
     def run_nearest(self, file_name: str):
         """
@@ -79,9 +93,9 @@ class Handler:
         """
 
         def runner(position):
-            self._runner.positions([position])
+            self._runner.run_positions([position])
 
-        self._positions.get_nearest(file_name, runner, False)
+        self._positions.calculate_nearest(file_name, runner, False)
 
     def clear_old(self, file_name: str):
         """
@@ -94,7 +108,17 @@ class Handler:
         def runner(positions):
             self._results.clear_old(file_name, positions)
 
-        self._positions.get_all(file_name, runner)
+        self._positions.calculate_all(file_name, runner)
+
+    def clear_all(self, file_name: str):
+        """
+        Clear all results from file
+
+        :param file_name: Name of file to clear results from.
+        :type file_name: str
+        """
+
+        self._results.clear_old(file_name, [])
 
     def store_positions(self, file_name: str):
         """Update and store the test positions for a buffer.
@@ -102,7 +126,7 @@ class Handler:
         :param file_name: File to update positions in.
         :type file_name: str
         """
-        self._positions.get_all(file_name)
+        self._positions.calculate_all(file_name)
 
     def get_positions(self, file_name: str) -> Dict[str, Dict]:
         """Get the known positions for a buffer, mapped by name.
@@ -112,7 +136,7 @@ class Handler:
         """
         return {
             position.name: position.dict
-            for position in self._positions.all_stored(file_name)
+            for position in self._positions.get_stored(file_name)
         }
 
     def nearest_output(self, file_name: str, strict: bool) -> str:
@@ -126,7 +150,7 @@ class Handler:
         :return: Path to output file
         :rtype: str
         """
-        position = self._positions.nearest_stored(file_name, strict)
+        position = self._positions.get_nearest_stored(file_name, strict)
         return self._results.output(file_name, position.name) if position else ""
 
     def get_output(self, file_name: str, test_name: str) -> str:
@@ -140,12 +164,3 @@ class Handler:
         :rtype: str
         """
         return self._results.output(file_name, test_name)
-
-
-def create(vim: Nvim) -> Handler:
-    client = VimClient(vim)
-    processors = Processors(client)
-    positions = Positions(client)
-    runner = Runner(client, processors)
-    results = Results(client, processors)
-    return Handler(client, runner, positions, results)

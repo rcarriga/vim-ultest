@@ -3,5 +3,4 @@
 PYTHON_DIR="rplugin/python3/ultest"
 
 pylint ${PYTHON_DIR}
-mypy ${PYTHON_DIR}
 black --check ${PYTHON_DIR}

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from ultest.models.position import Position
+from .position import Position
 
 
 @dataclass(repr=False)
 class Test(Position):
 
-    id: int
+    id: str

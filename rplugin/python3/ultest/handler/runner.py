@@ -1,23 +1,21 @@
+from uuid import uuid4
 import tempfile
 import os
 import os.path
-import random
 import subprocess
-from typing import Iterable, List, Dict
+from typing import Iterable, List
 
-from ultest.models import Position, Result, Test
-from ultest.processors import Processors
-from ultest.vim import VimClient
+from ..models import Position, Result, Test
+from ..vim import VimClient
 
 
 class Runner:
     """Handles scheduling and running tests."""
 
-    def __init__(self, vim: VimClient, processor: Processors):
+    def __init__(self, vim: VimClient):
         self._vim = vim
-        self._processor = processor
 
-    def test(self, cmd: List[str], test: Test) -> Result:
+    def execute_test(self, cmd: List[str], test: Test) -> Result:
         """
         Runs a test with the given command and returns a result
         contstructed from the given test.
@@ -32,17 +30,20 @@ class Runner:
         completed = subprocess.run(
             cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, check=False
         )
-        (output_handle, output_path) = tempfile.mkstemp()
-        with os.fdopen(output_handle, "w") as output_file:
-            output_file.write(completed.stdout.decode())
-        result_kwargs: Dict = {
+        if completed.returncode:
+            (output_handle, output_path) = tempfile.mkstemp()
+            with os.fdopen(output_handle, "w") as output_file:
+                output_file.write(completed.stdout.decode())
+        else:
+            output_path = ""
+        result_kwargs = {
             **test.dict,
             "code": completed.returncode,
             "output": output_path,
         }
         return Result(**result_kwargs)
 
-    def positions(self, positions: Iterable[Position]):
+    def run_positions(self, positions: Iterable[Position]):
         """
         Run a list of test positions. Each will be done in
         a separate thread.
@@ -50,12 +51,10 @@ class Runner:
         :param positions: Positions of tests.
         :type positions: Iterable[Position]
         """
-        for position in positions:
-            self._vim.schedule(self._run_position, position)
+        tests = [Test(**position.dict, id=str(uuid4())) for position in positions]
+        for test in tests:
+            self._vim.schedule(self._run_position, test)
 
-    def _run_position(self, position: Position):
-        test_id = random.randint(1000, 1000000)
-        test_kwargs: Dict = {**position.dict, "id": test_id}
-        test = Test(**test_kwargs)
-        self._processor.start(test)
-        self._vim.test.run(test)
+    def _run_position(self, test: Test):
+        self._vim.call("ultest#process#start", test)
+        self._vim.call("ultest#adapter#run_test", test)

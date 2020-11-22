@@ -1,6 +1,4 @@
-from importlib.util import find_spec
-
-import ultest.handler as handler
+from .handler import HandlerFactory
 
 try:
     import vim  # pylint: disable=E0401
@@ -10,7 +8,7 @@ try:
     def _check_started():
         global HANDLER  # pylint: disable=W0603
         if not HANDLER:
-            HANDLER = handler.create(vim)
+            HANDLER = HandlerFactory.create(vim)
 
     def _ultest_strategy(*args):
         _check_started()
@@ -27,6 +25,10 @@ try:
     def _ultest_clear_old(*args):
         _check_started()
         HANDLER.clear_old(*args)
+
+    def _ultest_clear_all(*args):
+        _check_started()
+        HANDLER.clear_all(*args)
 
     def _ultest_set_positions(*args):
         _check_started()
@@ -54,46 +56,44 @@ except ImportError:
             self._vim = nvim
             self._handler = None
 
-        def _check_started(self):
+        @property
+        def handler(self):
             if not self._handler:
-                self._handler = handler.create(self._vim)
+                self._handler = HandlerFactory.create(self._vim)
+            return self._handler
 
         @function("_ultest_strategy")
         def _strategy(self, args):
-            self._check_started()
-            self._handler.strategy(*args)
+            self.handler.strategy(*args)
 
         @function("_ultest_run_all")
         def _run_all(self, args):
-            self._check_started()
-            self._handler.run_all(*args)
+            self.handler.run_all(*args)
 
         @function("_ultest_run_nearest")
         def _run_nearest(self, args):
-            self._check_started()
-            self._handler.run_nearest(*args)
+            self.handler.run_nearest(*args)
 
         @function("_ultest_clear_old")
         def _clear_old(self, args):
-            self._check_started()
-            self._handler.clear_old(*args)
+            self.handler.clear_old(*args)
+
+        @function("_ultest_clear_all")
+        def _clear_all(self, args):
+            self.handler.clear_all(*args)
 
         @function("_ultest_set_positions")
         def _set_positions(self, args):
-            self._check_started()
-            self._handler.store_positions(*args)
+            self.handler.store_positions(*args)
 
         @function("_ultest_get_positions", sync=True)
         def _get_positions(self, args):
-            self._check_started()
-            return self._handler.get_positions(*args)
+            return self.handler.get_positions(*args)
 
         @function("_ultest_nearest_output", sync=True)
         def _nearest_output(self, args):
-            self._check_started()
-            return self._handler.nearest_output(*args)
+            return self.handler.nearest_output(*args)
 
         @function("_ultest_get_output", sync=True)
         def _get_output(self, args):
-            self._check_started()
-            return self._handler.get_output(*args)
+            return self.handler.get_output(*args)
