@@ -7,6 +7,8 @@ endfor
 
 function ultest#process#start(position) abort
   call ultest#process#pre(a:position)
+  let results = getbufvar(a:position.file, "ultest_results")
+  let results[a:position.name] = a:position
   for processor in g:ultest#active_processors
     let start = get(processor, "start", "")
     if start != ""
@@ -17,6 +19,7 @@ endfunction
 
 function ultest#process#clear(position) abort
   call ultest#process#pre(a:position)
+  call remove(getbufvar(a:position.file, "ultest_results"), a:position.name)
   for processor in g:ultest#active_processors
     let clear = get(processor, "clear", "")
     if clear != ""
@@ -27,6 +30,8 @@ endfunction
 
 function ultest#process#exit(result) abort
   call ultest#process#pre(a:result)
+  let results = getbufvar(a:result.file, "ultest_results")
+  let results[a:result.name] = a:result
   for processor in g:ultest#active_processors
     let exit = get(processor, "exit", "")
     if exit != ""

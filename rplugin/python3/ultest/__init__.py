@@ -38,6 +38,10 @@ try:
         _check_started()
         return HANDLER.get_positions(*args)
 
+    def _ultest_get_nearest_position(*args):
+        _check_started()
+        return HANDLER.get_nearest_position(*args)
+
     def _ultest_nearest_output(*args):
         _check_started()
         return HANDLER.nearest_output(*args)
@@ -89,6 +93,10 @@ except ImportError:
         @function("_ultest_get_positions", sync=True)
         def _get_positions(self, args):
             return self.handler.get_positions(*args)
+
+        @function("_ultest_get_nearest_position", sync=True)
+        def _get_nearest_position(self, args):
+            return self.handler.get_nearest_position(*args)
 
         @function("_ultest_nearest_output", sync=True)
         def _nearest_output(self, args):

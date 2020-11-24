@@ -2,14 +2,14 @@ import os
 import json
 import re
 from shlex import split
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pynvim import Nvim
 
 from .positions import Positions
 from .results import Results
 from .runner import Runner
-from ..models import Test
+from ..models import Test, Position
 from ..vim import VimClient
 
 
@@ -73,7 +73,7 @@ class Handler:
         if result.code and self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)"):
             nearest = self._positions.get_nearest_stored(result.file, False)
             if nearest and nearest.name == result.name:
-                self._vim.sync_call("ultest#output#open", result.output)
+                self._vim.sync_call("ultest#output#open", result.dict)
 
     def run_all(self, file_name: str):
         """
@@ -138,6 +138,10 @@ class Handler:
             position.name: position.dict
             for position in self._positions.get_stored(file_name)
         }
+
+    def get_nearest_position(self, file_name: str, strict: bool) -> Optional[Dict]:
+        position = self._positions.get_nearest_stored(file_name, strict)
+        return position and position.dict
 
     def nearest_output(self, file_name: str, strict: bool) -> str:
         """
