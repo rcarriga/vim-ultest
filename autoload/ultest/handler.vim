@@ -6,6 +6,10 @@ else
     let s:yarp = yarp#py3('ultest')
 endif
 
+function! s:PreRun(file_name) abort
+  call setbufvar(a:file_name, "ultest_results", getbufvar(a:file_name, "ultest_results", {}))
+endfunction
+
 function! ultest#handler#strategy(cmd) abort
     if s:is_nvim
         call _ultest_strategy(a:cmd)
@@ -15,6 +19,7 @@ function! ultest#handler#strategy(cmd) abort
 endfunction
 
 function! ultest#handler#run_all(file_name) abort
+    call s:PreRun(a:file_name)
     if s:is_nvim
         call _ultest_run_all(a:file_name)
     else
@@ -23,6 +28,7 @@ function! ultest#handler#run_all(file_name) abort
 endfunction
 
 function! ultest#handler#run_nearest(file_name) abort
+    call s:PreRun(a:file_name)
     if s:is_nvim
         call _ultest_run_nearest(a:file_name)
     else
@@ -59,6 +65,14 @@ function! ultest#handler#get_positions(file_name) abort
         return _ultest_get_positions(a:file_name)
     else
         return s:yarp.call('_ultest_get_positions', a:file_name)
+    endif
+endfunction
+
+function! ultest#handler#get_nearest_position(file_name, strict) abort
+    if s:is_nvim
+        return _ultest_get_nearest_position(a:file_name, a:strict)
+    else
+        return s:yarp.call('_ultest_get_nearest_position', a:file_name, a:strict)
     endif
 endfunction
 

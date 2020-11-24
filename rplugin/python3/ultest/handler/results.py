@@ -16,12 +16,6 @@ class Results:
             self._results[result.file] = {}
         self._results[result.file][result.name] = result
 
-    def output(self, file_name: str, test_name: str, fail_only: bool = True) -> str:
-        result = self._results.get(file_name, {}).get(test_name)
-        if result and (result.code or not fail_only):
-            return result.output
-        return ""
-
     def clear_old(self, file_name: str, positions: Iterable[Position]):
         existing = set(position.name for position in positions)
         to_clear = [

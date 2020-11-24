@@ -149,7 +149,7 @@ command! -bar UltestNearest call ultest#handler#run_nearest(expand("%"))
 
 ""
 " Show the output of the nearest test in the current file
-command! -bar UltestOutput call ultest#output#open(ultest#handler#nearest_output(expand("%"), v:false))
+command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_position(expand("%"), v:false))
 
 ""
 " @section Mappings
@@ -179,7 +179,7 @@ nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 if g:ultest_output_on_line
     augroup UltestOutputOnLine
         au!
-        au CursorHold * call ultest#output#open(ultest#handler#nearest_output(expand("%"), v:true))
+        au CursorHold * call ultest#output#open(ultest#handler#get_nearest_position(expand("%"), v:true))
     augroup END
 endif
 

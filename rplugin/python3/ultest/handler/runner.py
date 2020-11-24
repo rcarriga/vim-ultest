@@ -53,8 +53,5 @@ class Runner:
         """
         tests = [Test(**position.dict, id=str(uuid4())) for position in positions]
         for test in tests:
-            self._vim.schedule(self._run_position, test)
-
-    def _run_position(self, test: Test):
-        self._vim.call("ultest#process#start", test)
-        self._vim.call("ultest#adapter#run_test", test)
+            self._vim.call("ultest#process#start", test)
+            self._vim.call("ultest#adapter#run_test", test)

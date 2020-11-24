@@ -10,13 +10,16 @@ augroup UltestOutputMappings
   autocmd FileType UltestOutput nnoremap <buffer> q <C-W><C-K>
 augroup END
 
-function! ultest#output#open(output) abort
-  if empty(a:output) | return | endif
+function! ultest#output#open(position) abort
+  if type(a:position) != v:t_dict || empty(a:position) | return | endif
   doautocmd User UltestOutputOpen
+  let result = get(getbufvar(a:position.file, "ultest_results", {}), a:position.name, {})
+  let output = get(result, "output", "")
+  if output == "" | return | endif
   if has("nvim")
-    call s:NvimOpenFloat(a:output)
+    call s:NvimOpenFloat(output)
   else
-    call s:VimOpenFloat(a:output)
+    call s:VimOpenFloat(output)
   endif
 endfunction
 

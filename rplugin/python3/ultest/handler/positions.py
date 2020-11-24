@@ -97,5 +97,5 @@ class Positions:
         for pattern in patterns:
             matched = re.match(pattern, line)
             if matched:
-                return matched[0]
+                return matched[1]
         return None
