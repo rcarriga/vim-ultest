@@ -1,4 +1,5 @@
 from uuid import uuid4
+from time import sleep
 import tempfile
 import os
 import os.path
@@ -55,3 +56,4 @@ class Runner:
         for test in tests:
             self._vim.call("ultest#process#start", test)
             self._vim.call("ultest#adapter#run_test", test)
+            sleep(0.03)  # Minor sleep to avoid blocking main thread with IO
