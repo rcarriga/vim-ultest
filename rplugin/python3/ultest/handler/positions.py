@@ -1,5 +1,6 @@
 import re
 from typing import Callable, Dict, List, Optional
+from time import sleep
 
 from ..models import Position
 from ..vim import VimClient
@@ -65,17 +66,18 @@ class Positions:
     def _get_nearest_from(
         self, positions: List[Position], current_line: int, strict: bool
     ):
-        # TODO: Binary search
-        last = None
-        for nearest in positions:
-            if nearest.line == current_line:
-                return nearest
-            if last and last.line < current_line < nearest.line:
-                return None if strict else last
-            last = nearest
-        if not strict and last and last.line < current_line:
-            return last
-        return None
+        l = 0
+        r = len(positions) - 1
+        while l <= r:
+            m = int((l + r) / 2)
+            mid = positions[m]
+            if mid.line < current_line:
+                l = m + 1
+            elif mid.line > current_line:
+                r = m - 1
+            else:
+                return mid
+        return positions[r] if not strict and len(positions) > r else None
 
     def _calculate_positions(
         self,
