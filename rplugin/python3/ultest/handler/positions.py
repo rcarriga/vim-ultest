@@ -44,8 +44,10 @@ class Positions:
         return regex
 
     def get_nearest_stored(self, file_name: str, strict: bool) -> Optional[Position]:
-        current_line = self._vim.sync_call("getbufinfo", file_name)[0].get("lnum")
         positions = self.get_stored(file_name)
+        if not positions:
+            return None
+        current_line = self._vim.sync_call("getbufinfo", file_name)[0].get("lnum")
         return self._get_nearest_from(positions, current_line, strict)
 
     def calculate_nearest(
