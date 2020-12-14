@@ -71,6 +71,8 @@ call dein#add('rcarriga/vim-ultest')
 
 ```
 
+NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
+
 ## Usage
 
 ### Configuration
