@@ -23,6 +23,10 @@ try:
         _check_started()
         HANDLER.run_nearest(*args)
 
+    def _ultest_run_single(*args):
+        _check_started()
+        HANDLER.run_single(*args)
+
     def _ultest_update_positions(*args):
         _check_started()
         HANDLER.update_positions(*args)
@@ -38,6 +42,7 @@ try:
 
 except ImportError:
     from pynvim import Nvim, function, plugin
+
     try:
 
         @plugin
@@ -64,6 +69,10 @@ except ImportError:
             def _run_nearest(self, args):
                 self.handler.run_nearest(*args)
 
+            @function("_ultest_run_single")
+            def _run_single(self, args):
+                self.handler.run_single(*args)
+
             @function("_ultest_update_positions")
             def _update_positions(self, args):
                 self.handler.update_positions(*args)
@@ -75,7 +84,6 @@ except ImportError:
             @function("_ultest_get_nearest_test", sync=True)
             def _get_nearest_test(self, args):
                 return self.handler.get_nearest_test_dict(*args)
-
 
     except Exception:
         logging.exception("Error instantiating client")

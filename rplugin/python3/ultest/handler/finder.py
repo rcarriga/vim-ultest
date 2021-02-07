@@ -77,7 +77,7 @@ class TestFinder:
                 line_no = line_index + 1
                 tests.append(
                     Test(
-                        id=test_name+str(hash(current_test_text)),
+                        id=test_name + str(hash(current_test_text)),
                         file=file_name,
                         line=line_no,
                         col=1,

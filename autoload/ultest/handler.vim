@@ -38,6 +38,15 @@ function! ultest#handler#run_nearest(line, file_name) abort
     endif
 endfunction
 
+function! ultest#handler#run_single(test_id, file_name) abort
+    call s:PreRun(a:file_name)
+    if s:is_nvim
+        call _ultest_run_single(a:test_id, a:file_name)
+    else
+        call s:yarp.call('_ultest_run_single', a:test_id, a:file_name)
+    endif
+endfunction
+
 function! ultest#handler#update_positions(file_name) abort
     call s:PreRun(a:file_name)
     if s:is_nvim

@@ -29,7 +29,9 @@ class VimClient:
         """
         self._vim.async_call(func, *args, **kwargs)
 
-    def launch(self, func: Callable, priority: Union[int, JobPriority] = JobPriority.LOW) -> None:
+    def launch(
+        self, func: Callable, priority: Union[int, JobPriority] = JobPriority.LOW
+    ) -> None:
         """
         Launch a function to be run on a separate thread.
 
@@ -70,7 +72,7 @@ class VimClient:
         """
         expr = self.construct_command(command, *args, **kwargs)
         output = self._vim.command_output(expr)
-        return output.splitlines() if output else [] # type: ignore
+        return output.splitlines() if output else []  # type: ignore
 
     def construct_command(self, command, *args, **kwargs):
         args_str = " ".join(f"{arg}" for arg in args)
