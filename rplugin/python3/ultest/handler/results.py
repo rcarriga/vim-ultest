@@ -1,34 +1,20 @@
 import os
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional
 
-from ..models import Position, Result, Test
-from ..vim import VimClient
+from ..models import Result, Test
 
 
-class Results:
-    def __init__(self, vim: VimClient):
-        self._vim = vim
+class ResultStore:
+    def __init__(self):
         self._results: Dict[str, Dict[str, Result]] = {}
 
-    def store(self, result: Result):
-        self._clear(result)
-        if not self._results.get(result.file):
-            self._results[result.file] = {}
-        self._results[result.file][result.name] = result
+    def add(self, file_name: str, result: Result):
+        if not self._results.get(file_name):
+            self._results[file_name] = {}
+        self._results[file_name][result.id] = result
 
-    def clear_old(self, file_name: str, positions: Iterable[Position]):
-        existing = set(position.name for position in positions)
-        to_clear = [
-            res
-            for name, res in self._results.get(file_name, {}).items()
-            if name not in existing and res.file == file_name
-        ]
-        for res in to_clear:
-            self._clear(res)
+    def get(self, file_name: str, test_id: str) -> Optional[Result]:
+        return self._results.get(file_name, {}).pop(test_id, None)
 
-    def _clear(self, test: Test):
-        old_result = self._results.get(test.file, {}).pop(test.name, None)
-        if old_result:
-            self._vim.call("ultest#process#clear", old_result)
-            if old_result.output:
-                os.remove(old_result.output)
+    def pop(self, file_name: str, test_id: str) -> Optional[Result]:
+        return self._results.get(file_name, {}).pop(test_id, None)
