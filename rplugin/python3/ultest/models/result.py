@@ -1,10 +1,22 @@
-from dataclasses import dataclass
-
-from .test import Test
+import json
+from dataclasses import dataclass, asdict
 
 
 @dataclass(repr=False)
-class Result(Test):
+class Result:
 
+    id: str
+    file: str
     code: int
     output: str
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        props = self.dict
+        return json.dumps(props)
+
+    @property
+    def dict(self):
+        return asdict(self)

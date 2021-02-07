@@ -1,14 +1,15 @@
-from typing import Any, Callable, Optional, List
+from typing import Any, Callable, Optional, List, Union
 
 from pynvim import Nvim
-from .threader import Threader
+from .jobs import JobManager, JobPriority
 
 
 class VimClient:
     def __init__(self, vim: Nvim):
         self._vim = vim
-        num_threads = int(self._vim.eval("g:ultest_max_threads"))
-        self._threader = Threader(num_threads)
+        num_threads = int(self._vim.eval("g:ultest_max_threads"))  # type: ignore
+        self._job_manager = JobManager(num_threads)
+        self.clear_jobs = self._job_manager.clear_jobs
 
     def message(self, message, sync=False):
         if not isinstance(message, str) or not message.endswith("\n"):
@@ -23,23 +24,20 @@ class VimClient:
         Schedule a function to be called on Vim thread.
 
         :param func: Function to run.
-        :type func: Callable
         :param *args: Positional args for function.
         :param **kwargs: Keywords args for function.
         """
         self._vim.async_call(func, *args, **kwargs)
 
-    def launch(self, func: Callable, *args, **kwargs) -> None:
+    def launch(self, func: Callable, priority: Union[int, JobPriority] = JobPriority.LOW) -> None:
         """
         Launch a function to be run on a separate thread.
 
         :param func: Function to run.
-        :type func: Callable
         :param *args: Positional args for function.
         :param **kwargs: Keywords args for function.
         """
-        runner = lambda: func(*args, **kwargs)
-        self._threader.run(runner)()
+        self._job_manager.run(func, priority)()
 
     def command(
         self,
@@ -54,9 +52,7 @@ class VimClient:
         Args are supplied first. Kwargs are supplied after in the format "name=value"
 
         :param command: Command to run
-        :type command: str
         :param callback: Function to supply resulting output to.
-        :type callback: Optional[Callable]
         """
         runner = (
             lambda: callback(self.sync_command(command, *args, **kwargs))
@@ -71,11 +67,10 @@ class VimClient:
         Args are supplied first. Kwargs are supplied after in the format "name=value"
 
         :param command: Command to run
-        :type command: str
         """
         expr = self.construct_command(command, *args, **kwargs)
         output = self._vim.command_output(expr)
-        return output.splitlines() if output else []
+        return output.splitlines() if output else [] # type: ignore
 
     def construct_command(self, command, *args, **kwargs):
         args_str = " ".join(f"{arg}" for arg in args)
@@ -88,10 +83,8 @@ class VimClient:
         from a different thread to main Vim thread.
 
         :param func: Name of function to call.
-        :type func: str
         :param args: Arguments for the function.
         :param callback: Callback to send result of function to, defaults to None
-        :type callback: Optional[Callable]
         :rtype: None
         """
         runner = (
@@ -106,7 +99,6 @@ class VimClient:
         Call a vimscript function from the main Vim thread.
 
         :param func: Name of function to call.
-        :type func: str
         :param args: Arguments for the function.
         :return: Result of function call.
         :rtype: Any
