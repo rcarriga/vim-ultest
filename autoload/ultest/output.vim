@@ -10,10 +10,10 @@ augroup UltestOutputMappings
   autocmd FileType UltestOutput nnoremap <buffer> q <C-W><C-K>
 augroup END
 
-function! ultest#output#open(position) abort
-  if type(a:position) != v:t_dict || empty(a:position) | return | endif
+function! ultest#output#open(test) abort
+  if type(a:test) != v:t_dict || empty(a:test) | return | endif
   doautocmd User UltestOutputOpen
-  let result = get(getbufvar(a:position.file, "ultest_results", {}), a:position.name, {})
+  let result = get(getbufvar(a:test.file, "ultest_results", {}), a:test.id, {})
   let output = get(result, "output", "")
   if output == "" | return | endif
   if has("nvim")
@@ -31,7 +31,7 @@ function! ultest#output#close() abort
     return
   endif
   for window in g:ultest#output_windows
-    call s:CloseFloat(window)
+    exec "bd! ".nvim_win_get_buf(window)
   endfor
   let g:ultest#output_windows = []
 endfunction
@@ -42,7 +42,7 @@ endfunction
 
 function ultest#output#jumpto() abort
   if !s:OutputIsOpen()
-    call ultest#output#open(ultest#handler#nearest_output(expand("%"), v:false))
+    call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
     if !s:OutputIsOpen()
       return
     endif
@@ -125,15 +125,4 @@ function! s:NvimOpenFloat(path) abort
   call setwinvar(border_win_id, "&winhl", "Normal:Normal")
   call matchadd("UltestBorder", ".*",100, -1, {"window": border_window})
   let g:ultest#output_windows = [output_window, border_window]
-endfunction
-
-function! s:CloseFloat(window)
-  if has("nvim")
-    try
-      let output_buffer = nvim_win_get_buf(a:window)
-      exec "bd! ".output_buffer
-      call nvim_win_close(a:window, v:true)
-    catch /Invalid/
-    endtry
-  endif
 endfunction

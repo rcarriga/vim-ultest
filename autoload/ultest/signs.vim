@@ -1,6 +1,11 @@
-call sign_define("test_pass", {"text":g:ultest_pass_sign, "texthl": "UltestPass"})
-call sign_define("test_fail", {"text":g:ultest_fail_sign, "texthl": "UltestFail"})
-call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "UltestRunning"})
+function! ultest#signs#move(test) abort
+  let result = get(getbufvar(a:test.file, "ultest_results"), a:test.id, {})
+  if result != {}
+    call ultest#signs#process(result)
+  else
+    call ultest#signs#unplace(a:test)
+  endif
+endfunction
 
 function! ultest#signs#start(test) abort
     call ultest#signs#unplace(a:test)
@@ -11,15 +16,16 @@ function! ultest#signs#start(test) abort
     endif
 endfunction
 
-function! ultest#signs#process(test) abort
-    call ultest#signs#unplace(a:test)
+function! ultest#signs#process(result) abort
+    let test = getbufvar(a:result.file, "ultest_tests")[a:result.id]
+    call ultest#signs#unplace(test)
     if s:UseVirtual()
-        let text_highlight = a:test["code"] ? "UltestFail" : "UltestPass"
-        let text = a:test["code"] ? g:ultest_fail_text : g:ultest_pass_text
-        call s:PlaceVirtualText(a:test, text, text_highlight)
+        let text_highlight = a:result.code ? "UltestFail" : "UltestPass"
+        let text = result.code ? g:ultest_fail_text : g:ultest_pass_text
+        call s:PlaceVirtualText(test, text, text_highlight)
     else
-        let test_icon = a:test["code"] ? "test_fail" : "test_pass"
-        call s:PlaceSign(a:test, test_icon)
+        let test_icon = a:result.code ? "test_fail" : "test_pass"
+        call s:PlaceSign(test, test_icon)
     endif
 endfunction
 
@@ -34,7 +40,8 @@ endfunction
 
 function! s:PlaceVirtualText(test, text, highlight) abort
     let namespace = s:GetNamespace(a:test)
-    call nvim_buf_set_virtual_text(0, namespace, str2nr(a:test["line"]) - 1, [[a:text, a:highlight]], {})
+    let buffer =  nvim_win_get_buf(win_getid(bufwinnr(a:test.file)))
+    call nvim_buf_set_virtual_text(buffer, namespace, str2nr(a:test.line) - 1, [[a:text, a:highlight]], {})
 endfunction
 
 function! ultest#signs#unplace(test)
@@ -42,12 +49,12 @@ function! ultest#signs#unplace(test)
         let namespace = s:GetNamespace(a:test)
         call nvim_buf_clear_namespace(0, namespace, 0, -1)
     else
-        call sign_unplace(a:test.name, {"buffer": a:test.file})
+        call sign_unplace(a:test["name"], {"buffer": a:test.file})
       redraw
     endif
 endfunction
 
 function! s:GetNamespace(test)
-    let virtual_namespace = "ultest".substitute(a:test["name"], " ", "_", "g")
+    let virtual_namespace = "ultest".substitute(a:test.name, " ", "_", "g")
     return nvim_create_namespace(virtual_namespace)
 endfunction

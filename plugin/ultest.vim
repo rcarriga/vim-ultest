@@ -7,7 +7,7 @@ let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
 " @order introduction config commands highlights mappings
 " @stylized Ultest
 "
-" The ultimate testing plugin for NeoVim
+" The ultimate testing plugin for Vim/NeoVim
 "
 " Running tests should be as quick and painless as possible.
 " [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
@@ -41,11 +41,13 @@ hi default UltestPass ctermfg=Green guifg=#96F291
 hi default UltestFail ctermfg=Red guifg=#F70067
 hi default UltestRunning ctermfg=Yellow guifg=#FFEC63
 hi default UltestBorder ctermfg=Red guifg=#F70067
+hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 
 ""
 " Number of workers that are used for running and processing tests.
-" (default: 4)
-let g:ultest_max_threads = get(g:, "ultest_max_threads", 4)
+" Set to 0 to use number of cpu cores - 1 (to avoid blocking main thread)
+" (default: 0)
+let g:ultest_max_threads = get(g:, "ultest_max_threads", 0)
 
 ""
 " Enable positions processor for tests to allow jumping between tests.
@@ -131,12 +133,18 @@ let g:ultest#processors = [
 \       "condition": g:ultest_show_in_file,
 \       "start": "ultest#signs#start",
 \       "clear": "ultest#signs#unplace",
-\       "exit": "ultest#signs#process"
+\       "exit": "ultest#signs#process",
+\       "move": "ultest#signs#move",
+\       "replace": "ultest#signs#process"
 \   },
-\   {   "condition": g:ultest_positions,
-\       "clear": "ultest#positions#clear",
-\       "exit": "ultest#positions#process",
-\   }
+\   {
+\       "new": "ultest#summary#render",
+\       "start": "ultest#summary#render",
+\       "clear": "ultest#summary#render",
+\       "exit": "ultest#summary#render",
+\       "move": "ultest#summary#render",
+\       "replace": "ultest#summary#render"
+\   },
 \] + get(g:, "ultest_custom_processors", [])
 
 ""
@@ -145,12 +153,14 @@ command! -bar Ultest call ultest#handler#run_all(expand("%"))
 
 ""
 " Run nearest test in the current file
-command! -bar UltestNearest call ultest#handler#run_nearest(expand("%"))
+command! -bar UltestNearest call ultest#handler#run_nearest(line("."), expand("%"))
 
 ""
 " Show the output of the nearest test in the current file
-command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_position(expand("%"), v:false))
+command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
 
+
+command! -bar UltestSummary call ultest#summary#open()
 ""
 " @section Mappings
 "
@@ -162,6 +172,8 @@ command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_po
 "
 " <Plug>(ultest-run-nearest)	 Run test closest to the cursor.
 "
+" <Plug>(ultest-open-summary)	 Open the summary window
+"
 " <Plug>(ultest-output-show) 	 Show error output of the nearest test. (Will
 " jump to popup window in Vim)
 "
@@ -172,14 +184,18 @@ nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
 nnoremap <silent><Plug>(ultest-run-file) :Ultest<CR>
 nnoremap <silent><Plug>(ultest-run-nearest) :UltestNearest<CR>
+nnoremap <silent><Plug>(ultest-open-summary) :UltestSummary<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>
 nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 
+" Workaround to function not registering correctly sometimes
+" Seems to be similar to https://github.com/neovim/pynvim/issues/386
+" call ultest#handler#get_positions(expand("%"))
 
 if g:ultest_output_on_line
     augroup UltestOutputOnLine
         au!
-        au CursorHold * call ultest#output#open(ultest#handler#get_nearest_position(expand("%"), v:true))
+        au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:true))
     augroup END
 endif
 
@@ -187,3 +203,14 @@ augroup UltestCleanup
     au!
     au BufUnload * call ultest#handler#clear_all(expand("<afile>"))
 augroup END
+
+augroup UltestPositionUpdater
+    au!
+    au BufWrite,BufEnter *test* call ultest#handler#update_positions(expand("<afile>"))
+augroup END
+
+
+call sign_define("test_pass", {"text":g:ultest_pass_sign, "texthl": "UltestPass"})
+call sign_define("test_fail", {"text":g:ultest_fail_sign, "texthl": "UltestFail"})
+call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "UltestRunning"})
+
