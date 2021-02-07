@@ -17,7 +17,8 @@ If you experience any problems please open an issue with as much detail as possi
 
 _The ultimate testing plugin for NeoVim_
 
-![example](https://user-images.githubusercontent.com/24252670/99190810-8ebc9780-2760-11eb-8420-2aaf2c25798e.gif)
+![output_example](https://user-images.githubusercontent.com/24252670/107156823-7f707300-6978-11eb-9900-5bef5b1a036b.gif)
+![summary_example](https://user-images.githubusercontent.com/24252670/107156859-a5961300-6978-11eb-8a73-4b61433da4a4.gif)
 
 Running tests should be as quick and painless as possible.
 [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
@@ -27,16 +28,19 @@ If you're already using vim-test then switching to Ultest is as easy as installi
 The goal behind Ultest is to make running tests as seamless as possible.
 
 - Tests are run individually so that any errors can be addressed individually.
-- Tests are run in seperate threads (not just asynchronously on the same thread) so your NeoVim session will never be blocked.
+- Tests are run in separate threads (not just asynchronously on the same thread) so your NeoVim session will never be blocked.
 - When tests are complete, results can be viewed immediately or on command.
 - Utilise the existing power of vim-test by extending upon it.
 
 ## Features
 
-- Easy to use interface for running tests
-- Extensible and customisable
+- Summary window
+  - Highlight tests based on current status (running, succeeded, failed)
+  - Show test output
+  - View all tests currently found in all test files
 - Test result markers using signs or virtual text
 - Failure outputs in a floating window
+- Extensible and customisable
 
 More features are being worked on.
 If you have any ideas, feel free to open an issue!
@@ -100,6 +104,7 @@ let test#javascript#jest#options = "--color=always"
 - `Ultest`: Run all tests in a file.
 - `UltestNearest`: Run the test closest to the cursor.
 - `UltestOutput`: Show error output of the nearest test.
+- `UltestSummary`: Toggle the summary window
 
 These can be used manually or in an autocommand.\
 For example to run the nearest test every time a file is written:
@@ -118,12 +123,14 @@ augroup END
 - `<Plug>(ultest-run-nearest)`: Run test closest to the cursor.
 - `<Plug>(ultest-output-show) `: Show error output of the nearest test.
 - `<Plug>(ultest-output-jump) `: Show error output of the nearest test.
+- `<Plug>(ultest-summary-toggle) `: Toggle summary window.
+- `<Plug>(ultest-summary-jump) `: Jump to summary window
 
 Bind these to make running, navigating and analysing test results easier.\
 For example to be able to jump between failures in a test file:
 ```vim
-nmap <leader>uj <Plug>(ultest-next-fail)
-nmap <leader>uk <Plug>(ultest-prev-fail)
+nmap ]t <Plug>(ultest-next-fail)
+nmap [t <Plug>(ultest-prev-fail)
 ```
 
 Features are able to be enabled/disabled individually.
