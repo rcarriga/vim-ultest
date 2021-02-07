@@ -15,7 +15,7 @@ If you experience any problems please open an issue with as much detail as possi
 
 ## Introduction
 
-_The ultimate testing plugin for Vim/NeoVim_
+_The ultimate testing plugin for NeoVim_
 
 ![example](https://user-images.githubusercontent.com/24252670/99190810-8ebc9780-2760-11eb-8420-2aaf2c25798e.gif)
 
@@ -27,7 +27,7 @@ If you're already using vim-test then switching to Ultest is as easy as installi
 The goal behind Ultest is to make running tests as seamless as possible.
 
 - Tests are run individually so that any errors can be addressed individually.
-- Tests are run in seperate threads (not just asynchronously on the same thread) so your Vim session will never be blocked.
+- Tests are run in seperate threads (not just asynchronously on the same thread) so your NeoVim session will never be blocked.
 - When tests are complete, results can be viewed immediately or on command.
 - Utilise the existing power of vim-test by extending upon it.
 
@@ -55,7 +55,12 @@ Vim only:
 - [nvim-yarp](https://github.com/roxma/nvim-yarp)
 - [vim-hug-neovim-rpc](https://github.com/roxma/vim-hug-neovim-rpc)
 
-I have not had the chance to extensively test Vim/NeoVim versions.
+**Note:** Vim support is not in a usable state.
+The instructions here should only be used if you wish to contribute fixes.
+There is no fundamental issue blocking Vim support, I just don't have the time.
+Feel free to open PRs for adding support but I will not be addressing bug reports for Vim.
+
+I have not had the chance to extensively test NeoVim versions, it is recommended to stay on the latest nightly version.
 If you have issues with missing features, please open an issue with your editor version.
 
 Ultest can be installed as usual with your favourite plugin manager.
@@ -68,10 +73,9 @@ call dein#add("roxma/vim-hug-neovim-rpc")
 
 call dein#add('janko/vim-test')
 call dein#add('rcarriga/vim-ultest')
-
 ```
 
-NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
+**Note:** NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
 
 ## Usage
 
