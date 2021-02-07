@@ -1,6 +1,7 @@
 let s:strategy = "ultest"
 let g:test#custom_strategies = get(g:, "test#custom#strategies", {})
 let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
+let g:ultest_buffers = []
 
 ""
 " @section Introduction
@@ -27,7 +28,7 @@ let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
 " @section Highlights
 "
 " Define the following highlight groups to override their values by copying
-" these commands and changing their colours.
+" these commands and changing their colours/attributes.
 "
 " hi UltestPass ctermfg=Green guifg=#96F291
 "
@@ -36,6 +37,8 @@ let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
 " hi UltestRunning ctermfg=Yellow guifg=#FFEC63
 "
 " hi UltestBorder ctermfg=Red guifg=#F70067
+"
+" hi UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 
 hi default UltestPass ctermfg=Green guifg=#96F291
 hi default UltestFail ctermfg=Red guifg=#F70067
@@ -120,32 +123,51 @@ let g:ultest_fail_text = get(g:, "ultest_fail_text", g:ultest_icons? "●":"Fail
 let g:ultest_running_text = get(g:, "ultest_running_text", g:ultest_icons? "●":"Running")
 
 ""
+" Width of the summary window
+" (default: 50)
+let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
+""
 " Custom list of receivers for test events.
 " This is experimental and could change!
 " Receivers are dictionaries with any of the following keys:
+" 'new': A function which takes a new test which has been discovered.
+" 'move': A function which takes a test which has been moved.
+" 'replace': A function which takes a test which has previously been cleared but has been replaced.
 " 'start': A function which takes a test which has been run.
 " 'exit': A function which takes a test result once it has completed.
 " 'clear': A function which takes a test which has been removed for some
 " reason.
 let g:ultest_custom_processors = get(g:, "ultest_custom_processors", [])
 let g:ultest#processors = [
-\   {
-\       "condition": g:ultest_show_in_file,
-\       "start": "ultest#signs#start",
-\       "clear": "ultest#signs#unplace",
-\       "exit": "ultest#signs#process",
-\       "move": "ultest#signs#move",
-\       "replace": "ultest#signs#process"
-\   },
-\   {
-\       "new": "ultest#summary#render",
-\       "start": "ultest#summary#render",
-\       "clear": "ultest#summary#render",
-\       "exit": "ultest#summary#render",
-\       "move": "ultest#summary#render",
-\       "replace": "ultest#summary#render"
-\   },
-\] + get(g:, "ultest_custom_processors", [])
+      \   {
+      \       "condition": g:ultest_show_in_file,
+      \       "start": "ultest#signs#start",
+      \       "clear": "ultest#signs#unplace",
+      \       "exit": "ultest#signs#process",
+      \       "move": "ultest#signs#move",
+      \       "replace": "ultest#signs#process"
+      \   },
+      \   {
+      \       "new": "ultest#summary#render",
+      \       "start": "ultest#summary#render",
+      \       "clear": "ultest#summary#render",
+      \       "exit": "ultest#summary#render",
+      \       "move": "ultest#summary#render",
+      \       "replace": "ultest#summary#render"
+      \   },
+      \] + get(g:, "ultest_custom_processors", [])
+
+""
+" Key mappings for the summary window (dict)
+" Possible values:
+" "run" (default "r"): Runs the test currently selected or whole file if file name is selected.
+" "jumpto" (default "<CR>"): Jump to currently selected test.
+" "output" (default "o"): Open the output to the current test if failed.
+let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
+      \ "run": "r",
+      \ "jumpto": "<CR>",
+      \ "output": "o"
+      \ })
 
 ""
 " Run all tests in the current file
@@ -159,8 +181,18 @@ command! -bar UltestNearest call ultest#handler#run_nearest(line("."), expand("%
 " Show the output of the nearest test in the current file
 command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
 
+""
+" Toggle the summary window between open and closed
+command! -bar UltestSummary call ultest#summary#toggle()
 
-command! -bar UltestSummary call ultest#summary#open()
+""
+" Open the summary window
+command! -bar UltestSummaryOpen call ultest#summary#open()
+
+""
+" Close the summary window
+command! -bar UltestSummaryClose call ultest#summary#close()
+
 ""
 " @section Mappings
 "
@@ -172,19 +204,20 @@ command! -bar UltestSummary call ultest#summary#open()
 "
 " <Plug>(ultest-run-nearest)	 Run test closest to the cursor.
 "
-" <Plug>(ultest-open-summary)	 Open the summary window
+" <Plug>(ultest-summary-toggle)	 Toggle the summary window between open and closed
 "
-" <Plug>(ultest-output-show) 	 Show error output of the nearest test. (Will
-" jump to popup window in Vim)
+" <Plug>(ultest-summary-jump)	 Jump to the summary window (opening if it isn't already)
 "
-" <Plug>(ultest-output-jump) 	 Show error output of the nearest test. (Same
-" behabviour as <Plug>(ultest-output-show) in Vim)
+" <Plug>(ultest-output-show) 	 Show error output of the nearest test. (Will jump to popup window in Vim)
+"
+" <Plug>(ultest-output-jump) 	 Show error output of the nearest test. (Same behabviour as <Plug>(ultest-output-show) in Vim)
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
 nnoremap <silent><Plug>(ultest-run-file) :Ultest<CR>
 nnoremap <silent><Plug>(ultest-run-nearest) :UltestNearest<CR>
-nnoremap <silent><Plug>(ultest-open-summary) :UltestSummary<CR>
+nnoremap <silent><Plug>(ultest-summary-toggle) :UltestSummary<CR>
+nnoremap <silent><Plug>(ultest-summary-jump) :call ultest#summary#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>
 nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 
@@ -193,20 +226,20 @@ nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 " call ultest#handler#get_positions(expand("%"))
 
 if g:ultest_output_on_line
-    augroup UltestOutputOnLine
-        au!
-        au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:true))
-    augroup END
+  augroup UltestOutputOnLine
+    au!
+    au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:true))
+  augroup END
 endif
 
 augroup UltestCleanup
-    au!
-    au BufUnload * call ultest#handler#clear_all(expand("<afile>"))
+  au!
+  au BufUnload * call ultest#handler#clear_all(expand("<afile>"))
 augroup END
 
 augroup UltestPositionUpdater
-    au!
-    au BufWrite,BufEnter *test* call ultest#handler#update_positions(expand("<afile>"))
+  au!
+  au BufWrite,BufEnter *test* call ultest#handler#update_positions(expand("<afile>"))
 augroup END
 
 
