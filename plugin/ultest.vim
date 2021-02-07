@@ -130,13 +130,20 @@ let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
 " Custom list of receivers for test events.
 " This is experimental and could change!
 " Receivers are dictionaries with any of the following keys:
+"
 " 'new': A function which takes a new test which has been discovered.
+"
 " 'move': A function which takes a test which has been moved.
+"
 " 'replace': A function which takes a test which has previously been cleared but has been replaced.
+"
 " 'start': A function which takes a test which has been run.
+"
 " 'exit': A function which takes a test result once it has completed.
+"
 " 'clear': A function which takes a test which has been removed for some
 " reason.
+"
 let g:ultest_custom_processors = get(g:, "ultest_custom_processors", [])
 let g:ultest#processors = [
       \   {
@@ -160,9 +167,12 @@ let g:ultest#processors = [
 ""
 " Key mappings for the summary window (dict)
 " Possible values:
-" "run" (default "r"): Runs the test currently selected or whole file if file name is selected.
-" "jumpto" (default "<CR>"): Jump to currently selected test.
-" "output" (default "o"): Open the output to the current test if failed.
+"
+" 'run': (default "r") Runs the test currently selected or whole file if file name is selected.
+"
+" 'jumpto': (default "<CR>") Jump to currently selected test.
+"
+" 'output': (default "o") Open the output to the current test if failed.
 let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "run": "r",
       \ "jumpto": "<CR>",

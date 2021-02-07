@@ -13,7 +13,7 @@ CONTENTS                                                     *ultest-contents*
 INTRODUCTION                                             *ultest-introduction*
 
 
-The ultimate testing plugin for NeoVim
+The ultimate testing plugin for Vim/NeoVim
 
 Running tests should be as quick and painless as possible.
 [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive
@@ -37,7 +37,8 @@ The goal behind Ultest is to make running tests as seamless as possible.
 CONFIGURATION                                                  *ultest-config*
 
                                                         *g:ultest_max_threads*
-Number of workers that are used for running and processing tests. (default: 4)
+Number of workers that are used for running and processing tests. Set to 0 to
+use number of cpu cores - 1 (to avoid blocking main thread) (default: 0)
 
                                                           *g:ultest_positions*
 Enable positions processor for tests to allow jumping between tests. (default:
@@ -92,12 +93,36 @@ Virtual text for failing tests (string) (default: g:ultest_icons?
 Virtual text for passing tests (string) (default: g:ultest_icons?
 "●":"Running")
 
+                                                      *g:ultest_summary_width*
+Width of the summary window (default: 50)
+
                                                   *g:ultest_custom_processors*
 Custom list of receivers for test events. This is experimental and could
-change! Receivers are dictionaries with any of the following keys: 'start': A
-function which takes a test which has been run. 'exit': A function which takes
-a test result once it has completed. 'clear': A function which takes a test
-which has been removed for some reason.
+change! Receivers are dictionaries with any of the following keys:
+
+'new': A function which takes a new test which has been discovered.
+
+'move': A function which takes a test which has been moved.
+
+'replace': A function which takes a test which has previously been cleared but
+has been replaced.
+
+'start': A function which takes a test which has been run.
+
+'exit': A function which takes a test result once it has completed.
+
+'clear': A function which takes a test which has been removed for some reason.
+
+
+                                                   *g:ultest_summary_mappings*
+Key mappings for the summary window (dict) Possible values:
+
+'run': (default "r") Runs the test currently selected or whole file if file
+name is selected.
+
+'jumpto': (default "<CR>") Jump to currently selected test.
+
+'output': (default "o") Open the output to the current test if failed.
 
 ==============================================================================
 COMMANDS                                                     *ultest-commands*
@@ -111,12 +136,21 @@ COMMANDS                                                     *ultest-commands*
 :UltestOutput                                                  *:UltestOutput*
   Show the output of the nearest test in the current file
 
+:UltestSummary                                                *:UltestSummary*
+  Toggle the summary window between open and closed
+
+:UltestSummaryOpen                                        *:UltestSummaryOpen*
+  Open the summary window
+
+:UltestSummaryClose                                      *:UltestSummaryClose*
+  Close the summary window
+
 ==============================================================================
 HIGHLIGHTS                                                 *ultest-highlights*
 
 
 Define the following highlight groups to override their values by copying
-these commands and changing their colours.
+these commands and changing their colours/attributes.
 
 hi UltestPass ctermfg=Green guifg=#96F291
 
@@ -125,6 +159,8 @@ hi UltestFail ctermfg=Red guifg=#F70067
 hi UltestRunning ctermfg=Yellow guifg=#FFEC63
 
 hi UltestBorder ctermfg=Red guifg=#F70067
+
+hi UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 
 ==============================================================================
 MAPPINGS                                                     *ultest-mappings*
@@ -137,6 +173,12 @@ MAPPINGS                                                     *ultest-mappings*
 <Plug>(ultest-run-file)          Run all tests in a file.
 
 <Plug>(ultest-run-nearest)       Run test closest to the cursor.
+
+<Plug>(ultest-summary-toggle)    Toggle the summary window between open and
+closed
+
+<Plug>(ultest-summary-jump)      Jump to the summary window (opening if it
+isn't already)
 
 <Plug>(ultest-output-show)       Show error output of the nearest test. (Will
 jump to popup window in Vim)
