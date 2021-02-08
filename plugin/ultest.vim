@@ -6,16 +6,16 @@ let g:ultest_buffers = []
 ""
 " @section Introduction
 " @order introduction config commands highlights mappings
-" @stylized Ultest
+" @stylized vim-ultest
 "
 " The ultimate testing plugin for Vim/NeoVim
 "
 " Running tests should be as quick and painless as possible.
 " [vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
-" Rather than replacing vim-test altogether, Ultest makes it even better while maintaining the ability to use your existing configuration.
-" If you're already using vim-test then switching to Ultest is as easy as installing and... well, that's pretty much it.
+" Rather than replacing vim-test altogether, vim-ultest makes it even better while maintaining the ability to use your existing configuration.
+" If you're already using vim-test then switching to vim-ultest is as easy as installing and... well, that's pretty much it.
 "
-" The goal behind Ultest is to make running tests as seamless as possible.
+" The goal behind vim-ultest is to make running tests as seamless as possible.
 "
 " * Tests are run individually so that any errors can be addressed individually.
 " * Tests are run in seperate threads (not just asynchronously on the same thread) so your Vim session will never be blocked.
