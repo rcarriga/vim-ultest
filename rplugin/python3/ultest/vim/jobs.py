@@ -1,10 +1,10 @@
+import logging
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from queue import PriorityQueue, Empty
+from queue import Empty, PriorityQueue
 from threading import Thread
-from typing import Callable, List, Optional, Any, Union
-import logging
+from typing import Any, Callable, List, Optional, Union
 
 
 class JobPriority(int, Enum):

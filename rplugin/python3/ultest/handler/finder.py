@@ -3,7 +3,7 @@ import re
 from typing import Callable, Dict, List, Optional
 
 from ..models import Test
-from ..vim import VimClient, JobPriority
+from ..vim import JobPriority, VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 

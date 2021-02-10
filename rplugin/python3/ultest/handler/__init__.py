@@ -1,16 +1,16 @@
-import os
 import json
+import os
 import re
 from shlex import split
 from typing import Dict, List, Optional
 
 from pynvim import Nvim
 
+from ..models import Test
+from ..vim import JobPriority, VimClient
 from .finder import TestFinder
 from .results import ResultStore
 from .runner import Runner
-from ..models import Test, Test
-from ..vim import VimClient, JobPriority
 
 
 class HandlerFactory:
@@ -60,11 +60,13 @@ class Handler:
         test = Test(**test_args)
 
         def runner():
-            result = self._runner.execute_test(command, test)
-            test.running = 0
-            self._results.add(test.file, result)
-            self._vim.call("ultest#process#exit", test, result)
-            self._vim.schedule(self._present_output, result)
+            def receiver(result):
+                test.running = 0
+                self._results.add(test.file, result)
+                self._vim.call("ultest#process#exit", test, result)
+                self._vim.schedule(self._present_output, result)
+
+            self._runner.execute_test(command, test, receiver)
 
         self._vim.launch(runner, test.line + 3)  # type: ignore
 
@@ -142,11 +144,13 @@ class Handler:
             )
             for test in tests:
 
-                if recorded := recorded_tests.pop(test.id, None):
+                if test.id in recorded_tests:
+                    recorded = recorded_tests.pop(test.id)
                     if recorded.line != test.line:
                         test.running = recorded.running
                         self._vim.call("ultest#process#move", test)
-                elif existing_result := self._results.get(test.file, test.id):
+                elif self._results.get(test.file, test.id):
+                    existing_result = self._results.get(test.file, test.id)
                     self._vim.call("ultest#process#replace", test, existing_result)
                 else:
                     self._vim.call("ultest#process#new", test)
@@ -169,7 +173,7 @@ class Handler:
             tests = self._stored_tests.pop(file_name, [])
             for test in tests:
                 result = self._results.pop(test.file, test.id)
-                if result and result.code:
+                if result:
                     os.remove(result.output)
 
         self._vim.launch(runner)

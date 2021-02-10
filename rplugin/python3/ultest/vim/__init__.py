@@ -1,6 +1,7 @@
-from typing import Any, Callable, Optional, List, Union
+from typing import Any, Callable, List, Optional, Union
 
 from pynvim import Nvim
+
 from .jobs import JobManager, JobPriority
 
 

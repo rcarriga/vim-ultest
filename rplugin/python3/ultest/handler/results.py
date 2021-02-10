@@ -1,7 +1,6 @@
-import os
-from typing import Dict, Iterable, Optional
+from typing import Dict, Optional
 
-from ..models import Result, Test
+from ..models import Result
 
 
 class ResultStore:

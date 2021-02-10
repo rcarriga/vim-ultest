@@ -14,8 +14,8 @@ function! ultest#output#open(test) abort
   if type(a:test) != v:t_dict || empty(a:test) | return | endif
   doautocmd User UltestOutputOpen
   let result = get(getbufvar(a:test.file, "ultest_results", {}), a:test.id, {})
+  if get(result, "code") == 0 | return | endif
   let output = get(result, "output", "")
-  if output == "" | return | endif
   if has("nvim")
     call s:NvimOpenFloat(output)
   else

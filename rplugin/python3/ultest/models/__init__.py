@@ -1,2 +1,2 @@
-from .test import Test
 from .result import Result
+from .test import Test

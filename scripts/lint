@@ -1,5 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
-PYTHON_DIR="rplugin/python3/ultest"
+PYTHON_DIRS=("rplugin/python3/ultest" "tests")
 
-black --check ${PYTHON_DIR}
+if [[ $1 == "-w" ]]; then
+  black "${PYTHON_DIRS[@]}"
+  isort "${PYTHON_DIRS[@]}"
+  autoflake --remove-unused-variables --remove-all-unused-imports --ignore-init-module-imports --remove-duplicate-keys --recursive -i "${PYTHON_DIRS[@]}"
+else
+  black --check "${PYTHON_DIRS[@]}"
+  isort --check "${PYTHON_DIRS[@]}"
+  autoflake --remove-unused-variables --remove-all-unused-imports --ignore-init-module-imports --remove-duplicate-keys --recursive "${PYTHON_DIRS[@]}"
+fi
