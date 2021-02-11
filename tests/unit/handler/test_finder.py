@@ -1,8 +1,8 @@
 import random
+import pytest
 from typing import List
 from unittest.mock import Mock, mock_open, patch
 
-from asynctest import TestCase
 from hypothesis import given
 from hypothesis.strategies import builds, integers, lists
 
@@ -26,69 +26,67 @@ def sorted_tests(
         unique_by=lambda test: test.line,  # type: ignore
     ).map(lambda tests: sorted(tests, key=lambda test: test.line))
 
+vim = Mock()
+vim.launch = lambda f, _: f()
+finder = TestFinder(vim)
 
-class TestTestFinder(TestCase):
-    def setUp(self) -> None:
-        self.vim = Mock()
-        self.vim.launch = lambda f, _: f()
-        self.finder = TestFinder(self.vim)
+@given(sorted_tests())
+def test_get_nearest_from_strict_match( tests: List[Test]):
+    test_i = int(random.random() * len(tests))
+    expected = tests[test_i]
+    result = finder.get_nearest_from(expected.line, tests, strict=True)
+    assert expected == result
 
-    @given(sorted_tests())
-    def test_get_nearest_from_strict_match(self, tests: List[Test]):
-        test_i = int(random.random() * len(tests))
-        expected = tests[test_i]
-        result = self.finder.get_nearest_from(expected.line, tests, strict=True)
-        self.assertEqual(expected, result)
+@given(sorted_tests())
+def test_get_nearest_from_strict_no_match( tests: List[Test]):
+    test_i = int(random.random() * len(tests))
+    result = finder.get_nearest_from(
+        tests[test_i].line + 1, tests, strict=True
+    )
+    assert result is None
 
-    @given(sorted_tests())
-    def test_get_nearest_from_strict_no_match(self, tests: List[Test]):
-        test_i = int(random.random() * len(tests))
-        result = self.finder.get_nearest_from(
-            tests[test_i].line + 1, tests, strict=True
-        )
-        self.assertIsNone(result)
+@given(sorted_tests())
+def test_get_nearest_from_non_strict_match( tests: List[Test]):
+    test_i = int(random.random() * len(tests))
+    expected = tests[test_i]
+    result = finder.get_nearest_from(expected.line + 1, tests, strict=False)
+    assert expected == result
 
-    @given(sorted_tests())
-    def test_get_nearest_from_non_strict_match(self, tests: List[Test]):
-        test_i = int(random.random() * len(tests))
-        expected = tests[test_i]
-        result = self.finder.get_nearest_from(expected.line + 1, tests, strict=False)
-        self.assertEqual(expected, result)
+@given(sorted_tests(min_line=20))
+def test_get_nearest_from_non_strict_no_match( tests: List[Test]):
+    line = 10
+    result = finder.get_nearest_from(line, tests, strict=False)
+    assert result is None
 
-    @given(sorted_tests(min_line=20))
-    def test_get_nearest_from_non_strict_no_match(self, tests: List[Test]):
-        line = 10
-        result = self.finder.get_nearest_from(line, tests, strict=False)
-        self.assertIsNone(result)
+@patch("builtins.open", mock_open(read_data=mock_python_file))
+@patch("builtins.hash", lambda o: len(".".join(o)))
+@patch("os.path.isfile", lambda _: True)
+@pytest.mark.asyncio
+async def test_find_python_tests():
+    patterns = {
+        "test": [r"\v^\s*%(async )?def (test_\w+)"],
+        "namespace": [r"\v^\s*class (\w+)"],
+    }
 
-    @patch("builtins.open", mock_open(read_data=mock_python_file))
-    @patch("builtins.hash", lambda o: len(".".join(o)))
-    @patch("os.path.isfile", lambda _: True)
-    async def test_find_python_tests(self):
-        patterns = {
-            "test": [r"\v^\s*%(async )?def (test_\w+)"],
-            "namespace": [r"\v^\s*class (\w+)"],
-        }
+    expected = [
+        Test(
+            id="test_a3025",
+            name="test_a30",
+            file="",
+            line=4,
+            col=1,
+            running=0,
+        ),
+        Test(
+            id="test_a4341",
+            name="test_a43",
+            file="",
+            line=7,
+            col=1,
+            running=0,
+        ),
+    ]
 
-        expected = [
-            Test(
-                id="test_a3025",
-                name="test_a30",
-                file="",
-                line=4,
-                col=1,
-                running=0,
-            ),
-            Test(
-                id="test_a4341",
-                name="test_a43",
-                file="",
-                line=7,
-                col=1,
-                running=0,
-            ),
-        ]
+    result = await finder.find_all("", patterns)
 
-        results = await self.finder.find_all("", patterns)
-
-        self.assertEqual(results, expected)
+    assert result == expected
