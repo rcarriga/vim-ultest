@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 PYTHON_DIRS=("rplugin/python3/ultest" "tests")
 
 if [[ $1 == "-w" ]]; then
