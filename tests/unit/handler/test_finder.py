@@ -1,13 +1,14 @@
 import random
 from typing import List
-from unittest import TestCase
 from unittest.mock import Mock, mock_open, patch
 
+from asynctest import TestCase
 from hypothesis import given
 from hypothesis.strategies import builds, integers, lists
 
 from rplugin.python3.ultest.handler.finder import TestFinder
 from rplugin.python3.ultest.models.test import Test
+from tests.mocks.test_files import mock_python_file
 
 
 def sorted_tests(
@@ -24,18 +25,6 @@ def sorted_tests(
         max_size=max_length,
         unique_by=lambda test: test.line,  # type: ignore
     ).map(lambda tests: sorted(tests, key=lambda test: test.line))
-
-
-mock_python_test_file = """
-from time import sleep
-
-def test_a30():
-    assert 2 == 3
-
-def test_a43():
-    sleep(1)
-    assert 3 == 3
-"""
 
 
 class TestTestFinder(TestCase):
@@ -72,35 +61,34 @@ class TestTestFinder(TestCase):
         result = self.finder.get_nearest_from(line, tests, strict=False)
         self.assertIsNone(result)
 
-    @patch("builtins.open", mock_open(read_data=mock_python_test_file))
+    @patch("builtins.open", mock_open(read_data=mock_python_file))
     @patch("builtins.hash", lambda o: len(".".join(o)))
     @patch("os.path.isfile", lambda _: True)
-    def test_find_python_tests(self):
-        self.vim.sync_call.return_value = {
+    async def test_find_python_tests(self):
+        patterns = {
             "test": [r"\v^\s*%(async )?def (test_\w+)"],
             "namespace": [r"\v^\s*class (\w+)"],
         }
 
         expected = [
-            {
-                "id": "test_a3025",
-                "name": "test_a30",
-                "file": "",
-                "line": 4,
-                "col": 1,
-                "running": 0,
-            },
-            {
-                "id": "test_a4341",
-                "name": "test_a43",
-                "file": "",
-                "line": 7,
-                "col": 1,
-                "running": 0,
-            },
+            Test(
+                id="test_a3025",
+                name="test_a30",
+                file="",
+                line=4,
+                col=1,
+                running=0,
+            ),
+            Test(
+                id="test_a4341",
+                name="test_a43",
+                file="",
+                line=7,
+                col=1,
+                running=0,
+            ),
         ]
 
-        def receiver(results: List[Test]):
-            self.assertEqual([result.dict for result in results], expected)
+        results = await self.finder.find_all("", patterns)
 
-        self.finder.find_all("", receiver=receiver)
+        self.assertEqual(results, expected)

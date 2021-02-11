@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Coroutine, List, Optional, Union
 
 from pynvim import Nvim
 
@@ -31,7 +31,9 @@ class VimClient:
         self._vim.async_call(func, *args, **kwargs)
 
     def launch(
-        self, func: Callable, priority: Union[int, JobPriority] = JobPriority.LOW
+        self,
+        func: Callable[[], Coroutine],
+        priority: Union[int, JobPriority] = JobPriority.LOW,
     ) -> None:
         """
         Launch a function to be run on a separate thread.
@@ -40,7 +42,7 @@ class VimClient:
         :param *args: Positional args for function.
         :param **kwargs: Keywords args for function.
         """
-        self._job_manager.run(func, priority)()
+        self._job_manager.run(func, priority)
 
     def command(
         self,

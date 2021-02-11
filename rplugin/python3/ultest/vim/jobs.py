@@ -1,10 +1,11 @@
+import asyncio
 import logging
 import os
 from dataclasses import dataclass, field
 from enum import Enum
 from queue import Empty, PriorityQueue
 from threading import Thread
-from typing import Any, Callable, List, Optional, Union
+from typing import Callable, Coroutine, List, Optional, Union
 
 
 class JobPriority(int, Enum):
@@ -16,7 +17,7 @@ class JobPriority(int, Enum):
 @dataclass(order=True)
 class PrioritizedJob:
     priority: Union[JobPriority, int]
-    func: Any = field(compare=False)
+    func: Callable[[], Coroutine] = field(compare=False)
 
 
 class JobManager:
@@ -27,6 +28,7 @@ class JobManager:
                 num_threads = max(1, os_count - 1)
             else:
                 num_threads = 4
+        num_threads = 3
         self._queue: PriorityQueue[PrioritizedJob] = PriorityQueue()
         self._threads: List[Thread] = []
         self._running = True
@@ -37,9 +39,8 @@ class JobManager:
     def set_threads(self, num: int):
         self._start_workers(num)
 
-    def run(self, func: Callable, priority: Union[int, JobPriority]):
-        threaded = lambda: self._queue.put(PrioritizedJob(priority=priority, func=func))
-        return threaded if self._threads else func
+    def run(self, func: Callable[[], Coroutine], priority: Union[int, JobPriority]):
+        self._queue.put(PrioritizedJob(priority=priority, func=func))
 
     def clear_jobs(self):
         self._running = False
@@ -59,14 +60,17 @@ class JobManager:
         self._stop_workers()
         self._running = True
         for _ in range(max_threads):
-            thread = Thread(target=self._worker, daemon=True)
+            thread = Thread(target=self._start_worker, daemon=True)
             thread.start()
             self._threads.append(thread)
 
-    def _worker(self):
-        while self._running:
-            try:
-                job = self._queue.get()
-                job.func()
-            except Exception as e:
-                logging.exception(e)
+    def _start_worker(self):
+        async def work():
+            while self._running:
+                try:
+                    job = self._queue.get()
+                    await job.func()
+                except Exception as e:
+                    logging.exception(e)
+
+        asyncio.run(work())

@@ -6,3 +6,4 @@ black==20.08b
 autoflake
 isort
 hypothesis
+asynctest

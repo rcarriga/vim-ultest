@@ -1,9 +1,8 @@
-import os
 import re
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from ..models import Test
-from ..vim import JobPriority, VimClient
+from ..vim import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 
@@ -12,25 +11,11 @@ class TestFinder:
     def __init__(self, vim: VimClient):
         self._vim = vim
 
-    def find_all(
-        self,
-        file_name: str,
-        receiver: Callable[[List[Test]], None] = None,
-        priority: JobPriority = JobPriority.LOW,
-    ):
-        vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
-        if not vim_patterns or not os.path.isfile(file_name):
-            return
-
-        def runner():
-            patterns = self._convert_patterns(vim_patterns)
-            with open(file_name, "r") as test_file:
-                lines = test_file.readlines()
-            tests = self._calculate_tests(file_name, patterns, lines)
-            if receiver:
-                receiver(tests)
-
-        self._vim.launch(runner, priority)
+    async def find_all(self, file_name: str, vim_patterns: Dict):
+        patterns = self._convert_patterns(vim_patterns)
+        with open(file_name, "r") as test_file:
+            lines = test_file.readlines()
+        return self._calculate_tests(file_name, patterns, lines)
 
     def get_nearest_from(
         self, line: int, tests: List[Test], strict: bool = False

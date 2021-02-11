@@ -59,14 +59,12 @@ class Handler:
         command = split(cmd[: -len(custom_args)])
         test = Test(**test_args)
 
-        def runner():
-            def receiver(result):
-                test.running = 0
-                self._results.add(test.file, result)
-                self._vim.call("ultest#process#exit", test, result)
-                self._vim.schedule(self._present_output, result)
-
-            self._runner.execute_test(command, test, receiver)
+        async def runner():
+            result = await self._runner.execute_test(command, test)
+            test.running = 0
+            self._results.add(test.file, result)
+            self._vim.call("ultest#process#exit", test, result)
+            self._vim.schedule(self._present_output, result)
 
         self._vim.launch(runner, test.line + 3)  # type: ignore
 
@@ -88,9 +86,9 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        def runner():
+        async def runner():
             tests = self._stored_tests.get(file_name, [])
-            self._runner.run_tests(tests)
+            await self._runner.run_tests(tests)
 
         self._vim.launch(runner)
 
@@ -102,11 +100,11 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        def runner():
+        async def runner():
             tests = self._stored_tests.get(file_name, [])
             test = self._finder.get_nearest_from(line, tests, strict=False)
             if test:
-                self._runner.run_tests([test])
+                await self._runner.run_tests([test])
 
         self._vim.launch(runner)
 
@@ -118,24 +116,29 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        def runner():
+        async def runner():
             tests = self._stored_tests.get(file_name, [])
-            self._runner.run_tests([test for test in tests if test.id == test_id])
+            await self._runner.run_tests([test for test in tests if test.id == test_id])
 
         self._vim.launch(runner)
 
-    def update_positions(self, file_name: str, callback=None):
+    def update_positions(self, file_name: str):
         """
         Check for new, moved and removed tests and send appropriate events.
 
         :param file_name: Name of file to clear results from.
         """
 
+        vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
+        if not vim_patterns or not os.path.isfile(file_name):
+            return
+
         recorded_tests = {
             test.id: test for test in self._stored_tests.get(file_name, [])
         }
 
-        def runner(tests: List[Test]):
+        async def runner():
+            tests = await self._finder.find_all(file_name, vim_patterns)
             self._stored_tests[file_name] = tests
             self._vim.call(
                 "ultest#process#store_sorted_ids",
@@ -143,24 +146,22 @@ class Handler:
                 [test.id for test in tests],
             )
             for test in tests:
-
                 if test.id in recorded_tests:
                     recorded = recorded_tests.pop(test.id)
                     if recorded.line != test.line:
                         test.running = recorded.running
                         self._vim.call("ultest#process#move", test)
-                elif self._results.get(test.file, test.id):
-                    existing_result = self._results.get(test.file, test.id)
-                    self._vim.call("ultest#process#replace", test, existing_result)
                 else:
-                    self._vim.call("ultest#process#new", test)
+                    existing_result = self._results.get(test.file, test.id)
+                    if existing_result:
+                        self._vim.call("ultest#process#replace", test, existing_result)
+                    else:
+                        self._vim.call("ultest#process#new", test)
 
             for removed in recorded_tests.values():
                 self._vim.call("ultest#process#clear", removed)
-            if callback:
-                callback(tests)
 
-        self._finder.find_all(file_name, runner, JobPriority.HIGH)
+        self._vim.launch(runner, JobPriority.HIGH)
 
     def clear_all(self, file_name: str):
         """
@@ -169,7 +170,7 @@ class Handler:
         :param file_name: Name of file to clear results from.
         """
 
-        def runner():
+        async def runner():
             tests = self._stored_tests.pop(file_name, [])
             for test in tests:
                 result = self._results.pop(test.file, test.id)
