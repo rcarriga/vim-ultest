@@ -3,12 +3,13 @@ function! ultest#signs#move(test) abort
   if result != {}
     call ultest#signs#process(result)
   else
-    call ultest#signs#unplace(a:test)
+    call ultest#signs#start(a:test)
   endif
 endfunction
 
 function! ultest#signs#start(test) abort
     call ultest#signs#unplace(a:test)
+    if !a:test.running | return | endif
     if s:UseVirtual()
         call s:PlaceVirtualText(a:test, g:ultest_running_text, "UltestRunning")
     else

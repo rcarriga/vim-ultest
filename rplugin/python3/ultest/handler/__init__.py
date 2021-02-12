@@ -2,15 +2,15 @@ import json
 import os
 import re
 from shlex import split
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from pynvim import Nvim
 
 from ..models import Test
 from ..vim import JobPriority, VimClient
 from .finder import TestFinder
+from .processes import ProcessManager
 from .results import ResultStore
-from .runner import ProcessManager
 
 
 class HandlerFactory:
@@ -81,7 +81,7 @@ class Handler:
             line = self._vim.sync_call("getbufinfo", result.file)[0].get("lnum")
             nearest = self.get_nearest_test(line, result.file, strict=False)
             if nearest and nearest.id == result.id:
-                self._vim.sync_call("ultest#output#open", result.dict)
+                self._vim.sync_call("ultest#output#open", result.dict())
 
     def run_all(self, file_name: str):
         """
@@ -155,7 +155,7 @@ class Handler:
                 if test.id in recorded_tests:
                     recorded = recorded_tests.pop(test.id)
                     if recorded.line != test.line:
-                        test.running = recorded.running
+                        test.running = self._process_manager.is_running(test.id)
                         self._vim.call("ultest#process#move", test)
                 else:
                     existing_result = self._results.get(test.file, test.id)
@@ -197,3 +197,6 @@ class Handler:
     ) -> Optional[Dict]:
         test = self.get_nearest_test(line, file_name, strict)
         return test and test.dict()
+
+    def get_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:
+        return self._process_manager.create_attach_script(test_id)
