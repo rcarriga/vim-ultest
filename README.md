@@ -71,7 +71,7 @@ Vim only:
 - [nvim-yarp](https://github.com/roxma/nvim-yarp)
 - [vim-hug-neovim-rpc](https://github.com/roxma/vim-hug-neovim-rpc)
 
-**Note:** Vim support is not in a usable state.
+**Note:** Vim support is not in a usable state yet.
 The instructions here should only be used if you wish to contribute fixes.
 There is no fundamental issue blocking Vim support, I just don't use it.
 Feel free to open PRs for adding support but I will not be addressing bug reports for Vim.
@@ -98,6 +98,8 @@ call dein#add('rcarriga/vim-ultest')
 
 ### Configuration
 
+`:help ultest-config`
+
 Any vim-test configuration should carry over to vim-ultest.
 See the vim-test documentation on further details for changing test runner and options.
 If you have compatibility problems please raise an issue.
@@ -115,12 +117,8 @@ let test#javascript#jest#options = "--color=always"
 
 ### Commands
 
-- `Ultest`: Run all tests in a file.
-- `UltestNearest`: Run the test closest to the cursor.
-- `UltestOutput`: Show error output of the nearest test.
-- `UltestSummary`: Toggle the summary window
+`:help ultest-commands`
 
-These can be used manually or in an autocommand.\
 For example to run the nearest test every time a file is written:
 
 ```vim
@@ -132,16 +130,8 @@ augroup END
 
 ### Plug mappings
 
-- `<Plug>(ultest-next-fail)`: Jump to next failed test.
-- `<Plug>(ultest-prev-fail)`: Jump to previous failed test.
-- `<Plug>(ultest-run-file)`: Run all tests in a file.
-- `<Plug>(ultest-run-nearest)`: Run test closest to the cursor.
-- `<Plug>(ultest-output-show) `: Show error output of the nearest test.
-- `<Plug>(ultest-output-jump) `: Show error output of the nearest test.
-- `<Plug>(ultest-summary-toggle) `: Toggle summary window.
-- `<Plug>(ultest-summary-jump) `: Jump to summary window
+`:help ultest-mappings`
 
-Bind these to make running, navigating and analysing test results easier.\
 For example to be able to jump between failures in a test file:
 
 ```vim
