@@ -14,9 +14,8 @@ class Result:
         return self.__repr__()
 
     def __repr__(self):
-        props = self.dict
+        props = self.dict()
         return json.dumps(props)
 
-    @property
     def dict(self):
         return asdict(self)

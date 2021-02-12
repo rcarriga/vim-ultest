@@ -10,7 +10,7 @@ from ..models import Test
 from ..vim import JobPriority, VimClient
 from .finder import TestFinder
 from .results import ResultStore
-from .runner import Runner
+from .runner import ProcessManager
 
 
 class HandlerFactory:
@@ -18,17 +18,21 @@ class HandlerFactory:
     def create(vim: Nvim) -> "Handler":
         client = VimClient(vim)
         finder = TestFinder(client)
-        runner = Runner(client)
+        process_manager = ProcessManager(client)
         results = ResultStore()
-        return Handler(client, runner, finder, results)
+        return Handler(client, process_manager, finder, results)
 
 
 class Handler:
     def __init__(
-        self, nvim: VimClient, runner: Runner, finder: TestFinder, results: ResultStore
+        self,
+        nvim: VimClient,
+        process_manager: ProcessManager,
+        finder: TestFinder,
+        results: ResultStore,
     ):
         self._vim = nvim
-        self._runner = runner
+        self._process_manager = process_manager
         self._finder = finder
         self._results = results
         self._stored_tests: Dict[str, List[Test]] = {}
@@ -60,13 +64,13 @@ class Handler:
         test = Test(**test_args)
 
         async def runner():
-            result = await self._runner.execute_test(command, test)
+            result = await self._process_manager.run(command, test)
             test.running = 0
             self._results.add(test.file, result)
             self._vim.call("ultest#process#exit", test, result)
             self._vim.schedule(self._present_output, result)
 
-        self._vim.launch(runner, test.line + 3)  # type: ignore
+        self._vim.launch(runner, test.line + JobPriority.LOW)
 
     def _present_output(self, result):
         if (
@@ -88,7 +92,7 @@ class Handler:
 
         async def runner():
             tests = self._stored_tests.get(file_name, [])
-            await self._runner.run_tests(tests)
+            await self._process_manager.run_tests(tests)
 
         self._vim.launch(runner)
 
@@ -104,7 +108,7 @@ class Handler:
             tests = self._stored_tests.get(file_name, [])
             test = self._finder.get_nearest_from(line, tests, strict=False)
             if test:
-                await self._runner.run_tests([test])
+                await self._process_manager.run_tests([test])
 
         self._vim.launch(runner)
 
@@ -118,7 +122,9 @@ class Handler:
 
         async def runner():
             tests = self._stored_tests.get(file_name, [])
-            await self._runner.run_tests([test for test in tests if test.id == test_id])
+            await self._process_manager.run_tests(
+                [test for test in tests if test.id == test_id]
+            )
 
         self._vim.launch(runner)
 
@@ -190,4 +196,4 @@ class Handler:
         self, line: int, file_name: str, strict: bool
     ) -> Optional[Dict]:
         test = self.get_nearest_test(line, file_name, strict)
-        return test and test.dict
+        return test and test.dict()
