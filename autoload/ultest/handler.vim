@@ -80,10 +80,10 @@ function! ultest#handler#get_nearest_test(line, file_name, strict) abort
     endif
 endfunction
 
-function! ultest#handler#get_attach_script(test_id) abort
+function! ultest#handler#get_attach_script(test) abort
     if s:is_nvim
-        return _ultest_get_attach_script(a:test_id)
+        return _ultest_get_attach_script(a:test)
     else
-        return s:yarp.call('_ultest_get_attach_script', a:test_id)
+        return s:yarp.call('_ultest_get_attach_script', a:line, a:file_name, a:strict)
     endif
 endfunction

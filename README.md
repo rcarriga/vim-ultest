@@ -71,10 +71,10 @@ Vim only:
 - [nvim-yarp](https://github.com/roxma/nvim-yarp)
 - [vim-hug-neovim-rpc](https://github.com/roxma/vim-hug-neovim-rpc)
 
-**Note:** Vim support is not in a usable state yet.
-The instructions here should only be used if you wish to contribute fixes.
-There is no fundamental issue blocking Vim support, I just don't use it.
-Feel free to open PRs for adding support but I will not be addressing bug reports for Vim.
+**Note:** Vim support is maintained with a best effort.
+Due to the differences between Vim and NeoVim, it is inevitable that bugs will occur in one and not the other.
+I primarily use NeoVim so I will catch issues in it myself.
+Please file bug reports for Vim if you find them!
 
 I have not had the chance to extensively test NeoVim versions, it is recommended to stay on the latest nightly version.
 If you have issues with missing features, please open an issue with your editor version.

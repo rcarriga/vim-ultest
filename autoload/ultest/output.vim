@@ -22,7 +22,7 @@ function! ultest#output#open(test) abort
     call s:NvimOpenFloat(cmd, width, height, "UltestOutput")
   else
     call s:VimOpenFloat(cmd, width, height)
-    exec "tnoremap <buffer><silent> q <C-W>N:call popup_close(".winid.")<CR>"
+    exec "tnoremap <buffer><silent> q <C-W>N:call popup_close(".g:ultest#output_windows[0].")<CR>"
   endif
 endfunction
 
@@ -44,7 +44,7 @@ function! ultest#output#attach(test) abort
 endfunction
 
 function! ultest#output#close(force) abort
-  if !s:OutputIsOpen()
+  if !s:OutputIsOpen() || !has("nvim")
     return
   endif
   if !a:force && nvim_get_current_win() == g:ultest#output_windows[0]
@@ -99,7 +99,7 @@ function! s:VimOpenFloat(cmd, width, height) abort
     \ "mapping": 1
     \}
   let buf = term_start(a:cmd, {"hidden": 1, "term_kill": "term", "term_finish": 'close', "term_highlight": "Normal"})
-  let winid = popup_atcursor(buf, popup_options)
+  let g:ultest#output_windows = [popup_atcursor(buf, popup_options)]
 endfunction
 
 function! s:NvimOpenFloat(cmd, width, height, filetype) abort

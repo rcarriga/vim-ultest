@@ -38,7 +38,7 @@ try:
 
     def _ultest_get_nearest_test(*args):
         _check_started()
-        return HANDLER.get_nearest_test(*args)
+        return HANDLER.get_nearest_test_dict(*args)
 
     def _ultest_get_attach_script(*args):
         _check_started()
