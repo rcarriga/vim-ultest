@@ -192,6 +192,11 @@ command! -bar UltestNearest call ultest#handler#run_nearest(line("."), expand("%
 command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
 
 ""
+" Attach to the running process of a test to be able to send input and read
+" output as it runs. This is useful for debugging
+command! -bar UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+
+""
 " Toggle the summary window between open and closed
 command! -bar UltestSummary call ultest#summary#toggle()
 
@@ -221,6 +226,8 @@ command! -bar UltestSummaryClose call ultest#summary#close()
 " <Plug>(ultest-output-show) 	 Show error output of the nearest test. (Will jump to popup window in Vim)
 "
 " <Plug>(ultest-output-jump) 	 Show error output of the nearest test. (Same behabviour as <Plug>(ultest-output-show) in Vim)
+"
+" <Plug>(ultest-attach) 	 Attach to the nearest test's running process.
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
@@ -230,10 +237,7 @@ nnoremap <silent><Plug>(ultest-summary-toggle) :UltestSummary<CR>
 nnoremap <silent><Plug>(ultest-summary-jump) :call ultest#summary#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>
 nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
-
-" Workaround to function not registering correctly sometimes
-" Seems to be similar to https://github.com/neovim/pynvim/issues/386
-" call ultest#handler#get_positions(expand("%"))
+nnoremap <silent><Plug>(ultest-attach) :UltestAttach<CR>
 
 if g:ultest_output_on_line
   augroup UltestOutputOnLine

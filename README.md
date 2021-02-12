@@ -33,6 +33,12 @@ The goal behind vim-ultest is to make running tests as seamless as possible.
 
 ![Running Example](https://user-images.githubusercontent.com/24252670/107279654-39d2a980-6a4f-11eb-95f5-074f69b856e6.gif)
 
+- Attach to running processes to debug
+  - Currently experimental so please report issues!
+  - Uses python's readline library to pass input
+
+![debugging](https://user-images.githubusercontent.com/24252670/107827860-8552c380-6d7f-11eb-8f69-04f95e048cfb.gif)
+
 - Summary window
   - Highlight tests based on current status (running, succeeded, failed)
   - Show test output

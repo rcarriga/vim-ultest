@@ -79,3 +79,11 @@ function! ultest#handler#get_nearest_test(line, file_name, strict) abort
         return s:yarp.call('_ultest_get_nearest_test', a:line, a:file_name, a:strict)
     endif
 endfunction
+
+function! ultest#handler#get_attach_script(test_id) abort
+    if s:is_nvim
+        return _ultest_get_attach_script(a:test_id)
+    else
+        return s:yarp.call('_ultest_get_attach_script', a:test_id)
+    endif
+endfunction

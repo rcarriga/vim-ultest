@@ -136,6 +136,10 @@ COMMANDS                                                     *ultest-commands*
 :UltestOutput                                                  *:UltestOutput*
   Show the output of the nearest test in the current file
 
+:UltestAttach                                                  *:UltestAttach*
+  Attach to the running process of a test to be able to send input and read
+  output as it runs. This is useful for debugging
+
 :UltestSummary                                                *:UltestSummary*
   Toggle the summary window between open and closed
 
@@ -185,6 +189,8 @@ jump to popup window in Vim)
 
 <Plug>(ultest-output-jump)       Show error output of the nearest test. (Same
 behabviour as <Plug>(ultest-output-show) in Vim)
+
+<Plug>(ultest-attach)    Attach to the nearest test's running process.
 
 
 vim:tw=78:ts=8:ft=help:norl:
