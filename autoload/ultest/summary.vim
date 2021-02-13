@@ -2,7 +2,8 @@ let s:buffer_name = "Ultest Summary"
 let s:mappings = {
       \ "run": "r",
       \ "jumpto": "<CR>",
-      \ "output": "o"
+      \ "output": "o",
+      \ "attach": "a"
       \ }
 
 call extend(s:mappings, g:ultest_summary_mappings)
@@ -13,6 +14,7 @@ function! s:CreateMappings()
   exec "nnoremap <silent><buffer> ".s:mappings["run"]." :call <SID>RunCurrent()<CR>"
   exec "nnoremap <silent><buffer> ".s:mappings["output"]." :call <SID>OpenCurrentOutput()<CR>"
   exec "nnoremap <silent><buffer> ".s:mappings["jumpto"]." :call <SID>JumpToCurrent()<CR>"
+  exec "nnoremap <silent><buffer> ".s:mappings["attach"]." :call <SID>AttachToCurrent()<CR>"
 endfunction
 
 function! s:IsOpen() abort
@@ -94,7 +96,11 @@ function! s:FullRender() abort
   if len(lines) > 0
     call remove(lines, 0)
   endif
-  call setbufline(s:buffer_name, 1, lines)
+  if has("nvim")
+    call nvim_buf_set_lines(bufnr(s:buffer_name), 0, len(lines), v:false, lines)
+  else
+    call setbufline(s:buffer_name, 1, lines)
+  endif
   silent call deletebufline(s:buffer_name, len(lines)+1, "$")
   silent call deletebufline(s:buffer_name, len(lines)+1, "$")
   call setbufvar(s:buffer_name, "&modifiable", 0)
@@ -159,6 +165,16 @@ function! s:JumpToCurrent()
     if test != {}
       exec "norm ".test["line"]."G"
     endif
+  endif
+endfunction
+
+function! s:AttachToCurrent()
+  let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
+  if cur_file == "" || cur_test == ""
+    return
+  else
+    let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
+    call ultest#output#attach(test)
   endif
 endfunction
 
