@@ -33,7 +33,9 @@ function! ultest#output#attach(test) abort
   let [stdout_path, py_script] = attach_res
   doautocmd User UltestOutputOpen
   let cmd = ['python', py_script]
-  let [width, height] = s:CalculateBounds(stdout_path)
+  let [_width, height] = s:CalculateBounds(stdout_path)
+  let width = g:ultest_attach_width
+  let width = width ? width : _width
   if has("nvim")
     call s:NvimOpenFloat(cmd, width, height, "UltestAttach")
     call nvim_set_current_win(g:ultest#output_windows[0])

@@ -96,6 +96,11 @@ Virtual text for passing tests (string) (default: g:ultest_icons?
                                                       *g:ultest_summary_width*
 Width of the summary window (default: 50)
 
+                                                       *g:ultest_attach_width*
+Width of the attach window Some test runners don't output anyting until
+finished (e.g. Jest) so the attach window can't figure out a good width. Use
+this to hardcode a size. (default: 0)
+
                                                   *g:ultest_custom_processors*
 Custom list of receivers for test events. This is experimental and could
 change! Receivers are dictionaries with any of the following keys:

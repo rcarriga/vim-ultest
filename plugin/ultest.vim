@@ -126,6 +126,14 @@ let g:ultest_running_text = get(g:, "ultest_running_text", g:ultest_icons? "●"
 " Width of the summary window
 " (default: 50)
 let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
+
+""
+" Width of the attach window
+" Some test runners don't output anyting until finished (e.g. Jest) so the
+" attach window can't figure out a good width. Use this to hardcode a size.
+" (default: 0)
+let g:ultest_attach_width = get(g:, "ultest_attach_width", 0)
+
 ""
 " Custom list of receivers for test events.
 " This is experimental and could change!
