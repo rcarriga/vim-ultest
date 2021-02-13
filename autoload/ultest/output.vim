@@ -17,7 +17,7 @@ function! ultest#output#open(test) abort
   if get(result, "code") == 0 | return | endif
   let output = get(result, "output", "")
   let [width, height] = s:CalculateBounds(output)
-  let cmd = ['less', "-R", "-Ps", output]
+  let cmd = ['less', "-R", "-Ps", shellescape(output)]
   if has("nvim")
     call s:NvimOpenFloat(cmd, width, height, "UltestOutput")
   else
@@ -78,8 +78,8 @@ function ultest#output#jumpto() abort
 endfunction
 
 function! s:CalculateBounds(path) abort
-  let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".a:path." | wc -L"))[0]) + 1
-  let height = str2nr(split(system("wc -l ".a:path))[0])
+  let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".shellescape(a:path)." | wc -L"))[0]) + 1
+  let height = str2nr(split(system("wc -l ".shellescape(a:path)))[0])
 
   let height = max([min([height, &lines/2]), 20])
   let width =  max([min([width, &columns/2]), 40])

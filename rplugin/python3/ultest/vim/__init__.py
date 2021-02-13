@@ -2,6 +2,7 @@ from typing import Any, Callable, Coroutine, List, Optional, Union
 
 from pynvim import Nvim
 
+from ..logging import UltestLogger, logger
 from .jobs import JobManager, JobPriority
 
 
@@ -10,7 +11,10 @@ class VimClient:
         self._vim = vim
         num_threads = int(self._vim.eval("g:ultest_max_threads"))  # type: ignore
         self._job_manager = JobManager(num_threads)
-        self.clear_jobs = self._job_manager.clear_jobs
+
+    @property
+    def log(self) -> UltestLogger:
+        return logger
 
     def message(self, message, sync=False):
         if not isinstance(message, str) or not message.endswith("\n"):

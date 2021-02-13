@@ -60,9 +60,10 @@ class TestFinder:
             test_name = self._find_test_name(line, patterns)
             if test_name:
                 line_no = line_index + 1
+                test_id = self._clean_id(test_name + str(hash(current_test_text)))
                 tests.append(
                     Test(
-                        id=test_name + str(hash(current_test_text)),
+                        id=test_id,
                         file=file_name,
                         line=line_no,
                         col=1,
@@ -74,6 +75,9 @@ class TestFinder:
             else:
                 current_test_text += line.strip()
         return list(reversed(tests))
+
+    def _clean_id(self, id: str) -> str:
+        return re.subn(r"[.'\" \\/]", "_", id)[0]
 
     def _find_test_name(self, line: str, patterns: List[str]) -> Optional[str]:
         for pattern in patterns:

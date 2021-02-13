@@ -1,5 +1,5 @@
-import logging
 import os
+import re
 import tempfile
 from asyncio import subprocess
 from contextlib import contextmanager
@@ -57,7 +57,8 @@ class TestProcess:
     def _close_stdin(self, reader: BufferedReader):
         self._close_event.set()
         reader.close()
-        os.remove(self.in_path)
+        if os.path.exists(self.in_path):
+            os.remove(self.in_path)
 
     def _close_stdout(self, writer: BufferedWriter):
         writer.close()
@@ -77,7 +78,9 @@ class ProcessManager:
         self._processes: Dict[str, Optional[TestProcess]] = {}
 
     def _test_file_dir(self, file: str) -> str:
-        return os.path.join(self._dir.name, file.replace(os.sep, "__"))
+        return os.path.join(
+            self._dir.name, re.subn(r"[.'\" \\/]", "_", file.replace(os.sep, "__"))[0]
+        )
 
     def _create_test_file_dir(self, file: str):
         path = self._test_file_dir(file)
@@ -107,13 +110,14 @@ class ProcessManager:
         stdout_path = self.stdout_name(test)
         test_process = TestProcess(in_path=stdin_path, out_path=stdout_path)
         self._processes[test.id] = test_process
+        self._vim.log.fdebug("Starting test process {test.id} with command: {cmd}")
         with test_process.open() as (in_handle, out_handle):
-            logging.error(f"{in_handle} {out_handle}")
             process = await subprocess.create_subprocess_exec(
                 *cmd, stdin=in_handle, stderr=out_handle, stdout=out_handle
             )
             test_process.process = process
             code = await process.wait()
+            self._vim.log.fdebug("Test {test.id} complete with exit code: {code}")
             result = Result(id=test.id, file=test.file, code=code, output=stdout_path)
             del self._processes[test.id]
             return result
@@ -124,6 +128,7 @@ class ProcessManager:
         a separate thread.
         """
         for test in tests:
+            self._vim.log.fdebug("Sending {test.id} to vim-test")
             test.running = 1
             self._processes[test.id] = None
             self._vim.call("ultest#process#start", test)
@@ -133,6 +138,7 @@ class ProcessManager:
         return int(test_id in self._processes)
 
     def clear(self):
+        self._vim.log.debug("Clearing temp files")
         self._dir.cleanup()
 
     def create_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:

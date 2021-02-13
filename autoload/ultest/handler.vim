@@ -76,6 +76,6 @@ function! ultest#handler#get_attach_script(test) abort
     if s:is_nvim
         return _ultest_get_attach_script(a:test)
     else
-        return s:yarp.call('_ultest_get_attach_script', a:line, a:file_name, a:strict)
+        return s:yarp.call('_ultest_get_attach_script', a:test)
     endif
 endfunction
