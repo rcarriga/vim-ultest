@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import re
@@ -37,6 +38,7 @@ class Handler:
         self._results = results
         self._stored_tests: Dict[str, List[Test]] = {}
         self._prepare_env()
+        self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
 
     def _prepare_env(self):
         rows = self._vim.sync_eval("g:ultest_output_rows")
@@ -58,6 +60,7 @@ class Handler:
         :param cmd: Command to run with file name, test name and line no appended.
         """
 
+        logging.info("YOYOYO")
         custom_args = re.search(r"\[.*\]$", cmd)[0]  # type: ignore
         test_args = json.loads(bytes(json.loads(custom_args)).decode())
         command = split(cmd[: -len(custom_args)])
@@ -68,16 +71,13 @@ class Handler:
             test.running = 0
             self._results.add(test.file, result)
             self._vim.call("ultest#process#exit", test, result)
-            self._vim.schedule(self._present_output, result)
+            if self._show_on_run:
+                self._vim.schedule(self._present_output, result)
 
         self._vim.launch(runner, test.line + JobPriority.LOW)
 
     def _present_output(self, result):
-        if (
-            result.code
-            and self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
-            and self._vim.sync_call("expand", "%") == result.file
-        ):
+        if result.code and self._vim.sync_call("expand", "%") == result.file:
             line = self._vim.sync_call("getbufinfo", result.file)[0].get("lnum")
             nearest = self.get_nearest_test(line, result.file, strict=False)
             if nearest and nearest.id == result.id:
