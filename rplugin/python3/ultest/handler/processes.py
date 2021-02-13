@@ -77,7 +77,7 @@ class ProcessManager:
         self._processes: Dict[str, Optional[TestProcess]] = {}
 
     def _test_file_dir(self, file: str) -> str:
-        return os.path.join(self._dir.name, file.replace(os.path.pathsep, "__"))
+        return os.path.join(self._dir.name, file.replace(os.sep, "__"))
 
     def _create_test_file_dir(self, file: str):
         path = self._test_file_dir(file)
