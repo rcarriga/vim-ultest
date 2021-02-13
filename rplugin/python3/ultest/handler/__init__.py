@@ -169,22 +169,6 @@ class Handler:
 
         self._vim.launch(runner, JobPriority.HIGH)
 
-    def clear_all(self, file_name: str):
-        """
-        Clear all results from file and permanently delete the result file if exists.
-
-        :param file_name: Name of file to clear results from.
-        """
-
-        async def runner():
-            tests = self._stored_tests.pop(file_name, [])
-            for test in tests:
-                result = self._results.pop(test.file, test.id)
-                if result:
-                    os.remove(result.output)
-
-        self._vim.launch(runner)
-
     def get_nearest_test(
         self, line: int, file_name: str, strict: bool
     ) -> Optional[Test]:

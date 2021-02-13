@@ -173,10 +173,13 @@ let g:ultest#processors = [
 " 'jumpto': (default "<CR>") Jump to currently selected test.
 "
 " 'output': (default "o") Open the output to the current test if failed.
+"
+" 'attach': (default "a") Attach to the running process of the current test.
 let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "run": "r",
       \ "jumpto": "<CR>",
-      \ "output": "o"
+      \ "output": "o",
+      \ "attach": "a"
       \ })
 
 ""
@@ -245,11 +248,6 @@ if g:ultest_output_on_line
     au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:true))
   augroup END
 endif
-
-augroup UltestCleanup
-  au!
-  au BufUnload * call ultest#handler#clear_all(expand("<afile>"))
-augroup END
 
 augroup UltestPositionUpdater
   au!

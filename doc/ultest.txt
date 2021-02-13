@@ -124,6 +124,8 @@ name is selected.
 
 'output': (default "o") Open the output to the current test if failed.
 
+'attach': (default "a") Attach to the running process of the current test.
+
 ==============================================================================
 COMMANDS                                                     *ultest-commands*
 

@@ -32,10 +32,6 @@ try:
         _check_started()
         HANDLER.update_positions(*args)
 
-    def _ultest_clear_all(*args):
-        _check_started()
-        HANDLER.clear_all(*args)
-
     def _ultest_get_nearest_test(*args):
         _check_started()
         return HANDLER.get_nearest_test_dict(*args)
@@ -81,10 +77,6 @@ except ImportError:
             @function("_ultest_update_positions")
             def _update_positions(self, args):
                 self.handler.update_positions(*args)
-
-            @function("_ultest_clear_all")
-            def _clear_all(self, args):
-                self.handler.clear_all(*args)
 
             @function("_ultest_get_nearest_test", sync=True)
             def _get_nearest_test(self, args):

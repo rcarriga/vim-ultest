@@ -56,14 +56,6 @@ function! ultest#handler#update_positions(file_name) abort
     endif
 endfunction
 
-function! ultest#handler#clear_all(file_name) abort
-    if s:is_nvim
-        call _ultest_clear_all(a:file_name)
-    else
-        call s:yarp.call('_ultest_clear_all', a:file_name)
-    endif
-endfunction
-
 function! ultest#handler#get_sorted_ids(file_name) abort
     if s:is_nvim
         return _ultest_get_sorted_test_ids(a:file_name)
