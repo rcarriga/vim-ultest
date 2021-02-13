@@ -5,3 +5,11 @@ line-length=120
 [tool.isort]
 profile = "black"
 multi_line_output = 3
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::pytest.PytestCollectionWarning",
+    "ignore:::pynvim[.*]"
+]
+
