@@ -1,12 +1,10 @@
-import json
 import os
-import re
-import shlex
 from shlex import split
 from typing import Dict, List, Optional, Tuple
 
 from pynvim import Nvim
 
+from ..logging import UltestLogger
 from ..models import Test
 from ..vim import JobPriority, VimClient
 from .finder import TestFinder
@@ -16,8 +14,8 @@ from .results import ResultStore
 
 class HandlerFactory:
     @staticmethod
-    def create(vim: Nvim) -> "Handler":
-        client = VimClient(vim)
+    def create(vim: Nvim, logger: UltestLogger) -> "Handler":
+        client = VimClient(vim, logger)
         finder = TestFinder(client)
         process_manager = ProcessManager(client)
         results = ResultStore()
@@ -187,7 +185,7 @@ class Handler:
                         self._vim.log.fdebug("New test {test.id} found in {file_name}")
                         self._vim.call("ultest#process#new", test)
 
-            self._vim.log.finfo(
+            self._vim.log.fdebug(
                 "Removing tests {[recorded.id for recorded in recorded_tests]} from {file_name}"
             )
             for removed in recorded_tests.values():

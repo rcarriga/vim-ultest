@@ -2,19 +2,20 @@ from typing import Any, Callable, Coroutine, List, Optional, Union
 
 from pynvim import Nvim
 
-from ..logging import UltestLogger, logger
+from ..logging import UltestLogger
 from .jobs import JobManager, JobPriority
 
 
 class VimClient:
-    def __init__(self, vim: Nvim):
+    def __init__(self, vim: Nvim, logger: UltestLogger):
         self._vim = vim
+        self._logger = logger
         num_threads = int(self._vim.eval("g:ultest_max_threads"))  # type: ignore
-        self._job_manager = JobManager(num_threads)
+        self._job_manager = JobManager(logger, num_threads)
 
     @property
     def log(self) -> UltestLogger:
-        return logger
+        return self._logger
 
     def message(self, message, sync=False):
         if not isinstance(message, str) or not message.endswith("\n"):
@@ -52,7 +53,6 @@ class VimClient:
         self,
         command: str,
         *args,
-        callback: Optional[Callable[[List[str]], None]] = None,
         **kwargs,
     ):
         """
@@ -63,11 +63,11 @@ class VimClient:
         :param command: Command to run
         :param callback: Function to supply resulting output to.
         """
-        runner = (
-            lambda: callback(self.sync_command(command, *args, **kwargs))
-            if callback
-            else self.sync_command(command, *args, **kwargs)
-        )
+
+        def runner():
+            expr = self.construct_command(command, *args, **kwargs)
+            self._vim.command(expr, async_=True)
+
         self.schedule(runner)
 
     def sync_command(self, command: str, *args, **kwargs) -> List[str]:
@@ -86,21 +86,20 @@ class VimClient:
         kwargs_str = " ".join(f" {name}={val}" for name, val in kwargs.items())
         return f"{command} {args_str} {kwargs_str}"
 
-    def call(self, func: str, *args, callback: Optional[Callable] = None) -> None:
+    def call(self, func: str, *args) -> None:
         """
         Call a vimscript function asynchronously. This can be called
         from a different thread to main Vim thread.
 
         :param func: Name of function to call.
         :param args: Arguments for the function.
-        :param callback: Callback to send result of function to, defaults to None
         :rtype: None
         """
-        runner = (
-            lambda: callback(self.sync_call(func, *args))
-            if callback
-            else self.sync_call(func, *args)
-        )
+        expr = self.construct_function(func, *args)
+
+        def runner():
+            self._eval(expr, sync=False)
+
         self.schedule(runner)
 
     def sync_call(self, func: str, *args) -> Any:
@@ -113,17 +112,17 @@ class VimClient:
         :rtype: Any
         """
         expr = self.construct_function(func, *args)
-        return self._eval(expr)
+        return self._eval(expr, sync=True)
 
     def sync_eval(self, expr: str) -> Any:
-        return self._vim.eval(expr)
+        return self._eval(expr, sync=True)
 
     def construct_function(self, func: str, *args):
         func_args = ", ".join(self._convert_arg(arg) for arg in args)
         return f"{func}({func_args})"
 
-    def _eval(self, expr: str):
-        return self._vim.eval(expr)
+    def _eval(self, expr: str, sync: bool):
+        return self._vim.eval(expr, async_=not sync)
 
     def _convert_arg(self, arg):
         if isinstance(arg, str) and self._needs_quotes(arg):

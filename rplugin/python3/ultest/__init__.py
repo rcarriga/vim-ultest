@@ -1,7 +1,3 @@
-import logging
-
-from .handler import HandlerFactory
-
 try:
     import vim  # type: ignore
 
@@ -10,7 +6,10 @@ try:
     def _check_started():
         global HANDLER  # pylint: disable=W0603
         if not HANDLER:
-            HANDLER = HandlerFactory.create(vim)
+            from .handler import HandlerFactory
+            from .logging import create_logger
+
+            HANDLER = HandlerFactory.create(vim, create_logger())
 
     def _ultest_strategy(*args):
         _check_started()
@@ -44,47 +43,45 @@ try:
 except ImportError:
     from pynvim import Nvim, function, plugin
 
-    try:
+    @plugin
+    class Ultest:
+        def __init__(self, nvim: Nvim):
+            self._vim = nvim
+            self._handler = None
 
-        @plugin
-        class Ultest:
-            def __init__(self, nvim: Nvim):
-                self._vim = nvim
-                self._handler = None
+        @property
+        def handler(self):
+            if not self._handler:
+                from .handler import HandlerFactory
+                from .logging import create_logger
 
-            @property
-            def handler(self):
-                if not self._handler:
-                    self._handler = HandlerFactory.create(self._vim)
-                return self._handler
+                self._handler = HandlerFactory.create(self._vim, create_logger())
+            return self._handler
 
-            @function("_ultest_strategy")
-            def _strategy(self, args):
-                self.handler.strategy(*args)
+        @function("_ultest_strategy", allow_nested=True)
+        def _strategy(self, args):
+            self.handler.strategy(*args)
 
-            @function("_ultest_run_all")
-            def _run_all(self, args):
-                self.handler.run_all(*args)
+        @function("_ultest_run_all", allow_nested=True)
+        def _run_all(self, args):
+            self.handler.run_all(*args)
 
-            @function("_ultest_run_nearest")
-            def _run_nearest(self, args):
-                self.handler.run_nearest(*args)
+        @function("_ultest_run_nearest", allow_nested=True)
+        def _run_nearest(self, args):
+            self.handler.run_nearest(*args)
 
-            @function("_ultest_run_single")
-            def _run_single(self, args):
-                self.handler.run_single(*args)
+        @function("_ultest_run_single", allow_nested=True)
+        def _run_single(self, args):
+            self.handler.run_single(*args)
 
-            @function("_ultest_update_positions")
-            def _update_positions(self, args):
-                self.handler.update_positions(*args)
+        @function("_ultest_update_positions", allow_nested=True)
+        def _update_positions(self, args):
+            self.handler.update_positions(*args)
 
-            @function("_ultest_get_nearest_test", sync=True)
-            def _get_nearest_test(self, args):
-                return self.handler.get_nearest_test_dict(*args)
+        @function("_ultest_get_nearest_test", sync=True)
+        def _get_nearest_test(self, args):
+            return self.handler.get_nearest_test_dict(*args)
 
-            @function("_ultest_get_attach_script", sync=True)
-            def _get_attach_script(self, args):
-                return self.handler.get_attach_script(*args)
-
-    except Exception:
-        logging.exception("Error instantiating client")
+        @function("_ultest_get_attach_script", sync=True)
+        def _get_attach_script(self, args):
+            return self.handler.get_attach_script(*args)

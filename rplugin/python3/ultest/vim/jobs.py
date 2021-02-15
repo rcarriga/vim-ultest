@@ -6,7 +6,7 @@ from queue import Empty, PriorityQueue
 from threading import Thread
 from typing import Callable, Coroutine, List, Optional, Union
 
-from ..logging import logger
+from ..logging import UltestLogger
 
 
 class JobPriority(int, Enum):
@@ -22,7 +22,8 @@ class PrioritizedJob:
 
 
 class JobManager:
-    def __init__(self, num_threads: int = 0):
+    def __init__(self, logger: UltestLogger, num_threads: int = 0):
+        self._logger = logger
         if not num_threads:
             os_count = os.cpu_count()
             if os_count is not None:
@@ -43,44 +44,43 @@ class JobManager:
         self._queue.put(PrioritizedJob(priority=priority, func=func))
 
     def clear_jobs(self):
-        logger.info("Clearing jobs")
+        self._logger.info("Clearing jobs")
         self._running = False
         while not self._queue.empty():
             try:
                 self._queue.get()
             except Empty:
                 pass
-        logger.info("Jobs cleared")
+        self._logger.info("Jobs cleared")
         self._running = True
 
     def _stop_workers(self, timeout: Optional[float] = None):
-        logger.info("Stopping workers")
+        self._logger.info("Stopping workers")
         self._running = False
         for thread in self._threads:
             thread.join(timeout)
-        logger.info("Workers stopped")
+        self._logger.info("Workers stopped")
 
     def _start_workers(self, max_threads):
         if self._threads:
             self._stop_workers()
         self._running = True
-        logger.finfo("Starting {max_threads} workers")
+        self._logger.finfo("Starting {max_threads} workers")
         for _ in range(max_threads):
             thread = Thread(target=self._start_worker, daemon=True)
             thread.start()
             self._threads.append(thread)
-        logger.info("Workers started")
+        self._logger.info("Workers started")
 
     def _start_worker(self):
         async def work():
             while self._running:
                 try:
-                    logger.fdebug("Queue size: {self._queue.qsize()}")
                     job = self._queue.get()
-                    logger.debug("Starting job")
+                    self._logger.debug("Starting job")
                     await job.func()
-                    logger.debug("Finished job")
+                    self._logger.debug("Finished job")
                 except Exception as e:
-                    logger.exception(e)
+                    self._logger.exception(e)
 
         asyncio.run(work())

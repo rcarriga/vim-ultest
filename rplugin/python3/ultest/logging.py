@@ -37,38 +37,36 @@ class UltestLogger(logging.Logger):
                 del frame
 
 
-def _setup() -> UltestLogger:
+def create_logger() -> UltestLogger:
     logfile = os.environ.get(
         "ULTEST_LOG_FILE", os.path.join(tempfile.gettempdir(), "vim-ultest.log")
     )
     logger = UltestLogger(name="ultest")
     if logfile:
-        handler = logging.FileHandler(logfile, "w", "utf-8")
+        env_level = os.environ.get("ULTEST_LOG_LEVEL", "INFO")
+        level = getattr(logging, env_level.strip(), None)
+        format = [
+            "%(asctime)s",
+            "%(levelname)s",
+            "%(threadName)s",
+            "%(filename)s:%(funcName)s:%(lineno)s",
+            "%(message)s",
+        ]
+        if not isinstance(level, int):
+            logger.warning("Invalid NVIM_PYTHON_LOG_LEVEL: %r, using INFO.", env_level)
+            level = logging.INFO
+        if level >= logging.INFO:
+            logging.logThreads = 0
+            logging.logProcesses = 0
+            logging._srcfile = None
+            format.pop(-3)
+            format.pop(-2)
+        handler = logging.FileHandler(logfile)
         handler.formatter = logging.Formatter(
-            " | ".join(
-                [
-                    "%(asctime)s",
-                    "%(levelname)s",
-                    "%(threadName)s",
-                    "%(filename)s:%(funcName)s:%(lineno)s",
-                    "%(message)s",
-                ]
-            ),
+            " | ".join(format),
             datefmt="%H:%M:%S",
         )
         logger.addHandler(handler)
-        level = logging.INFO
-        env_log_level = os.environ.get("ULTEST_LOG_LEVEL", None)
-        if env_log_level is not None:
-            lvl = getattr(logging, env_log_level.strip(), None)
-            if isinstance(lvl, int):
-                level = lvl
-            else:
-                logger.warning(
-                    "Invalid NVIM_PYTHON_LOG_LEVEL: %r, using INFO.", env_log_level
-                )
         logger.setLevel(level)
+    logger.info("Logger created")
     return logger
-
-
-logger: UltestLogger = _setup()
