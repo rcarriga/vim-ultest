@@ -6,8 +6,9 @@ CONTENTS                                                     *ultest-contents*
   1. Introduction........................................|ultest-introduction|
   2. Configuration.............................................|ultest-config|
   3. Commands................................................|ultest-commands|
-  4. Highlights............................................|ultest-highlights|
-  5. Mappings................................................|ultest-mappings|
+  4. Functions..............................................|ultest-functions|
+  5. Highlights............................................|ultest-highlights|
+  6. Mappings................................................|ultest-mappings|
 
 ==============================================================================
 INTRODUCTION                                             *ultest-introduction*
@@ -155,6 +156,9 @@ COMMANDS                                                     *ultest-commands*
 
 :UltestSummaryClose                                      *:UltestSummaryClose*
   Close the summary window
+
+==============================================================================
+FUNCTIONS                                                   *ultest-functions*
 
 ==============================================================================
 HIGHLIGHTS                                                 *ultest-highlights*

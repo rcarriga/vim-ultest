@@ -5,7 +5,7 @@ let g:ultest_buffers = []
 
 ""
 " @section Introduction
-" @order introduction config commands highlights mappings
+" @order introduction config commands functions highlights mappings
 " @stylized vim-ultest
 "
 " The ultimate testing plugin for Vim/NeoVim

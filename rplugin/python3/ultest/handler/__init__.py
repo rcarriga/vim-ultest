@@ -148,8 +148,10 @@ class Handler:
         :param file_name: Name of file to clear results from.
         """
 
+        if not os.path.isfile(file_name):
+            return
         vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
-        if not vim_patterns or not os.path.isfile(file_name):
+        if not vim_patterns:
             return
 
         recorded_tests = {
@@ -190,6 +192,7 @@ class Handler:
             )
             for removed in recorded_tests.values():
                 self._vim.call("ultest#process#clear", removed)
+            self._vim.command("doau User UltestPositionsUpdate")
 
         self._vim.launch(runner, JobPriority.HIGH)
 
