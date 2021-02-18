@@ -6,7 +6,7 @@ from pynvim import Nvim
 
 from ..logging import UltestLogger
 from ..models import Test
-from ..vim import JobPriority, VimClient
+from ..vim_client import JobPriority, VimClient
 from .finder import TestFinder
 from .processes import ProcessManager
 from .results import ResultStore

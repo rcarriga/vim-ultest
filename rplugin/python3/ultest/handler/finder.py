@@ -2,7 +2,7 @@ import re
 from typing import Dict, List, Optional
 
 from ..models import Test
-from ..vim import VimClient
+from ..vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 

@@ -1,3 +1,5 @@
+import inspect
+
 try:
     import vim  # type: ignore
 
@@ -9,7 +11,8 @@ try:
             from .handler import HandlerFactory
             from .logging import create_logger
 
-            HANDLER = HandlerFactory.create(vim, create_logger())
+            logger = create_logger()
+            HANDLER = HandlerFactory.create(vim, logger)
 
     def _ultest_strategy(*args):
         _check_started()

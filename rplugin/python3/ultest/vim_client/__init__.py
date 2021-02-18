@@ -1,3 +1,4 @@
+import inspect
 from typing import Any, Callable, Coroutine, List, Optional, Union
 
 from pynvim import Nvim
@@ -7,10 +8,10 @@ from .jobs import JobManager, JobPriority
 
 
 class VimClient:
-    def __init__(self, vim: Nvim, logger: UltestLogger):
-        self._vim = vim
+    def __init__(self, vim_: Nvim, logger: UltestLogger):
+        self._vim = vim_
         self._logger = logger
-        num_threads = int(self._vim.eval("g:ultest_max_threads"))  # type: ignore
+        num_threads = int(self.sync_eval("g:ultest_max_threads"))  # type: ignore
         self._job_manager = JobManager(logger, num_threads)
 
     @property
