@@ -39,7 +39,7 @@ function! ultest#output#attach(test) abort
   if has("nvim")
     call s:NvimOpenFloat(cmd, width, height, "UltestAttach")
     call nvim_set_current_win(g:ultest#output_windows[0])
-    au TermClose * ++once call ultest#output#close(v:true)
+    " au TermClose * ++once call ultest#output#close(v:true)
   else
     call s:VimOpenFloat(cmd, width, height)
   endif
@@ -78,11 +78,11 @@ function ultest#output#jumpto() abort
 endfunction
 
 function! s:CalculateBounds(path) abort
-  let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".shellescape(a:path)." | wc -L"))[0]) + 1
+  let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".shellescape(a:path)." | wc -L"))[0])
   let height = str2nr(split(system("wc -l ".shellescape(a:path)))[0])
 
-  let height = max([min([height, &lines/2]), 20])
-  let width =  max([min([width, &columns/2]), 40])
+  let height = min([max([height + 2, 20]), &lines])
+  let width =  min([max([width + 4, 80]), &columns])
   return [width, height]
 endfunction
 
@@ -108,19 +108,38 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
 
   let lineNo = screenrow()
   let colNo = screencol()
-  let vert_anchor = lineNo + a:height < &lines - 3 ? "N" : "S"
-  let hor_anchor = colNo + a:width < &columns + 3 ? "W" : "E"
+  let vert_anchor = "N"
+  let hor_anchor = "W"
+
+  let row = min([1, &lines - (lineNo + a:height)])
+  let col = min([1, &columns - (colNo + a:width)])
 
 
   let opts = {
         \ 'relative': 'cursor',
-        \ 'row': vert_anchor == "N" ? 2 : -1,
-        \ 'col': hor_anchor == "W" ? 3 : -2,
+        \ 'row': row,
+        \ 'col': col,
         \ 'anchor': vert_anchor.hor_anchor,
         \ 'width': a:width,
         \ 'height': a:height,
         \ 'style': 'minimal'
         \ }
+
+  let top = "╭" . repeat("─", opts.width-2) . "╮"
+  let mid = "│" . repeat(" ", opts.width-2) . "│"
+  let bot = "╰" . repeat("─", opts.width-2) . "╯"
+  let lines = [top] + repeat([mid], a:height-2) + [bot]
+  let s:buf = nvim_create_buf(v:false, v:true)
+  call nvim_buf_set_lines(s:buf, 0, -1, v:true, lines)
+  let border_window = nvim_open_win(s:buf, v:false, opts)
+  let border_win_id = nvim_win_get_number(border_window)
+  call setwinvar(border_win_id, "&winhl", "Normal:Normal")
+  call matchadd("UltestBorder", ".*",100, -1, {"window": border_window})
+
+  let opts.row += 1
+  let opts.height -= 2
+  let opts.col += 2
+  let opts.width -= 4
 
   let out_buffer = nvim_create_buf(v:false, v:true)
   let user_window = nvim_get_current_win()
@@ -131,20 +150,5 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
   let output_win_id = nvim_win_get_number(output_window)
   call setwinvar(output_win_id, "&winhl", "Normal:Normal")
 
-  let opts.row += vert_anchor == "N" ? -1 : 1
-  let opts.height += 2
-  let opts.col += hor_anchor == "W" ? -2 : 2
-  let opts.width += 3
-
-  let top = "╭" . repeat("─", a:width+1) . "╮"
-  let mid = "│" . repeat(" ", a:width+1) . "│"
-  let bot = "╰" . repeat("─", a:width+1) . "╯"
-  let lines = [top] + repeat([mid], a:height) + [bot]
-  let s:buf = nvim_create_buf(v:false, v:true)
-  call nvim_buf_set_lines(s:buf, 0, -1, v:true, lines)
-  let border_window = nvim_open_win(s:buf, v:false, opts)
-  let border_win_id = nvim_win_get_number(border_window)
-  call setwinvar(border_win_id, "&winhl", "Normal:Normal")
-  call matchadd("UltestBorder", ".*",100, -1, {"window": border_window})
   let g:ultest#output_windows = [output_window, border_window]
 endfunction
