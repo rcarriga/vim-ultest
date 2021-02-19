@@ -1,3 +1,4 @@
+import inspect
 import os
 import re
 import tempfile
@@ -153,44 +154,10 @@ class ProcessManager:
         test_process = self._processes.get(test_id)
         if not test_process:
             return None
-        script = fr"""
-import os, subprocess, sys, readline
+        from . import attach
 
-IN_FILE = "{test_process.in_path}"
-OUT_FILE = "{test_process.out_path}"
-
-devnull = open("/dev/null", "a")
-to_input = open(IN_FILE, "wb")
-
-p = subprocess.Popen(
-    ["tail", "-F", "-c", "+0", OUT_FILE],
-    stdin=devnull,
-    stdout=sys.stdout,
-    stderr=subprocess.STDOUT,
-)
-
-
-try:
-    # base_stdout = sys.stdout
-    # class StdoutMiddleware:
-    #     @staticmethod
-    #     def write(s: str):
-    #         base_stdout.write(s)
-    #
-    #     @staticmethod
-    #     def flush():
-    #         # base_stdout.write("\0")
-    #         base_stdout.flush()
-    # sys.stdout = StdoutMiddleware
-
-    while True:
-        in_ = input() + "\n"
-        to_input.write(in_.encode())
-        to_input.flush()
-except BaseException as e:
-    print(e)
-"""
+        source = inspect.getsource(attach).format(**vars())
         script_path = os.path.join(self._dir.name, "attach.py")
         with open(script_path, "w") as script_file:
-            script_file.write(script)
+            script_file.write(source)
         return (test_process.out_path, script_path)

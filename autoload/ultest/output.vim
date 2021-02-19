@@ -39,7 +39,7 @@ function! ultest#output#attach(test) abort
   if has("nvim")
     call s:NvimOpenFloat(cmd, width, height, "UltestAttach")
     call nvim_set_current_win(g:ultest#output_windows[0])
-    " au TermClose * ++once call ultest#output#close(v:true)
+    au TermClose * ++once call ultest#output#close(v:true)
   else
     call s:VimOpenFloat(cmd, width, height)
   endif
