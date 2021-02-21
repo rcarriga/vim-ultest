@@ -3,9 +3,9 @@ import os
 
 if os.getenv("ULTEST_DEBUG") or os.getenv("ULTEST_DEBUG_PORT"):
     import debugpy
+
     debugpy.listen(int(os.getenv("ULTEST_DEBUG_PORT") or 5678))
     debugpy.wait_for_client()
-
 
 
 try:
