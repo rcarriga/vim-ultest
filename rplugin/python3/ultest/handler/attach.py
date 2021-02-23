@@ -1,3 +1,4 @@
+import readline  # type: ignore
 import subprocess
 import sys
 
