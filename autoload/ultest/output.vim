@@ -1,6 +1,5 @@
 augroup UltestOutputClose
   autocmd!
-  autocmd InsertEnter,CursorMoved *  call ultest#output#close(v:false)
   autocmd User UltestOutputOpen  call ultest#output#close(v:false)
 augroup END
 
@@ -20,6 +19,7 @@ function! ultest#output#open(test) abort
   let cmd = ['less', "-R", "-Ps", shellescape(output)]
   if has("nvim")
     call s:NvimOpenFloat(cmd, width, height, "UltestOutput")
+    autocmd InsertEnter,CursorMoved * ++once  call ultest#output#close(v:false)
   else
     call s:VimOpenFloat(cmd, width, height)
     exec "tnoremap <buffer><silent> q <C-W>N:call popup_close(".g:ultest#output_windows[0].")<CR>"
@@ -50,6 +50,7 @@ function! ultest#output#close(force) abort
     return
   endif
   if !a:force && nvim_get_current_win() == g:ultest#output_windows[0]
+    autocmd InsertEnter,CursorMoved * ++once call ultest#output#close(v:false)
     return
   endif
   for window in g:ultest#output_windows
@@ -114,8 +115,7 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
   let row = min([1, &lines - (lineNo + a:height)])
   let col = min([1, &columns - (colNo + a:width)])
 
-
-  let opts = {
+  let border_opts = {
         \ 'relative': 'cursor',
         \ 'row': row,
         \ 'col': col,
@@ -125,30 +125,32 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
         \ 'style': 'minimal'
         \ }
 
-  let top = "╭" . repeat("─", opts.width-2) . "╮"
-  let mid = "│" . repeat(" ", opts.width-2) . "│"
-  let bot = "╰" . repeat("─", opts.width-2) . "╯"
-  let lines = [top] + repeat([mid], a:height-2) + [bot]
-  let s:buf = nvim_create_buf(v:false, v:true)
-  call nvim_buf_set_lines(s:buf, 0, -1, v:true, lines)
-  let border_window = nvim_open_win(s:buf, v:false, opts)
-  let border_win_id = nvim_win_get_number(border_window)
-  call setwinvar(border_win_id, "&winhl", "Normal:Normal")
-  call matchadd("UltestBorder", ".*",100, -1, {"window": border_window})
-
-  let opts.row += 1
-  let opts.height -= 2
-  let opts.col += 2
-  let opts.width -= 4
+  let content_opts = extend({
+        \ "row":  border_opts.row + 1,
+        \ "height": border_opts.height - 2,
+        \ "col": border_opts.col + 2,
+        \ "width": border_opts.width - 4
+        \ }, border_opts, "keep")
 
   let out_buffer = nvim_create_buf(v:false, v:true)
   let user_window = nvim_get_current_win()
-  let output_window = nvim_open_win(out_buffer, v:true, opts)
+  let output_window = nvim_open_win(out_buffer, v:true, content_opts)
   call termopen(join(a:cmd, " "))
   exec "setfiletype ".a:filetype
   call nvim_set_current_win(user_window)
   let output_win_id = nvim_win_get_number(output_window)
   call setwinvar(output_win_id, "&winhl", "Normal:Normal")
+
+  let top = "╭" . repeat("─", border_opts.width-2) . "╮"
+  let mid = "│" . repeat(" ", border_opts.width-2) . "│"
+  let bot = "╰" . repeat("─", border_opts.width-2) . "╯"
+  let lines = [top] + repeat([mid], a:height-2) + [bot]
+  let s:buf = nvim_create_buf(v:false, v:true)
+  call nvim_buf_set_lines(s:buf, 0, -1, v:true, lines)
+  let border_window = nvim_open_win(s:buf, v:false, border_opts)
+  let border_win_id = nvim_win_get_number(border_window)
+  call setwinvar(border_win_id, "&winhl", "Normal:Normal")
+  call matchadd("UltestBorder", ".*",100, -1, {"window": border_window})
 
   let g:ultest#output_windows = [output_window, border_window]
 endfunction
