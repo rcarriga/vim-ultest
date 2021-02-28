@@ -4,7 +4,7 @@ from typing import Any, Callable, Coroutine, List, Optional, Union
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from .jobs import JobManager, JobPriority
+from .jobs import JobManager
 
 
 class VimClient:
@@ -38,17 +38,25 @@ class VimClient:
 
     def launch(
         self,
-        func: Callable[[], Coroutine],
-        priority: Union[int, JobPriority] = JobPriority.LOW,
+        func: Coroutine,
+        job_group: str,
     ) -> None:
         """
         Launch a function to be run on a separate thread.
 
         :param func: Function to run.
         :param *args: Positional args for function.
-        :param **kwargs: Keywords args for function.
+        :param **kwargs: kwargs for function.
         """
-        self._job_manager.run(func, priority)
+        self._job_manager.run(func, job_group=job_group)
+
+    def stop(self, job_group: str):
+        """
+        Stop all jobs associated with the given job group
+
+        :param job_group:  group for a group of jobs
+        """
+        self._job_manager.stop_jobs(job_group)
 
     def command(
         self,

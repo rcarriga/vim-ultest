@@ -6,7 +6,7 @@ from pynvim import Nvim
 
 from ..logging import UltestLogger
 from ..models import Test
-from ..vim_client import JobPriority, VimClient
+from ..vim_client import VimClient
 from .finder import TestFinder
 from .processes import ProcessManager
 from .results import ResultStore
@@ -80,7 +80,7 @@ class Handler:
             if self._show_on_run:
                 self._vim.schedule(self._present_output, result)
 
-        self._vim.launch(runner, test.line + JobPriority.LOW)
+        self._vim.launch(runner(), test.id)
 
     def _present_output(self, result):
         if result.code and self._vim.sync_call("expand", "%") == result.file:
@@ -102,7 +102,7 @@ class Handler:
             tests = self._stored_tests.get(file_name, [])
             await self._process_manager.run_tests(tests)
 
-        self._vim.launch(runner)
+        self._vim.launch(runner(), "run_all")
 
     def run_nearest(self, line: int, file_name: str):
         """
@@ -112,15 +112,16 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        async def runner():
-            self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
-            tests = self._stored_tests.get(file_name, [])
-            test = self._finder.get_nearest_from(line, tests, strict=False)
-            if test:
-                self._vim.log.finfo("Nearest test found is {test.id}")
-                await self._process_manager.run_tests([test])
+        self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
+        tests = self._stored_tests.get(file_name, [])
+        test = self._finder.get_nearest_from(line, tests, strict=False)
+        if test:
 
-        self._vim.launch(runner)
+            async def runner():
+                self._vim.log.finfo("Nearest test found is {test.id}")
+                await self._process_manager.run_tests([test])  # type: ignore
+
+            self._vim.launch(runner(), test.id)
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -137,7 +138,7 @@ class Handler:
                 [test for test in tests if test.id == test_id]
             )
 
-        self._vim.launch(runner)
+        self._vim.launch(runner(), test_id)
 
     def update_positions(self, file_name: str):
         """
@@ -185,14 +186,17 @@ class Handler:
                         self._vim.log.fdebug("New test {test.id} found in {file_name}")
                         self._vim.call("ultest#process#new", test)
 
-            self._vim.log.fdebug(
-                "Removing tests {[recorded.id for recorded in recorded_tests]} from {file_name}"
-            )
-            for removed in recorded_tests.values():
-                self._vim.call("ultest#process#clear", removed)
+            if recorded_tests:
+                self._vim.log.fdebug(
+                    "Removing tests {[recorded.id for recorded in recorded_tests]} from {file_name}"
+                )
+                for removed in recorded_tests.values():
+                    self._vim.call("ultest#process#clear", removed)
+            else:
+                self._vim.log.fdebug("No tests removed")
             self._vim.command("doau User UltestPositionsUpdate")
 
-        self._vim.launch(runner, JobPriority.HIGH)
+        self._vim.launch(runner(), "update_positions")
 
     def get_nearest_test(
         self, line: int, file_name: str, strict: bool
@@ -208,5 +212,15 @@ class Handler:
         return test and test.dict()
 
     def get_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:
-        self._vim.log.info("Creating script to attach to test {test_id}")
+        self._vim.log.finfo("Creating script to attach to test {test_id}")
         return self._process_manager.create_attach_script(test_id)
+
+    def clear_test(self, test_dict: Optional[Dict]):
+        if not test_dict:
+            self._vim.log.fdebug("No test to cancel")
+            return
+        test = Test(**test_dict)
+        self._vim.log.finfo("Stopping all jobs for test {test.id}")
+        self._vim.stop(test.id)
+        test.running = 0
+        self._vim.call("ultest#process#move", test)

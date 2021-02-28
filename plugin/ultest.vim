@@ -48,9 +48,9 @@ hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 
 ""
 " Number of workers that are used for running and processing tests.
-" Set to 0 to use number of cpu cores - 1 (to avoid blocking main thread)
+" Set to 0 to use number of cpu cores - 2
 " (default: 0)
-let g:ultest_max_threads = get(g:, "ultest_max_threads", 0)
+let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 
 ""
 " Enable positions processor for tests to allow jumping between tests.
@@ -208,6 +208,14 @@ command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_te
 command! -bar UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
 
 ""
+" Clear all running jobs and results for the current file
+command! -bar UltestClear call ultest#clear_file()
+
+""
+" Clear any running jobs and results for the nearest test
+command! -bar UltestClearNearest call ultest#clear_nearest()
+
+""
 " Toggle the summary window between open and closed
 command! -bar UltestSummary call ultest#summary#toggle()
 
@@ -239,6 +247,10 @@ command! -bar UltestSummaryClose call ultest#summary#close()
 " <Plug>(ultest-output-jump) 	 Show error output of the nearest test. (Same behabviour as <Plug>(ultest-output-show) in Vim)
 "
 " <Plug>(ultest-attach) 	 Attach to the nearest test's running process.
+"
+" <Plug>(ultest-clear-file) 	 Clear all running jobs and results for current file
+"
+" <Plug>(ultest-clear-nearest) 	 Clear any running jobs and results for nearest test
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
@@ -249,6 +261,8 @@ nnoremap <silent><Plug>(ultest-summary-jump) :call ultest#summary#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>
 nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-attach) :UltestAttach<CR>
+nnoremap <silent><Plug>(ultest-clear-file) :UltestClear<CR>
+nnoremap <silent><Plug>(ultest-clear-nearest) :UltestClearNearest<CR>
 
 if g:ultest_output_on_line
   augroup UltestOutputOnLine

@@ -50,6 +50,10 @@ try:
         _check_started()
         return HANDLER.get_attach_script(*args)
 
+    def _ultest_clear_test(*args):
+        _check_started()
+        return HANDLER.clear_test(*args)
+
 
 except ImportError:
     from pynvim import Nvim, function, plugin
@@ -96,3 +100,7 @@ except ImportError:
         @function("_ultest_get_attach_script", sync=True)
         def _get_attach_script(self, args):
             return self.handler.get_attach_script(*args)
+
+        @function("_ultest_clear_test", allow_nested=True)
+        def _clear_test(self, args):
+            return self.handler.clear_test(*args)

@@ -9,14 +9,16 @@ from os import path
 from threading import Event, Thread
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple
 
+from ..logging import UltestLogger
 from ..models import Result, Test
 from ..vim_client import VimClient
 
 
 class TestProcess:
-    def __init__(self, in_path: str, out_path: str):
+    def __init__(self, in_path: str, out_path: str, logger: UltestLogger):
         self.in_path = in_path
         self.out_path = out_path
+        self._logger = logger
         self._close_event = Event()
         self._create_stdin()
         self._wipe_stdout()
@@ -45,6 +47,9 @@ class TestProcess:
         out_handle = self._open_stdout()
         try:
             yield (in_handle, out_handle)
+        except:
+            self._logger.exception("Exception while open")
+            raise
         finally:
             self._close_stdin(in_handle)
             self._close_stdout(out_handle)
@@ -109,7 +114,9 @@ class ProcessManager:
         self._create_test_file_dir(test.file)
         stdin_path = self.stdin_name(test)
         stdout_path = self.stdout_name(test)
-        test_process = TestProcess(in_path=stdin_path, out_path=stdout_path)
+        test_process = TestProcess(
+            in_path=stdin_path, out_path=stdout_path, logger=self._vim.log
+        )
         self._processes[test.id] = test_process
         self._vim.log.fdebug("Starting test process {test.id} with command: {cmd}")
         with test_process.open() as (in_handle, out_handle):
