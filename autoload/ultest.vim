@@ -51,20 +51,20 @@ function ultest#is_test_file(...) abort
     return !empty(getbufvar(file, "ultest_tests", {}))
 endfunction
 
-function! ultest#clear_file(...) abort
+function! ultest#stop_file(...) abort
   let file = len(a:000) == 1 ? a:0 : expand("%")
   let ids = getbufvar(file, "ultest_sorted_tests", [])
   let tests = getbufvar(file, "ultest_tests", {})
   for test_id in ids
     let test = get(tests, test_id)
-    call ultest#handler#clear_test(test)
+    call ultest#handler#stop_test(test)
   endfor
   call ultest#handler#update_positions(file)
 endfunction
 
-function! ultest#clear_nearest(...) abort
+function! ultest#stop_nearest(...) abort
   let file = len(a:000) == 1 ? a:0 : expand("%")
   let test = ultest#handler#get_nearest_test(line("."), file, v:false)
-  call ultest#handler#clear_test(test)
+  call ultest#handler#stop_test(test)
   call ultest#handler#update_positions(file)
 endfunction

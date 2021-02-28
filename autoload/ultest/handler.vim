@@ -80,10 +80,10 @@ function! ultest#handler#get_attach_script(test) abort
     endif
 endfunction
 
-function! ultest#handler#clear_test(test_id) abort
+function! ultest#handler#stop_test(test_id) abort
     if s:is_nvim
-        return _ultest_clear_test(a:test_id)
+        return _ultest_stop_test(a:test_id)
     else
-        return s:yarp.call('_ultest_clear_test', a:test)
+        return s:yarp.call('_ultest_stop_test', a:test)
     endif
 endfunction

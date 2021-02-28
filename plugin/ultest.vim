@@ -208,12 +208,12 @@ command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_te
 command! -bar UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
 
 ""
-" Clear all running jobs and results for the current file
-command! -bar UltestClear call ultest#clear_file()
+" Stop all running jobs for the current file
+command! -bar UltestStop call ultest#stop_file()
 
 ""
-" Clear any running jobs and results for the nearest test
-command! -bar UltestClearNearest call ultest#clear_nearest()
+" Stop any running jobs and results for the nearest test
+command! -bar UltestStopNearest call ultest#stop_nearest()
 
 ""
 " Toggle the summary window between open and closed
@@ -248,9 +248,9 @@ command! -bar UltestSummaryClose call ultest#summary#close()
 "
 " <Plug>(ultest-attach) 	 Attach to the nearest test's running process.
 "
-" <Plug>(ultest-clear-file) 	 Clear all running jobs and results for current file
+" <Plug>(ultest-stop-file) 	 Stop all running jobs for current file
 "
-" <Plug>(ultest-clear-nearest) 	 Clear any running jobs and results for nearest test
+" <Plug>(ultest-stop-nearest) 	 Stop any running jobs for nearest test
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
@@ -261,8 +261,8 @@ nnoremap <silent><Plug>(ultest-summary-jump) :call ultest#summary#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>
 nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-attach) :UltestAttach<CR>
-nnoremap <silent><Plug>(ultest-clear-file) :UltestClear<CR>
-nnoremap <silent><Plug>(ultest-clear-nearest) :UltestClearNearest<CR>
+nnoremap <silent><Plug>(ultest-stop-file) :UltestStop<CR>
+nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
 
 if g:ultest_output_on_line
   augroup UltestOutputOnLine

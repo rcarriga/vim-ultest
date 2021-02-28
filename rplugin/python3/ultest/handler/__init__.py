@@ -215,7 +215,7 @@ class Handler:
         self._vim.log.finfo("Creating script to attach to test {test_id}")
         return self._process_manager.create_attach_script(test_id)
 
-    def clear_test(self, test_dict: Optional[Dict]):
+    def stop_test(self, test_dict: Optional[Dict]):
         if not test_dict:
             self._vim.log.fdebug("No test to cancel")
             return

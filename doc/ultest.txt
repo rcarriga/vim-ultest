@@ -148,11 +148,11 @@ COMMANDS                                                     *ultest-commands*
   Attach to the running process of a test to be able to send input and read
   output as it runs. This is useful for debugging
 
-:UltestClear                                                    *:UltestClear*
-  Clear all running jobs and results for the current file
+:UltestStop                                                      *:UltestStop*
+  Stop all running jobs for the current file
 
-:UltestClearNearest                                      *:UltestClearNearest*
-  Clear any running jobs and results for the nearest test
+:UltestStopNearest                                        *:UltestStopNearest*
+  Stop any running jobs and results for the nearest test
 
 :UltestSummary                                                *:UltestSummary*
   Toggle the summary window between open and closed
@@ -231,11 +231,9 @@ behabviour as <Plug>(ultest-output-show) in Vim)
 
 <Plug>(ultest-attach)    Attach to the nearest test's running process.
 
-<Plug>(ultest-clear-file)        Clear all running jobs and results for
-current file
+<Plug>(ultest-stop-file)         Stop all running jobs for current file
 
-<Plug>(ultest-clear-nearest)     Clear any running jobs and results for
-nearest test
+<Plug>(ultest-stop-nearest)      Stop any running jobs for nearest test
 
 
 vim:tw=78:ts=8:ft=help:norl:

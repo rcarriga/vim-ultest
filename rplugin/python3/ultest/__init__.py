@@ -50,9 +50,9 @@ try:
         _check_started()
         return HANDLER.get_attach_script(*args)
 
-    def _ultest_clear_test(*args):
+    def _ultest_stop_test(*args):
         _check_started()
-        return HANDLER.clear_test(*args)
+        return HANDLER.stop_test(*args)
 
 
 except ImportError:
@@ -101,6 +101,6 @@ except ImportError:
         def _get_attach_script(self, args):
             return self.handler.get_attach_script(*args)
 
-        @function("_ultest_clear_test", allow_nested=True)
-        def _clear_test(self, args):
-            return self.handler.clear_test(*args)
+        @function("_ultest_stop_test", allow_nested=True)
+        def _stop_test(self, args):
+            return self.handler.stop_test(*args)
