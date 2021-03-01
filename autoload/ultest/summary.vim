@@ -52,9 +52,15 @@ function! ultest#summary#render(test) abort
   endif
 endfunction
 
+function! s:GetFoldLevel(lnum) abort
+  let l = getline(a:lnum)
+  echom l
+  if l == "" | return 0 | endif
+  return 1
+endfunction
+
 function! s:OpenNewWindow() abort
   exec "botright vnew ".s:buffer_name." | vertical resize ".g:ultest_summary_width
-  call setwinvar(bufwinnr(s:buffer_name), "&winfixwidth", 1)
   let buf_settings = {
         \ "buftype": "nofile",
         \ "bufhidden": "hide",
@@ -63,10 +69,19 @@ function! s:OpenNewWindow() abort
         \ "modifiable": 0,
         \ "relativenumber": 0,
         \ "number": 0,
-        \ "filetype": "UltestSummary"
+        \ "filetype": "UltestSummary",
+        \ "foldmethod": "expr",
         \ }
   for [key, val] in items(buf_settings)
     call setbufvar(s:buffer_name, "&".key, val)
+  endfor
+  let win_settings = {
+    \ "foldexpr": "len(getline(v:lnum))>1",
+    \ "winfixwidth": 1
+    \ }
+  let win = bufwinnr(s:buffer_name)
+  for [key, val] in items(win_settings)
+    call setwinvar(win, "&".key, val)
   endfor
   call s:FullRender()
   exec "norm \<C-w>p"
@@ -82,7 +97,7 @@ function! s:FullRender() abort
     let tests = getbufvar(test_file, "ultest_tests", {})
     let results = getbufvar(test_file, "ultest_results", {})
     if len(tests) == 0 | continue | endif
-    let lines = lines + ["", "Test File: ".fnamemodify(test_file, ":t")]
+    let lines = lines + ["", " ".fnamemodify(test_file, ":t")]
     call matchaddpos("UltestInfo", [len(lines) - 1], 10, -1, {"window": win})
     let line_offset = len(lines)
     for index in range(len(sorted_ids))
@@ -90,7 +105,7 @@ function! s:FullRender() abort
       let test = get(tests, test_id, {})
       let result = get(results, test_id, {})
       if test == {} | continue | endif
-      call add(lines, s:RenderLine(test, result, index+line_offset, win))
+      call add(lines, s:RenderLine(test, result, index+line_offset, win, index == len(sorted_ids) - 1))
     endfor
   endfor
   if len(lines) > 0
@@ -106,7 +121,7 @@ function! s:FullRender() abort
   call setbufvar(s:buffer_name, "&modifiable", 0)
 endfunction
 
-function! s:RenderLine(test, result, line, window) abort
+function! s:RenderLine(test, result, line, window, is_last) abort
   let text = ""
   if has_key(a:result, "code")
     if a:result.code
@@ -125,8 +140,8 @@ function! s:RenderLine(test, result, line, window) abort
       let highlight = "Normal"
     endif
   endif
-  call matchaddpos(highlight, [a:line], 10, -1, {"window": a:window})
-  return " ".sign." ".a:test.name
+  call matchaddpos(highlight, [[a:line, 4, len(a:test.name) + 4]], 10, -1, {"window": a:window})
+  return (a:is_last ? "┕ " : "┝ ")." ".a:test.name
 endfunction
 
 function! s:Clear() abort
