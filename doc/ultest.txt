@@ -40,10 +40,6 @@ CONFIGURATION                                                  *ultest-config*
                                                         *g:ultest_max_threads*
 Number of workers that are used for running tests. (default: 2)
 
-                                                          *g:ultest_positions*
-Enable positions processor for tests to allow jumping between tests. (default:
-1)
-
                                                       *g:ultest_output_on_run*
 Show failed outputs when completed run. (default: 1)
 

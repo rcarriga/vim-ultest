@@ -52,11 +52,6 @@ hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 
 ""
-" Enable positions processor for tests to allow jumping between tests.
-" (default: 1)
-let g:ultest_positions = get(g:, "ultest_positions", 1)
-
-""
 " Show failed outputs when completed run.
 " (default: 1)
 let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
