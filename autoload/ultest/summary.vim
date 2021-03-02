@@ -3,7 +3,8 @@ let s:mappings = {
       \ "run": "r",
       \ "jumpto": "<CR>",
       \ "output": "o",
-      \ "attach": "a"
+      \ "attach": "a",
+      \ "stop": "s"
       \ }
 
 call extend(s:mappings, g:ultest_summary_mappings)
@@ -15,6 +16,7 @@ function! s:CreateMappings()
   exec "nnoremap <silent><buffer> ".s:mappings["output"]." :call <SID>OpenCurrentOutput()<CR>"
   exec "nnoremap <silent><buffer> ".s:mappings["jumpto"]." :call <SID>JumpToCurrent()<CR>"
   exec "nnoremap <silent><buffer> ".s:mappings["attach"]." :call <SID>AttachToCurrent()<CR>"
+  exec "nnoremap <silent><buffer> ".s:mappings["stop"]." :call <SID>StopCurrent()<CR>"
 endfunction
 
 function! s:IsOpen() abort
@@ -76,6 +78,7 @@ function! s:OpenNewWindow() abort
     call setbufvar(s:buffer_name, "&".key, val)
   endfor
   let win_settings = {
+    \ "foldtext": 'substitute(getline(v:foldstart),"\s*{{{[0-9]\s*$","","")." ▶"',
     \ "foldexpr": "len(getline(v:lnum))>1",
     \ "winfixwidth": 1
     \ }
@@ -83,6 +86,10 @@ function! s:OpenNewWindow() abort
   for [key, val] in items(win_settings)
     call setwinvar(win, "&".key, val)
   endfor
+  augroup UltestSummary 
+    au!
+    au CursorMoved <buffer> norm! 0
+  augroup END
   call s:FullRender()
   exec "norm \<C-w>p"
 endfunction
@@ -125,23 +132,19 @@ function! s:RenderLine(test, result, line, window, is_last) abort
   let text = ""
   if has_key(a:result, "code")
     if a:result.code
-      let sign = g:ultest_fail_sign
       let highlight = "UltestFail"
     else
-      let sign = g:ultest_pass_sign
       let highlight = "UltestPass"
     endif
   else
     if a:test.running
-      let sign = g:ultest_running_sign
       let highlight = "UltestRunning"
     else
-      let sign = " "
       let highlight = "Normal"
     endif
   endif
-  call matchaddpos(highlight, [[a:line, 4, len(a:test.name) + 4]], 10, -1, {"window": a:window})
-  return (a:is_last ? "┕ " : "┝ ")." ".a:test.name
+  call matchaddpos(highlight, [[a:line, 3, len(a:test.name) + 4]], 10, -1, {"window": a:window})
+  return (a:is_last ? "└" : "│")." ".a:test.name
 endfunction
 
 function! s:Clear() abort
@@ -190,6 +193,16 @@ function! s:AttachToCurrent()
   else
     let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
     call ultest#output#attach(test)
+  endif
+endfunction
+
+function! s:StopCurrent()
+  let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
+  if cur_file == "" || cur_test == ""
+    return
+  else
+    let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
+    call ultest#handler#stop_test(test)
   endif
 endfunction
 

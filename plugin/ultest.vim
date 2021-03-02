@@ -183,11 +183,14 @@ let g:ultest#processors = [
 " 'output': (default "o") Open the output to the current test if failed.
 "
 " 'attach': (default "a") Attach to the running process of the current test.
+"
+" 'stop': (default "s") Stop the running process of the current test.
 let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "run": "r",
       \ "jumpto": "<CR>",
       \ "output": "o",
-      \ "attach": "a"
+      \ "attach": "a",
+      \ "stop": "s"
       \ })
 
 ""
