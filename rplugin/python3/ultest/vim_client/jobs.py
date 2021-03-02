@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import CancelledError, Event
+from asyncio import CancelledError, Event, Semaphore
 from collections import defaultdict
 from threading import Thread
 from typing import Coroutine, Dict
@@ -14,8 +14,12 @@ class JobManager:
         self._jobs: defaultdict[str, Dict[str, Event]] = defaultdict(dict)
         self._loop = asyncio.new_event_loop()
         self._thread = Thread(target=self._loop.run_forever, daemon=True)
-        self._sem = asyncio.Semaphore(num_threads, loop=self._loop)
+        self._sem = Semaphore(num_threads, loop=self._loop)
         self._thread.start()
+
+    @property
+    def semaphore(self) -> Semaphore:
+        return self._sem
 
     def run(self, cor: Coroutine, job_group: str):
         job_id = str(uuid4())
@@ -35,25 +39,22 @@ class JobManager:
         self, cor: Coroutine, job_group: str, job_id: str, cancel_event: Event
     ):
         try:
-            async with self._sem:
-                self._logger.fdebug("Starting job with group {job_group}")
-                run_task = asyncio.create_task(cor)
-                cancel_task = asyncio.create_task(cancel_event.wait())
-                try:
-                    done, _ = await asyncio.wait(
-                        [run_task, cancel_task],
-                        return_when=asyncio.FIRST_COMPLETED,
-                    )
-                except CancelledError:
-                    self._logger.exception(f"Task was cancelled prematurely {run_task}")
+            self._logger.fdebug("Starting job with group {job_group}")
+            run_task = asyncio.create_task(cor)
+            cancel_task = asyncio.create_task(cancel_event.wait())
+            try:
+                done, _ = await asyncio.wait(
+                    [run_task, cancel_task],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            except CancelledError:
+                self._logger.exception(f"Task was cancelled prematurely {run_task}")
+            else:
+                if run_task in done:
+                    self._logger.fdebug("Finished job with group {job_group}")
                 else:
-                    if run_task in done:
-                        self._logger.fdebug("Finished job with group {job_group}")
-                    else:
-                        run_task.cancel()
-                        self._logger.fdebug(
-                            "Cancelled running job with group {job_group}"
-                        )
+                    run_task.cancel()
+                    self._logger.fdebug("Cancelled running job with group {job_group}")
         except CancelledError:
             self._logger.exception("Job runner cancelled")
             raise

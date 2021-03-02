@@ -18,6 +18,10 @@ class VimClient:
     def log(self) -> UltestLogger:
         return self._logger
 
+    @property
+    def semaphore(self):
+        return self._job_manager.semaphore
+
     def message(self, message, sync=False):
         if not isinstance(message, str) or not message.endswith("\n"):
             message = str(message) + "\n"

@@ -38,8 +38,7 @@ The goal behind vim-ultest is to make running tests as seamless as possible.
 CONFIGURATION                                                  *ultest-config*
 
                                                         *g:ultest_max_threads*
-Number of workers that are used for running and processing tests. Set to 0 to
-use number of cpu cores - 2 (default: 0)
+Number of workers that are used for running tests. (default: 2)
 
                                                           *g:ultest_positions*
 Enable positions processor for tests to allow jumping between tests. (default:
@@ -131,6 +130,8 @@ name is selected.
 'output': (default "o") Open the output to the current test if failed.
 
 'attach': (default "a") Attach to the running process of the current test.
+
+'stop': (default "s") Stop the running process of the current test.
 
 ==============================================================================
 COMMANDS                                                     *ultest-commands*

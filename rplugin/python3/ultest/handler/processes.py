@@ -120,17 +120,20 @@ class ProcessManager:
         self._processes[test.id] = test_process
         self._vim.log.fdebug("Starting test process {test.id} with command: {cmd}")
         try:
-            with test_process.open() as (in_handle, out_handle):
-                process = await subprocess.create_subprocess_exec(
-                    *cmd, stdin=in_handle, stderr=out_handle, stdout=out_handle
-                )
-                test_process.process = process
-                code = await process.wait()
-                self._vim.log.fdebug("Test {test.id} complete with exit code: {code}")
-                result = Result(
-                    id=test.id, file=test.file, code=code, output=stdout_path
-                )
-                return result
+            async with self._vim.semaphore:
+                with test_process.open() as (in_handle, out_handle):
+                    process = await subprocess.create_subprocess_exec(
+                        *cmd, stdin=in_handle, stderr=out_handle, stdout=out_handle
+                    )
+                    test_process.process = process
+                    code = await process.wait()
+                    self._vim.log.fdebug(
+                        "Test {test.id} complete with exit code: {code}"
+                    )
+                    result = Result(
+                        id=test.id, file=test.file, code=code, output=stdout_path
+                    )
+                    return result
         finally:
             del self._processes[test.id]
 

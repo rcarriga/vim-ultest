@@ -47,9 +47,8 @@ hi default UltestBorder ctermfg=Red guifg=#F70067
 hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 
 ""
-" Number of workers that are used for running and processing tests.
-" Set to 0 to use number of cpu cores - 2
-" (default: 0)
+" Number of workers that are used for running tests.
+" (default: 2)
 let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 
 ""
