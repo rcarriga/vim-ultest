@@ -213,6 +213,7 @@ function! s:OpenCurrentOutput()
   else
     let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
     call ultest#output#open(test)
+    call ultest#output#jumpto()
   endif
 endfunction
 
