@@ -270,7 +270,7 @@ endif
 
 augroup UltestPositionUpdater
   au!
-  au BufWrite,BufRead *test* call ultest#handler#update_positions(expand("<afile>"))
+  au BufWrite,BufRead *test* call ultest#handler#update_positions(expand("%"))
 augroup END
 
 
