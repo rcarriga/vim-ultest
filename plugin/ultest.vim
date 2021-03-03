@@ -271,6 +271,9 @@ endif
 augroup UltestPositionUpdater
   au!
   au BufWrite,BufRead *test* call ultest#handler#update_positions(expand("%"))
+  if !has("nvim")
+    au VimEnter *test* call ultest#handler#update_positions(expand("%"))
+  endif
 augroup END
 
 

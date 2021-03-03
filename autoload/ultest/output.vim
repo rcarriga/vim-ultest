@@ -1,3 +1,6 @@
+let s:height_buffer = has("nvim") ? 2 : 0
+let s:width_buffer = has("nvim") ? 4 : 0
+
 augroup UltestOutputClose
   autocmd!
   autocmd User UltestOutputOpen  call ultest#output#close(v:false)
@@ -16,13 +19,13 @@ function! ultest#output#open(test) abort
   if get(result, "code") == 0 | return | endif
   let output = get(result, "output", "")
   let [width, height] = s:CalculateBounds(output)
-  let cmd = ['less', "-R", "-Ps", shellescape(output)]
   if has("nvim")
+    let cmd = ['less', "-R", "-Ps", shellescape(output)]
     call s:NvimOpenFloat(cmd, width, height, "UltestOutput")
     autocmd InsertEnter,CursorMoved * ++once  call ultest#output#close(v:false)
   else
+    let cmd = ['less', "-R", "-Ps", output]
     call s:VimOpenFloat(cmd, width, height)
-    exec "tnoremap <buffer><silent> q <C-W>N:call popup_close(".g:ultest#output_windows[0].")<CR>"
   endif
 endfunction
 
@@ -82,8 +85,8 @@ function! s:CalculateBounds(path) abort
   let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".shellescape(a:path)." | wc -L"))[0])
   let height = str2nr(split(system("wc -l ".shellescape(a:path)))[0])
 
-  let height = min([max([height + 2, 20]), &lines - 2])
-  let width =  min([max([width + 4, 80]), &columns - 4])
+  let height = min([max([height + s:height_buffer, 20]), &lines - s:height_buffer])
+  let width =  min([max([width + s:width_buffer, 80]), &columns - s:width_buffer])
   return [width, height]
 endfunction
 
@@ -102,6 +105,7 @@ function! s:VimOpenFloat(cmd, width, height) abort
     \ "mapping": 1
     \}
   let buf = term_start(a:cmd, {"hidden": 1, "term_kill": "term", "term_finish": 'close', "term_highlight": "Normal"})
+  echom string(a:cmd)
   let g:ultest#output_windows = [popup_atcursor(buf, popup_options)]
 endfunction
 
