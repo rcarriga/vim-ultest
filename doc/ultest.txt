@@ -129,6 +129,9 @@ name is selected.
 
 'stop': (default "s") Stop the running process of the current test.
 
+The summary window also defines folds for each test file so they can be hidden
+as desired using the regular fold mappings.
+
 ==============================================================================
 COMMANDS                                                     *ultest-commands*
 

@@ -179,6 +179,9 @@ let g:ultest#processors = [
 " 'attach': (default "a") Attach to the running process of the current test.
 "
 " 'stop': (default "s") Stop the running process of the current test.
+"
+" The summary window also defines folds for each test file so they can be
+" hidden as desired using the regular fold mappings.
 let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "run": "r",
       \ "jumpto": "<CR>",

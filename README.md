@@ -30,6 +30,7 @@ The goal behind vim-ultest is to make running tests as seamless as possible.
   - Test result markers using signs or virtual text
   - Failure outputs in a floating window
   - Key mappings to jump between failed tests
+  - Stop long running tests
 
 ![Running Example](https://user-images.githubusercontent.com/24252670/107279654-39d2a980-6a4f-11eb-95f5-074f69b856e6.gif)
 
@@ -45,9 +46,9 @@ The goal behind vim-ultest is to make running tests as seamless as possible.
   - View all tests currently found in all test files
   - Run tests with key binding
 
-![summary](https://user-images.githubusercontent.com/24252670/107280239-f75d9c80-6a4f-11eb-9732-734becdb475d.gif)
+![summary](https://user-images.githubusercontent.com/24252670/110017932-a96e4880-7d1e-11eb-9bd7-8d4a8fd6d4f6.gif)
 
-- Multithreaded (not just asynchronous) so your NeoVim session will never be blocked
+- Multithreaded (not just asynchronous) to prevent blocking
 
 - Use existing vim-test configuration
 
@@ -72,11 +73,11 @@ Vim only:
 - [vim-hug-neovim-rpc](https://github.com/roxma/vim-hug-neovim-rpc)
 
 **Note:** Vim support is maintained with a best effort.
-Due to the differences between Vim and NeoVim, it is inevitable that bugs will occur in one and not the other.
+Due to the differences between Vim and NeoVim and their RPC libraries, it is inevitable that bugs will occur in one and not the other.
 I primarily use NeoVim so I will catch issues in it myself.
 Please file bug reports for Vim if you find them!
 
-I have not had the chance to extensively test NeoVim versions, it is recommended to stay on the latest nightly version.
+I have not had the chance to extensively test (Neo)Vim versions, it is recommended to stay on the latest nightly version.
 If you have issues with missing features, please open an issue with your editor version.
 
 vim-ultest can be installed as usual with your favourite plugin manager.
