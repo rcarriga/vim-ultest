@@ -35,7 +35,7 @@ function! ultest#output#attach(test) abort
   if type(attach_res) != v:t_list | return | endif
   let [stdout_path, py_script] = attach_res
   doautocmd User UltestOutputOpen
-  let cmd = ['python', py_script]
+  let cmd = ['python3', py_script]
   let [_width, height] = s:CalculateBounds(stdout_path)
   let width = g:ultest_attach_width
   let width = width ? width : _width
