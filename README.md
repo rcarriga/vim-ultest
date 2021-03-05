@@ -46,7 +46,7 @@ The goal behind vim-ultest is to make running tests as seamless as possible.
   - View all tests currently found in all test files
   - Run tests with key binding
 
-![summary](https://user-images.githubusercontent.com/24252670/110017932-a96e4880-7d1e-11eb-9bd7-8d4a8fd6d4f6.gif)
+![summary](https://user-images.githubusercontent.com/24252670/110024777-6b752280-7d26-11eb-9594-76005bbcfa48.gif)
 
 - Multithreaded (not just asynchronous) to prevent blocking
 
