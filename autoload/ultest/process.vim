@@ -104,7 +104,11 @@ endfunction
 
 function ultest#process#pre(test) abort
   if len(get(a:test, "name", []))
-    let newName = list2str(a:test.name)
+    if exists("*list2str")
+      let newName = list2str(a:test.name)
+    else
+      let newName = join(map(a:test.name, {nr, val -> nr2char(val)}), '')
+    endif
     let a:test.name = newName
   endif
 endfunction
