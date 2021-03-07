@@ -167,6 +167,14 @@ let g:ultest#processors = [
       \] + get(g:, "ultest_custom_processors", [])
 
 ""
+"
+let g:ultest_custom_patterns = get(g:, "ultest_custom_patterns", {})
+
+const g:ultest_patterns = extend({
+      \ "elixir#exunit": {'test': ["^\\s*test\\s+['\"](.+)['\"]\\s+do"]}
+      \ }, g:ultest_custom_patterns)
+
+""
 " Key mappings for the summary window (dict)
 " Possible values:
 "

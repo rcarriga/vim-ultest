@@ -24,8 +24,16 @@ function ultest#adapter#get_patterns(file_name) abort
   let runner = test#determine_runner(a:file_name)
   if type(runner) == v:t_number | return {} | endif
   let file_type = split(runner, "#")[0]
+  let ultest_pattern = get(g:ultest_patterns, runner, get(g:ultest_patterns, file_type))
+  if type(ultest_pattern) == v:t_dict
+    return ultest_pattern
+  endif
   try
-    return eval("g:test#".file_type."#patterns")
+    try
+      return eval("g:test#".runner."#patterns")
+    catch /.*/
+      return eval("g:test#".file_type."#patterns")
+    endtry
   catch /.*/
   endtry
 endfunction
