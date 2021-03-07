@@ -68,6 +68,10 @@ class Handler:
 
         self._vim.launch(runner(), test.id)
 
+    def external_start(self, test_dict: Dict):
+        test = Test(**test_dict)
+        self._register_started(test)
+
     def external_result(self, test_dict: Dict, exit_code: int, stdout: str = ""):
         test = Test(**test_dict)
         result = Result(id=test.id, file=test.file, code=exit_code, output=stdout)

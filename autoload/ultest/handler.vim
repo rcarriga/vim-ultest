@@ -60,3 +60,11 @@ endfunction
 function! ultest#handler#stop_test(...) abort
   return s:Call('_ultest_stop_test', a:000)
 endfunction
+
+function! ultest#handler#external_start(...) abort
+  return s:Call('_ultest_external_start', a:000)
+endfunction
+
+function! ultest#handler#external_result(...) abort
+  return s:Call('_ultest_external_result', a:000)
+endfunction
