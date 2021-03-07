@@ -130,7 +130,7 @@ class ProcessManager:
                         raise
                     except Exception:
                         self._vim.log.warn(
-                            f"An exception was thrown when starting test {test.id}",
+                                f"An exception was thrown when starting test {test.id} with command: {cmd}",
                             exc_info=True,
                         )
                         code = 1
