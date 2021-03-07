@@ -54,10 +54,6 @@ try:
         _check_started()
         return HANDLER.stop_test(*args)
 
-    def _ultest_get_process(*args):
-        _check_started()
-        return HANDLER.get_process(*args)
-
 
 except ImportError:
     from pynvim import Nvim, function, plugin
@@ -108,7 +104,3 @@ except ImportError:
         @function("_ultest_stop_test", allow_nested=True)
         def _stop_test(self, args):
             return self.handler.stop_test(*args)
-
-        @function("_ultest_get_process", sync=True)
-        def _get_process(self, args):
-            return self.handler.get_process(*args)

@@ -60,7 +60,3 @@ endfunction
 function! ultest#handler#stop_test(...) abort
   return s:Call('_ultest_stop_test', a:000)
 endfunction
-
-function! ultest#handler#get_process(...) abort
-  return s:Call('_ultest_get_process', a:000)
-endfunction

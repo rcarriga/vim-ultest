@@ -1,6 +1,6 @@
 
 
-function ultest#adapter#run_test(test) abort
+function! ultest#adapter#build_cmd(test) abort
   call ultest#process#pre(a:test)
 
   let runner = test#determine_runner(a:test.file)
@@ -16,7 +16,11 @@ function ultest#adapter#run_test(test) abort
   if has_key(g:, 'test#transformation')
     let cmd = g:test#custom_transformations[g:test#transformation](cmd)
   endif
+  return cmd
+endfunction
 
+function ultest#adapter#run_test(test) abort
+  let cmd = ultest#adapter#build_cmd(a:test)
   call ultest#handler#strategy(cmd, a:test)
 endfunction
 

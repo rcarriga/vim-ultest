@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from io import BufferedReader, BufferedWriter
 from os import path
 from threading import Event, Thread
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 
 from ..logging import UltestLogger
 from ..models import Result, Test
@@ -147,17 +147,8 @@ class ProcessManager:
         finally:
             del self._processes[test.id]
 
-    async def run_tests(self, tests: Iterable[Test]):
-        """
-        Run a list of tests. Each will be done in
-        a separate thread.
-        """
-        for test in tests:
-            self._vim.log.fdebug("Sending {test.id} to vim-test")
-            test.running = 1
-            self._processes[test.id] = None
-            self._vim.call("ultest#process#start", test)
-            self._vim.call("ultest#adapter#run_test", test)
+    def register_new_test(self, test: Test):
+        self._processes[test.id] = None
 
     def is_running(self, test_id: str) -> int:
         return int(test_id in self._processes)
