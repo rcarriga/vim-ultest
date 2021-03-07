@@ -1,4 +1,5 @@
 import logging
+from logging import handlers
 import os
 import tempfile
 
@@ -61,7 +62,7 @@ def create_logger() -> UltestLogger:
             logging._srcfile = None
             format.pop(-3)
             format.pop(-2)
-        handler = logging.FileHandler(logfile)
+        handler = handlers.RotatingFileHandler(logfile, maxBytes=20*1024, backupCount=1)
         handler.formatter = logging.Formatter(
             " | ".join(format),
             datefmt="%H:%M:%S",

@@ -54,6 +54,14 @@ try:
         _check_started()
         return HANDLER.stop_test(*args)
 
+    def _ultest_external_start(*args):
+        _check_started()
+        return HANDLER.external_start(*args)
+
+    def _ultest_external_result(*args):
+        _check_started()
+        return HANDLER.external_result(*args)
+
 
 except ImportError:
     from pynvim import Nvim, function, plugin
@@ -104,3 +112,11 @@ except ImportError:
         @function("_ultest_stop_test", allow_nested=True)
         def _stop_test(self, args):
             return self.handler.stop_test(*args)
+
+        @function("_ultest_external_start", allow_nested=True)
+        def _external_start(self, args):
+            return self.handler.external_start(*args)
+
+        @function("_ultest_external_result", allow_nested=True)
+        def _external_result(self, args):
+            return self.handler.external_result(*args)
