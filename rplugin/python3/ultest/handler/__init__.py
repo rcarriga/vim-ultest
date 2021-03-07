@@ -57,9 +57,7 @@ class Handler:
 
     def strategy(self, cmd: List, test_dict: Dict):
         test = Test(**test_dict)
-        self._vim.log.fdebug(
-            "Received test from vim-test {test.id} with args {test_args}"
-        )
+        self._vim.log.fdebug("Received test from vim-test {test.id} with args {cmd}")
 
         async def runner():
             result = await self._process_manager.run(cmd, test)
@@ -151,6 +149,7 @@ class Handler:
             return
         vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
         if not vim_patterns:
+            self._vim.log.fdebug("No patterns found for {file_name}")
             return
 
         recorded_tests = {

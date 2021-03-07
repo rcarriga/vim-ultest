@@ -13,6 +13,7 @@ class TestFinder:
 
     async def find_all(self, file_name: str, vim_patterns: Dict):
         patterns = self._convert_patterns(vim_patterns)
+        self._vim.log.fdebug("Converted pattern {vim_patterns} to {patterns}")
         with open(file_name, "r") as test_file:
             lines = test_file.readlines()
         return self._calculate_tests(file_name, patterns, lines)

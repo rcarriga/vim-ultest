@@ -153,7 +153,7 @@ class ProcessManager:
         a separate thread.
         """
         for test in tests:
-            self._vim.log.fdebug("Sending {test.id} to vim-test with runner {runner}")
+            self._vim.log.fdebug("Sending {test.id} to vim-test")
             test.running = 1
             self._processes[test.id] = None
             self._vim.call("ultest#process#start", test)
