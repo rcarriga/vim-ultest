@@ -1,6 +1,7 @@
 
 if has("nvim")
   let s:is_nvim = v:true
+  let s:update_warn_sent = 0
 else
   let s:is_nvim = v:false
   let s:yarp = yarp#py3('ultest')
@@ -8,7 +9,15 @@ endif
 
 function! s:Call(func, args) abort
   if s:is_nvim
-    return call(a:func, a:args)
+    try
+      return call(a:func, a:args)
+    catch /.*Unknown function.*/
+      " Send twice because first one isn't shown if triggered during startup
+      if s:update_warn_sent < 2 
+        echom "Error: vim-ultest remote function not detected, try running :UpdateRemotePlugins on install/update"
+        let s:update_warn_sent += 1
+      endif
+    endtry
   else
     let args = copy(a:args)
     call insert(args, a:func)

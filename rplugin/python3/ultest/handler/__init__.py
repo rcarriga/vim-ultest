@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import Test, Result
+from ..models import Result, Test
 from ..vim_client import VimClient
 from .finder import TestFinder
 from .processes import ProcessManager

@@ -2,7 +2,7 @@ import inspect
 import os
 import re
 import tempfile
-from asyncio import subprocess, CancelledError
+from asyncio import CancelledError, subprocess
 from contextlib import contextmanager
 from io import BufferedReader, BufferedWriter
 from os import path
@@ -147,9 +147,7 @@ class ProcessManager:
         finally:
             del self._processes[test.id]
 
-    async def run_tests(
-        self, tests: Iterable[Test]
-    ):
+    async def run_tests(self, tests: Iterable[Test]):
         """
         Run a list of tests. Each will be done in
         a separate thread.
