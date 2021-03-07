@@ -10,7 +10,7 @@ function ultest#adapter#run_test(test) abort
   let args = test#base#options(runner, base_args)
   let args = test#base#build_args(runner, args, "ultest")
 
-  let cmd = [executable] + args
+  let cmd = split(executable) + args
 
   call filter(cmd, '!empty(v:val)')
   if has_key(g:, 'test#transformation')
