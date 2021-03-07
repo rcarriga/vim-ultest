@@ -81,19 +81,34 @@ I have not had the chance to extensively test (Neo)Vim versions, it is recommend
 If you have issues with missing features, please open an issue with your editor version.
 
 vim-ultest can be installed as usual with your favourite plugin manager.
+**Note:** NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
 
-For example with [dein](https://github.com/Shougo/dein.vim):
+[**dein**](https://github.com/Shougo/dein.vim):
 
 ```vim
 " Vim Only
 call dein#add("roxma/nvim-yarp")
 call dein#add("roxma/vim-hug-neovim-rpc")
 
-call dein#add('janko/vim-test')
-call dein#add('rcarriga/vim-ultest')
+call dein#add("janko/vim-test")
+call dein#add("rcarriga/vim-ultest")
 ```
 
-**Note:** NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
+[**vim-plug**](https://github.com/junegunn/vim-plug)
+
+```vim
+" Vim Only
+Plug "roxma/nvim-yarp"
+Plug "roxma/vim-hug-neovim-rpc"
+
+Plug "janko/vim-test"
+Plug "rcarriga/vim-ultest", { "do": ":UpdateRemotePlugins" }
+```
+
+[packer.nvim](https://github.com/wbthomason/packer.nvim)
+```lua
+use { "rcarriga/vim-ultest", requires = {"janko/vim-test"}, run = ":UpdateRemotePlugins" } }
+```
 
 ## Usage
 
