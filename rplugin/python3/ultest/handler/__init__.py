@@ -1,6 +1,6 @@
 import os
 from shlex import split
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from pynvim import Nvim
 
@@ -73,8 +73,26 @@ class Handler:
         result = Result(id=test.id, file=test.file, code=exit_code, output=stdout)
         self._register_result(test, result)
 
-    def _register_started(self, test_dict: Dict):
-        self._vim.call
+    def _run_tests(self, tests: Iterable[Test]):
+        """
+        Run a list of tests. Each will be done in
+        a separate thread.
+        """
+        for test in tests:
+            self._vim.log.fdebug("Sending {test.id} to vim-test with runner {runner}")
+            self._register_started(test)
+            cmd = self._vim.sync_call("ultest#adapter#build_cmd", test)
+
+            async def run():
+                result = await self._process_manager.run(cmd, test)
+                self._register_result(test, result)
+
+            self._vim.launch(run(), test.id)
+
+    def _register_started(self, test: Test):
+        test.running = 1
+        self._process_manager.register_new_test(test)
+        self._vim.call("ultest#process#start", test)
 
     def _register_result(self, test: Test, result: Result):
         self._results.add(result.file, result)
@@ -140,12 +158,8 @@ class Handler:
 
         test = self._finder.get_nearest_from(line, tests, strict=False)
         if test:
-
-            async def run():
-                self._vim.log.finfo("Nearest test found is {test.id}")
-                await self._process_manager.run_tests([test])  # type: ignore
-
-            self._vim.launch(run(), test.id)
+            self._vim.log.finfo("Nearest test found is {test.id}")
+            self._run_tests([test])  # type: ignore
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -154,15 +168,9 @@ class Handler:
         :param test_id: Test to run
         :param file_name: File to run in.
         """
-
-        async def run():
-            self._vim.log.finfo("Running test {test_id} in {file_name}")
-            tests = self._stored_tests.get(file_name, [])
-            await self._process_manager.run_tests(
-                [test for test in tests if test.id == test_id]
-            )
-
-        self._vim.launch(run(), test_id)
+        self._vim.log.finfo("Running test {test_id} in {file_name}")
+        tests = self._stored_tests.get(file_name, [])
+        self._run_tests([test for test in tests if test.id == test_id])
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
         """
