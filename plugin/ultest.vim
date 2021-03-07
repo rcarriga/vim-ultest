@@ -189,43 +189,42 @@ let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "attach": "a",
       \ "stop": "s"
       \ })
-
 ""
 " Run all tests in the current file
-command! -bar Ultest call ultest#handler#run_all(expand("%"))
+command! Ultest call ultest#run_file()
 
 ""
 " Run nearest test in the current file
-command! -bar UltestNearest call ultest#handler#run_nearest(line("."), expand("%"))
+command! UltestNearest call ultest#run_nearest()
 
 ""
 " Show the output of the nearest test in the current file
-command! -bar UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+command! UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:p"), v:false))
 
 ""
 " Attach to the running process of a test to be able to send input and read
 " output as it runs. This is useful for debugging
-command! -bar UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+command! UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%:p"), v:false))
 
 ""
 " Stop all running jobs for the current file
-command! -bar UltestStop call ultest#stop_file()
+command! UltestStop call ultest#stop_file()
 
 ""
 " Stop any running jobs and results for the nearest test
-command! -bar UltestStopNearest call ultest#stop_nearest()
+command! UltestStopNearest call ultest#stop_nearest()
 
 ""
 " Toggle the summary window between open and closed
-command! -bar UltestSummary call ultest#summary#toggle()
+command! UltestSummary call ultest#summary#toggle()
 
 ""
 " Open the summary window
-command! -bar UltestSummaryOpen call ultest#summary#open()
+command! UltestSummaryOpen call ultest#summary#open()
 
 ""
 " Close the summary window
-command! -bar UltestSummaryClose call ultest#summary#close()
+command! UltestSummaryClose call ultest#summary#close()
 
 ""
 " @section Mappings
@@ -267,15 +266,15 @@ nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
 if g:ultest_output_on_line
   augroup UltestOutputOnLine
     au!
-    au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:true))
+    au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:p"), v:true))
   augroup END
 endif
 
 augroup UltestPositionUpdater
   au!
-  au BufWrite,BufRead *test* call ultest#handler#update_positions(expand("%"))
+  au BufWrite,BufRead *test* call ultest#handler#update_positions(expand("%:p"))
   if !has("nvim")
-    au VimEnter *test* call ultest#handler#update_positions(expand("%"))
+    au VimEnter *test* call ultest#handler#update_positions(expand("%:p"))
   endif
 augroup END
 

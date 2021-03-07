@@ -2,7 +2,7 @@ import inspect
 import os
 import re
 import tempfile
-from asyncio import subprocess
+from asyncio import subprocess, CancelledError
 from contextlib import contextmanager
 from io import BufferedReader, BufferedWriter
 from os import path
@@ -122,11 +122,21 @@ class ProcessManager:
         try:
             async with self._vim.semaphore:
                 with test_process.open() as (in_handle, out_handle):
-                    process = await subprocess.create_subprocess_exec(
-                        *cmd, stdin=in_handle, stderr=out_handle, stdout=out_handle
-                    )
-                    test_process.process = process
-                    code = await process.wait()
+                    try:
+                        process = await subprocess.create_subprocess_exec(
+                            *cmd, stdin=in_handle, stderr=out_handle, stdout=out_handle
+                        )
+                    except CancelledError:
+                        raise
+                    except Exception:
+                        self._vim.log.warn(
+                            f"An exception was thrown when starting test {test.id}",
+                            exc_info=True,
+                        )
+                        code = 1
+                    else:
+                        test_process.process = process
+                        code = await process.wait()
                     self._vim.log.fdebug(
                         "Test {test.id} complete with exit code: {code}"
                     )
@@ -137,13 +147,15 @@ class ProcessManager:
         finally:
             del self._processes[test.id]
 
-    async def run_tests(self, tests: Iterable[Test]):
+    async def run_tests(
+        self, tests: Iterable[Test]
+    ):
         """
         Run a list of tests. Each will be done in
         a separate thread.
         """
         for test in tests:
-            self._vim.log.fdebug("Sending {test.id} to vim-test")
+            self._vim.log.fdebug("Sending {test.id} to vim-test with runner {runner}")
             test.running = 1
             self._processes[test.id] = None
             self._vim.call("ultest#process#start", test)

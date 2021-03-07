@@ -166,9 +166,9 @@ COMMANDS                                                     *ultest-commands*
 ==============================================================================
 FUNCTIONS                                                   *ultest-functions*
 
-ultest#status([expr])                                        *ultest#status()*
-  Get the status of a buffer. If the [expr] argument is not given, the current
-  buffer will be used. See bufname() for the use of [expr].
+ultest#status([file])                                        *ultest#status()*
+  Get the status of a file. If the [file] argument is not given, the current
+  buffer will be used. Full paths are expected for [file].
 
   The return value is a dict with the following keys:
 
@@ -180,13 +180,13 @@ ultest#status([expr])                                        *ultest#status()*
 
   'running': Number of tests running
 
-ultest#is_test_file([expr])                            *ultest#is_test_file()*
+ultest#is_test_file([file])                            *ultest#is_test_file()*
   Check if a file has tests detected within it. N.B. This can return false if
   a file has not been processed yet. You can use the 'User
   UltestPositionsUpdate' autocommand to detect when a file has been processed.
 
-  If the [expr] argument is not given, the current buffer will be used. See
-  bufname() for the use of [expr].
+  If the [file] argument is not given, the current buffer will be used. Full
+  paths are expected for [file].
 
 ==============================================================================
 HIGHLIGHTS                                                 *ultest-highlights*

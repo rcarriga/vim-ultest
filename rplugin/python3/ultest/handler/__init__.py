@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import Test
+from ..models import Test, Result
 from ..vim_client import VimClient
 from .finder import TestFinder
 from .processes import ProcessManager
@@ -55,35 +55,35 @@ class Handler:
             self._vim.log.debug("Clearing COLUMNS value")
             os.environ.pop("COLUMNS")
 
-    def strategy(self, cmd: str):
-        """
-        Only meant to be called by vim-test.
-        Acts as custom strategy.
-
-        :param cmd: Command to run with file name, test name and line no appended.
-        """
-
-        args = split(cmd)
-        test_id = args[-1]
-        file = args[-2]
-        matching_test = [
-            test for test in self._stored_tests[file] if test.id == test_id
-        ]
-        test = matching_test[0]
-        self._vim.log.fdebug("Received test from vim-test {test.id}")
+    def strategy(self, cmd: List, test_dict: Dict):
+        test = Test(**test_dict)
+        self._vim.log.fdebug(
+            "Received test from vim-test {test.id} with args {test_args}"
+        )
 
         async def runner():
-            result = await self._process_manager.run(args[:-2], test)
+            result = await self._process_manager.run(cmd, test)
             test.running = 0
-            self._results.add(test.file, result)
-            self._vim.call("ultest#process#exit", test, result)
-            if self._show_on_run:
-                self._vim.schedule(self._present_output, result)
+            self._register_result(test, result)
 
         self._vim.launch(runner(), test.id)
 
+    def external_result(self, test_dict: Dict, exit_code: int, stdout: str = ""):
+        test = Test(**test_dict)
+        result = Result(id=test.id, file=test.file, code=exit_code, output=stdout)
+        self._register_result(test, result)
+
+    def _register_started(self, test_dict: Dict):
+        self._vim.call
+
+    def _register_result(self, test: Test, result: Result):
+        self._results.add(result.file, result)
+        self._vim.call("ultest#process#exit", test, result)
+        if self._show_on_run and result.output:
+            self._vim.schedule(self._present_output, result)
+
     def _present_output(self, result):
-        if result.code and self._vim.sync_call("expand", "%") == result.file:
+        if result.code and self._vim.sync_call("expand", "%:p") == result.file:
             self._vim.log.fdebug("Showing {result.id} output")
             line = self._vim.sync_call("getbufinfo", result.file)[0].get("lnum")
             nearest = self.get_nearest_test(line, result.file, strict=False)
@@ -97,12 +97,12 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        async def runner():
+        async def run():
             self._vim.log.finfo("Running all tests in {file_name}")
             tests = self._stored_tests.get(file_name, [])
             await self._process_manager.run_tests(tests)
 
-        self._vim.launch(runner(), "run_all")
+        self._vim.launch(run(), "run_all")
 
     def run_nearest(self, line: int, file_name: str):
         """
@@ -117,11 +117,11 @@ class Handler:
         test = self._finder.get_nearest_from(line, tests, strict=False)
         if test:
 
-            async def runner():
+            async def run():
                 self._vim.log.finfo("Nearest test found is {test.id}")
                 await self._process_manager.run_tests([test])  # type: ignore
 
-            self._vim.launch(runner(), test.id)
+            self._vim.launch(run(), test.id)
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -131,14 +131,14 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        async def runner():
+        async def run():
             self._vim.log.finfo("Running test {test_id} in {file_name}")
             tests = self._stored_tests.get(file_name, [])
             await self._process_manager.run_tests(
                 [test for test in tests if test.id == test_id]
             )
 
-        self._vim.launch(runner(), test_id)
+        self._vim.launch(run(), test_id)
 
     def update_positions(self, file_name: str):
         """
@@ -156,6 +156,10 @@ class Handler:
         recorded_tests = {
             test.id: test for test in self._stored_tests.get(file_name, [])
         }
+        if not recorded_tests:
+            self._vim.call("setbufvar", file_name, "ultest_results", {})
+            self._vim.call("setbufvar", file_name, "ultest_tests", {})
+            self._vim.call("setbufvar", file_name, "ultest_sorted_tests", [])
 
         async def runner():
             self._vim.log.finfo("Updating positions in {file_name}")
@@ -212,6 +216,7 @@ class Handler:
         return test and test.dict()
 
     def get_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:
+        self._vim.message("heleele")
         self._vim.log.finfo("Creating script to attach to test {test_id}")
         return self._process_manager.create_attach_script(test_id)
 

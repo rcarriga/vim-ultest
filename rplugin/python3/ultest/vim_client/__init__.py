@@ -127,6 +127,9 @@ class VimClient:
         expr = self.construct_function(func, *args)
         return self._eval(expr, sync=True)
 
+    def eval(self, expr: str) -> Any:
+        return self._eval(expr, sync=False)
+
     def sync_eval(self, expr: str) -> Any:
         return self._eval(expr, sync=True)
 

@@ -51,6 +51,9 @@ class JobManager:
                 self._logger.exception(f"Task was cancelled prematurely {run_task}")
             else:
                 if run_task in done:
+                    e = run_task.exception()
+                    if e:
+                        self._logger.warn(f"Exception throw in job: {e}")
                     self._logger.fdebug("Finished job with group {job_group}")
                 else:
                     run_task.cancel()

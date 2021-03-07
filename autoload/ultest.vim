@@ -1,8 +1,8 @@
 ""
 " @public
-" @usage [expr]
-" Get the status of a buffer. If the [expr] argument is not given, the current
-" buffer will be used. See bufname() for the use of [expr].
+" @usage [file]
+" Get the status of a file. If the [file] argument is not given, the current
+" buffer will be used. Full paths are expected for [file].
 "
 " The return value is a dict with the following keys:
 "
@@ -13,9 +13,9 @@
 " 'failed': Number of tests failed
 "
 " 'running': Number of tests running
-function ultest#status(...) abort
+function! ultest#status(...) abort
   try
-    let file = len(a:000) == 1 ? a:0 : expand("%")
+    let file = a:0 == 1 ? a:1 : expand("%")
     let ids = getbufvar(file, "ultest_sorted_tests", [])
     let tests = getbufvar(file, "ultest_tests", {})
     let results = getbufvar(file, "ultest_results", {})
@@ -38,21 +38,32 @@ endfunction
 
 ""
 " @public
-" @usage [expr]
+" @usage [file]
 " Check if a file has tests detected within it.
 " N.B. This can return false if a file has not been processed yet.
 " You can use the 'User UltestPositionsUpdate' autocommand to detect when a
 " file has been processed.
 "
-"If the [expr] argument is not given, the current
-" buffer will be used. See bufname() for the use of [expr].
-function ultest#is_test_file(...) abort
-    let file = len(a:000) == 1 ? a:0 : expand("%")
+"If the [file] argument is not given, the current
+" buffer will be used. Full paths are expected for [file].
+function! ultest#is_test_file(...) abort
+    let file = a:0 == 1 ? a:1 : expand("%:p")
     return !empty(getbufvar(file, "ultest_tests", {}))
 endfunction
 
+function! ultest#run_file(...) abort
+  let file = a:0 == 1 ? a:1 : expand("%:p")
+  call ultest#handler#run_all(file)
+endfunction
+
+function! ultest#run_nearest(...) abort
+  let file = a:0 == 1 ? a:1 : expand("%:p")
+  let line = getbufinfo(file)[0]["lnum"]
+  call ultest#handler#run_nearest(line, file)
+endfunction
+
 function! ultest#stop_file(...) abort
-  let file = len(a:000) == 1 ? a:0 : expand("%")
+  let file = a:0 == 1 ? a:1 : expand("%")
   let ids = getbufvar(file, "ultest_sorted_tests", [])
   let tests = getbufvar(file, "ultest_tests", {})
   for test_id in ids
@@ -63,7 +74,7 @@ function! ultest#stop_file(...) abort
 endfunction
 
 function! ultest#stop_nearest(...) abort
-  let file = len(a:000) == 1 ? a:0 : expand("%")
+  let file = a:0 == 1 ? a:1 : expand("%")
   let test = ultest#handler#get_nearest_test(line("."), file, v:false)
   call ultest#handler#stop_test(test)
   call ultest#handler#update_positions(file)

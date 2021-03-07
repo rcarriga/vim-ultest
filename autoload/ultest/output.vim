@@ -71,7 +71,7 @@ endfunction
 
 function ultest#output#jumpto() abort
   if !s:OutputIsOpen()
-    call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+    call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:p"), v:false))
     if !s:OutputIsOpen()
       return
     endif
@@ -105,7 +105,6 @@ function! s:VimOpenFloat(cmd, width, height) abort
     \ "mapping": 1
     \}
   let buf = term_start(a:cmd, {"hidden": 1, "term_kill": "term", "term_finish": 'close', "term_highlight": "Normal"})
-  echom string(a:cmd)
   let g:ultest#output_windows = [popup_atcursor(buf, popup_options)]
 endfunction
 

@@ -56,7 +56,6 @@ endfunction
 
 function! s:GetFoldLevel(lnum) abort
   let l = getline(a:lnum)
-  echom l
   if l == "" | return 0 | endif
   return 1
 endfunction
@@ -222,7 +221,6 @@ endfunction
 " 1) Currently selected test file (or "")
 " 2) Currently selected test (or "")
 function! s:GetCurrentLine()
-  " Increase by one to account for no space at top
   if !s:IsOpen() | return 0 | endif
   return getbufinfo(s:buffer_name)[0]["lnum"]
 endfunction

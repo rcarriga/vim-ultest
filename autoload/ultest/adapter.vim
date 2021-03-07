@@ -2,11 +2,22 @@
 
 function ultest#adapter#run_test(test) abort
   call ultest#process#pre(a:test)
+
   let runner = test#determine_runner(a:test.file)
+  let executable = test#base#executable(runner)
+
   let base_args = test#base#build_position(runner, "nearest", a:test)
-  let args = extend(base_args, [shellescape(a:test.file), a:test.id])
-  let opts = test#base#options(runner, args, "nearest")
-  call test#execute(runner, opts, "ultest")
+  let args = test#base#options(runner, base_args)
+  let args = test#base#build_args(runner, args, "ultest")
+
+  let cmd = [executable] + args
+
+  call filter(cmd, '!empty(v:val)')
+  if has_key(g:, 'test#transformation')
+    let cmd = g:test#custom_transformations[g:test#transformation](cmd)
+  endif
+
+  call ultest#handler#strategy(cmd, a:test)
 endfunction
 
 function ultest#adapter#get_patterns(file_name) abort
