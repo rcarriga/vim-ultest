@@ -290,11 +290,20 @@ if g:ultest_output_on_line
   augroup END
 endif
 
+function! s:MonitorFile(file) abort
+  if !test#test_file(a:file) | return | endif
+  let buffer = bufnr(a:file)
+  let full_file = fnamemodify(a:file, ":p")
+  call ultest#handler#update_positions(full_file)
+  exec 'au BufWrite <buffer='.buffer.'> call ultest#handler#update_positions("'.full_file.'")'
+  exec 'au BufUnload <buffer='.buffer.'> au! * <buffer='.buffer'>'
+endfunction
+
 augroup UltestPositionUpdater
   au!
-  au BufWrite,BufRead *test* call ultest#handler#update_positions(expand("%:p"))
+  au BufEnter * call <SID>MonitorFile(expand("<afile>"))
   if !has("nvim")
-    au VimEnter *test* call ultest#handler#update_positions(expand("%:p"))
+    au VimEnter * call <SID>MonitorFile(expand("<afile>"))
   endif
 augroup END
 
