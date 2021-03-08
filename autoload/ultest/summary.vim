@@ -148,7 +148,11 @@ endfunction
 
 function! s:Clear() abort
   if bufexists(s:buffer_name)
-    call clearmatches(bufwinnr(s:buffer_name))
+    if has("patch8.1.1084")
+      call clearmatches(bufwinnr(s:buffer_name))
+    else
+      call clearmatches()
+    endif
   endif
 endfunction
 
