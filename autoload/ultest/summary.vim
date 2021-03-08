@@ -148,7 +148,7 @@ endfunction
 
 function! s:Clear() abort
   if bufexists(s:buffer_name)
-    if has("patch8.1.1084")
+    if has("nvim-0.5.0") || has("patch-8.1.1084")
       call clearmatches(bufwinnr(s:buffer_name))
     else
       call clearmatches()
