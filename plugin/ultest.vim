@@ -167,7 +167,19 @@ let g:ultest#processors = [
       \] + get(g:, "ultest_custom_processors", [])
 
 ""
+" Custom patterns for identifying tests. This dictionary should use the keys
+" in the form '<language>' or '<language>#<runner>'. The values should be a
+" dictionary with the following keys:
 "
+" 'test': A list a python-style regex patterns that can each indentify tests
+" in a line of code
+"
+" 'namepsace': A list of python-style regex patterns that can idenitfy test
+" namespaces (e.g. Classes). This feature is currently unsupporte but will be
+" in the future.
+"
+" If you find a missing language that requires you to set this value,
+" considering onpening an issue/PR to make it available to others.
 let g:ultest_custom_patterns = get(g:, "ultest_custom_patterns", {})
 
 let g:ultest_patterns = extend({

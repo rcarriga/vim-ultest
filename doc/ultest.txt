@@ -115,6 +115,21 @@ has been replaced.
 'clear': A function which takes a test which has been removed for some reason.
 
 
+                                                    *g:ultest_custom_patterns*
+Custom patterns for identifying tests. This dictionary should use the keys in
+the form '<language>' or '<language>#<runner>'. The values should be a
+dictionary with the following keys:
+
+'test': A list a python-style regex patterns that can each indentify tests in
+a line of code
+
+'namepsace': A list of python-style regex patterns that can idenitfy test
+namespaces (e.g. Classes). This feature is currently unsupporte but will be in
+the future.
+
+If you find a missing language that requires you to set this value,
+considering onpening an issue/PR to make it available to others.
+
                                                    *g:ultest_summary_mappings*
 Key mappings for the summary window (dict) Possible values:
 
