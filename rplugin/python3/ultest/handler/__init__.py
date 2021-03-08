@@ -60,7 +60,9 @@ class Handler:
         self._vim.log.fdebug("Received test from vim-test {test.id} with args {cmd}")
 
         async def runner():
-            result = await self._process_manager.run(cmd, test)
+            # Some runner position builders in vim-test don't split args properly (e.g. go test)
+            safe_cmd = split(" ".join(cmd))
+            result = await self._process_manager.run(safe_cmd, test)
             test.running = 0
             self._register_result(test, result)
 
@@ -81,7 +83,7 @@ class Handler:
             self._vim.schedule(self._present_output, result)
 
     def _present_output(self, result):
-        if result.code and self._vim.sync_call("expand", "%:p") == result.file:
+        if result.code and self._vim.sync_call("expand", "%") == result.file:
             self._vim.log.fdebug("Showing {result.id} output")
             line = self._vim.sync_call("getbufinfo", result.file)[0].get("lnum")
             nearest = self.get_nearest_test(line, result.file, strict=False)

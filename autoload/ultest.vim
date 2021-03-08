@@ -47,17 +47,17 @@ endfunction
 "If the [file] argument is not given, the current
 " buffer will be used. Full paths are expected for [file].
 function! ultest#is_test_file(...) abort
-    let file = a:0 == 1 ? a:1 : expand("%:p")
+    let file = a:0 == 1 ? a:1 : expand("%")
     return !empty(getbufvar(file, "ultest_tests", {}))
 endfunction
 
 function! ultest#run_file(...) abort
-  let file = a:0 == 1 ? a:1 : expand("%:p")
+  let file = a:0 == 1 ? a:1 : expand("%")
   call ultest#handler#run_all(file)
 endfunction
 
 function! ultest#run_nearest(...) abort
-  let file = a:0 == 1 ? a:1 : expand("%:p")
+  let file = a:0 == 1 ? a:1 : expand("%")
   let line = getbufinfo(file)[0]["lnum"]
   call ultest#handler#run_nearest(line, file)
 endfunction
