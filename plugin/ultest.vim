@@ -58,6 +58,12 @@ let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
 
 ""
 " Show failed outputs when cursor is on first line of test.
+"
+" This relies on the 'updatetime' setting which by default is 4 seconds.
+" A longer 'updatetime' will mean the window takes longer to show 
+" automatically but a shorter time means (Neo)Vim will write to disk 
+" much more often which can degrade SSDs over time and cause slowdowns on HDDs.
+"
 " Due to how Vim handles terminal popups, this is disabled by default as it
 " can be annoying.
 " (default: has("nvim"))
