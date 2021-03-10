@@ -106,6 +106,7 @@ Plug "rcarriga/vim-ultest", { "do": ":UpdateRemotePlugins" }
 ```
 
 [packer.nvim](https://github.com/wbthomason/packer.nvim)
+
 ```lua
 use { "rcarriga/vim-ultest", requires = {"janko/vim-test"}, run = ":UpdateRemotePlugins" } }
 ```
@@ -130,6 +131,9 @@ let test#python#pytest#options = "--color=yes"
 
 let test#javascript#jest#options = "--color=always"
 ```
+
+**Note**: The window to show results relies on the 'updatetime' setting which by default is 4 seconds.
+A longer 'updatetime' will mean the window takes longer to show automatically but a shorter time means (Neo)Vim will write to disk much more often which can degrade SSDs over time and cause slowdowns on HDDs.
 
 ### Commands
 
