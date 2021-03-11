@@ -132,7 +132,6 @@ function! s:FullRender() abort
     call setbufline(s:buffer_name, 1, lines)
   endif
   silent call deletebufline(s:buffer_name, len(lines)+1, "$")
-  silent call deletebufline(s:buffer_name, len(lines)+1, "$")
   call setbufvar(s:buffer_name, "&modifiable", 0)
 endfunction
 

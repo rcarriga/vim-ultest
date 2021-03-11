@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from asyncio import CancelledError, Event, Semaphore
 from collections import defaultdict
 from threading import Thread
@@ -54,6 +55,11 @@ class JobManager:
                     e = run_task.exception()
                     if e:
                         self._logger.warn(f"Exception throw in job: {e}")
+                        self._logger.warn(
+                            "\n".join(
+                                traceback.format_exception(type(e), e, e.__traceback__)
+                            )
+                        )
                     self._logger.fdebug("Finished job with group {job_group}")
                 else:
                     run_task.cancel()

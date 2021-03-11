@@ -103,7 +103,7 @@ function ultest#process#exit(test, result) abort
 endfunction
 
 function ultest#process#pre(test) abort
-  if len(get(a:test, "name", []))
+  if type(a:test.name) == v:t_list
     if exists("*list2str")
       let newName = list2str(a:test.name)
     else

@@ -10,7 +10,7 @@ let g:ultest_buffers = []
 
 ""
 " @section Introduction
-" @order introduction config commands functions highlights mappings
+" @order introduction config commands functions highlights mappings debugging
 " @stylized vim-ultest
 "
 " The ultimate testing plugin for Vim/NeoVim
@@ -65,8 +65,8 @@ let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
 " Show failed outputs when cursor is on first line of test.
 "
 " This relies on the 'updatetime' setting which by default is 4 seconds.
-" A longer 'updatetime' will mean the window takes longer to show 
-" automatically but a shorter time means (Neo)Vim will write to disk 
+" A longer 'updatetime' will mean the window takes longer to show
+" automatically but a shorter time means (Neo)Vim will write to disk
 " much more often which can degrade SSDs over time and cause slowdowns on HDDs.
 "
 " Due to how Vim handles terminal popups, this is disabled by default as it
@@ -240,6 +240,10 @@ command! Ultest call ultest#run_file()
 command! UltestNearest call ultest#run_nearest()
 
 ""
+" Debug the nearest test with nvim-dap
+command! UltestDebugNearest lua require("ultest").dap_run_nearest()
+
+""
 " Show the output of the nearest test in the current file
 command! UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:false))
 
@@ -292,6 +296,8 @@ command! UltestSummaryClose call ultest#summary#close()
 " <Plug>(ultest-stop-file) 	 Stop all running jobs for current file
 "
 " <Plug>(ultest-stop-nearest) 	 Stop any running jobs for nearest test
+"
+" <Plug>(ultest-debug-nearest)	  Debug the nearest test with nvim-dap
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
@@ -304,6 +310,7 @@ nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-attach) :UltestAttach<CR>
 nnoremap <silent><Plug>(ultest-stop-file) :UltestStop<CR>
 nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
+nnoremap <silent><Plug>(ultest-debug-nearest) :lua require("ultest").dap_run_nearest()<CR>
 
 if g:ultest_output_on_line
   augroup UltestOutputOnLine
@@ -351,3 +358,90 @@ if !has("vim_starting")
   endfor
 end
 
+
+""
+" @section Debugging
+"
+" vim-ultest supports debugging through nvim-dap. Due to the how debuggng
+" configurations can vary greatly between users and projects, some
+" configuration is required for test debugging to work.
+"
+" You must provide a way to build a suitable nvim-dap confiuration to run a
+" test, given the original command for the test. The command is given in the
+" form of a list of strings. The returned table should contain a 'dap' entry
+" which will be provided to nvim-dap's 'run' function.
+"
+" For example with a python test using the adapter defined in nvim-dap-python:
+" >
+"   function(cmd)
+"     -- The command can start with python command directly or an env manager
+"     local non_modules = {'python', 'pipenv', 'poetry'}
+"     -- Index of the python module to run the test.
+"     local module
+"     if vim.tbl_contains(non_modules, cmd[1]) then
+"       module = cmd[3]
+"     else
+"       module = cmd[1]
+"     end
+"     -- Remaining elements are arguments to the module
+"     local args = vim.list_slice(cmd, module_index + 1)
+"     return {
+"       dap = {
+"         type = 'python',
+"         request = 'launch',
+"         module = module,
+"         args = args
+"       }
+"     }
+"   end,
+" <
+" This will separate out the module name and arguments to provide to the
+" nvim-dap-python adapter.
+"
+" To provide this to vim-ultest, call the setup function, providing a table
+" with a 'builders' entry, with your language mapped to the builder. If you require
+" multiple runners, the key can be in the form of '<language>#<runner>'
+" (Example: 'python#pytest')
+" >
+"   require("ultest").setup({
+"     builders = {
+"       ['pyton#pytest'] = function (cmd)
+"         ...
+"       end
+"     }
+"   })
+" <
+"
+" Some adapters don't provide an exit code when running tests, such as
+" vscode-go. This causes vim-ultest to never receive a result. To work around
+" this, you can provide a 'parse_result' entry in the returned table of your
+" config builder function which will receive the output of the program as a
+" list of lines. You can then return an exit code for the test.
+" For example with vscode-go and gotest, the final line will state 'FAIL' on a
+" failed test.
+" >
+"   ["go#gotest"] = function(cmd)
+"     local args = {}
+"     for i = 3, #cmd - 1, 1 do
+"       local arg = cmd[i]
+"       if vim.startswith(arg, "-") then
+"         -- Delve requires test flags be prefix with 'test.'
+"         arg = "-test." .. string.sub(arg, 2)
+"       end
+"       args[#args + 1] = arg
+"     end
+"     return {
+"       dap = {
+"         type = "go",
+"         request = "launch",
+"         mode = "test",
+"         program = "${workspaceFolder}",
+"         dlvToolPath = vim.fn.exepath("dlv"),
+"         args = args
+"       },
+"       parse_result = function(lines)
+"         return lines[#lines] == "FAIL" and 1 or 0
+"       end
+"     }
+"   end
+" < 

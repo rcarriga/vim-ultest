@@ -1,9 +1,11 @@
 
+function! ultest#adapter#get_runner(file)
+  return test#determine_runner(a:file)
+endfunction
 
 function! ultest#adapter#build_cmd(test) abort
   call ultest#process#pre(a:test)
-
-  let runner = test#determine_runner(a:test.file)
+  let runner = ultest#adapter#get_runner(a:test.file)
   let executable = test#base#executable(runner)
 
   let base_args = test#base#build_position(runner, "nearest", a:test)
@@ -16,6 +18,7 @@ function! ultest#adapter#build_cmd(test) abort
   if has_key(g:, 'test#transformation')
     let cmd = g:test#custom_transformations[g:test#transformation](cmd)
   endif
+  let cmd = ultest#handler#safe_split(cmd)
   return cmd
 endfunction
 

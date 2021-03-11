@@ -1,6 +1,6 @@
 import os
 from shlex import split
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from pynvim import Nvim
 
@@ -55,26 +55,24 @@ class Handler:
             self._vim.log.debug("Clearing COLUMNS value")
             os.environ.pop("COLUMNS")
 
-    def strategy(self, cmd: List, test_dict: Dict):
-        test = Test(**test_dict)
-        self._vim.log.fdebug("Received test from vim-test {test.id} with args {cmd}")
+    def safe_split(self, cmd: Union[str, List[str]]) -> List[str]:
+        # Some runner position builders in vim-test don't split args properly (e.g. go test)
+        return split(cmd if isinstance(cmd, str) else " ".join(cmd))
 
-        async def runner():
-            # Some runner position builders in vim-test don't split args properly (e.g. go test)
-            safe_cmd = split(" ".join(cmd))
-            result = await self._process_manager.run(safe_cmd, test)
-            test.running = 0
-            self._register_result(test, result)
-
-        self._vim.launch(runner(), test.id)
-
-    def external_start(self, test_dict: Dict):
+    def external_start(self, test_dict: Dict, stdout: str = ""):
+        self._vim.log.fdebug(
+            "External test {test_dict} registered with stdout {stdout}"
+        )
         test = Test(**test_dict)
         self._register_started(test)
+        if stdout:
+            self._process_manager.register_external_output(test.id, stdout)
 
     def external_result(self, test_dict: Dict, exit_code: int, stdout: str = ""):
         test = Test(**test_dict)
         result = Result(id=test.id, file=test.file, code=exit_code, output=stdout)
+        self._vim.log.fdebug("External test {test.id} result registered: {result}")
+        self._process_manager.clear_external_output(test.id)
         self._register_result(test, result)
 
     def _run_tests(self, tests: Iterable[Test]):
@@ -83,11 +81,11 @@ class Handler:
         a separate thread.
         """
         for test in tests:
-            self._vim.log.fdebug("Sending {test.id} to vim-test with runner {runner}")
+            self._vim.log.fdebug("Sending {test.id} to vim-test")
             self._register_started(test)
             cmd = self._vim.sync_call("ultest#adapter#build_cmd", test)
 
-            async def run():
+            async def run(cmd=cmd, test=test):
                 result = await self._process_manager.run(cmd, test)
                 self._register_result(test, result)
 
@@ -128,16 +126,11 @@ class Handler:
             )
 
             def run_after_update():
-                self.run_all(file_name, update_empty=False)
+                self._vim.schedule(self.run_all, file_name, update_empty=False)
 
             self.update_positions(file_name, callback=run_after_update)
-
         if tests:
-
-            async def run():
-                await self._process_manager.run_tests(tests)
-
-            self._vim.launch(run(), "run_all")
+            self._run_tests(tests)
 
     def run_nearest(self, line: int, file_name: str, update_empty: bool = True):
         """
@@ -156,7 +149,9 @@ class Handler:
             )
 
             def run_after_update():
-                self.run_nearest(line, file_name, update_empty=False)
+                self._vim.schedule(
+                    self.run_nearest, line, file_name, update_empty=False
+                )
 
             return self.update_positions(file_name, callback=run_after_update)
 
