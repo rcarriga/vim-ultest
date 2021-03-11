@@ -25,10 +25,6 @@ function! s:Call(func, args) abort
   endif
 endfunction
 
-function! ultest#handler#strategy(...) abort
-  call s:Call('_ultest_strategy', a:000)
-endfunction
-
 function! ultest#handler#run_all(...) abort
   call s:Call('_ultest_run_all', a:000)
 endfunction
@@ -67,4 +63,8 @@ endfunction
 
 function! ultest#handler#external_result(...) abort
   return s:Call('_ultest_external_result', a:000)
+endfunction
+
+function! ultest#handler#safe_split(...) abort
+  return s:Call('_ultest_safe_split', a:000)
 endfunction

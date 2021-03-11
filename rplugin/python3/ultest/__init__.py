@@ -22,10 +22,6 @@ try:
             logger = create_logger()
             HANDLER = HandlerFactory.create(vim, logger)
 
-    def _ultest_strategy(*args):
-        _check_started()
-        HANDLER.strategy(*args)
-
     def _ultest_run_all(*args):
         _check_started()
         HANDLER.run_all(*args)
@@ -62,6 +58,10 @@ try:
         _check_started()
         return HANDLER.external_result(*args)
 
+    def _ultest_safe_split(*args):
+        _check_started()
+        return HANDLER.safe_split(*args)
+
 
 except ImportError:
     from pynvim import Nvim, function, plugin
@@ -80,10 +80,6 @@ except ImportError:
 
                 self._handler = HandlerFactory.create(self._vim, create_logger())
             return self._handler
-
-        @function("_ultest_strategy", allow_nested=True)
-        def _strategy(self, args):
-            self.handler.strategy(*args)
 
         @function("_ultest_run_all", allow_nested=True)
         def _run_all(self, args):
@@ -120,3 +116,7 @@ except ImportError:
         @function("_ultest_external_result", allow_nested=True)
         def _external_result(self, args):
             return self.handler.external_result(*args)
+
+        @function("_ultest_safe_split", sync=True)
+        def _safe_split(self, args):
+            return self.handler.safe_split(*args)

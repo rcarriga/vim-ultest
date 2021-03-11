@@ -82,6 +82,7 @@ class ProcessManager:
         self._vim = vim
         self._dir = tempfile.TemporaryDirectory(prefix="ultest")
         self._processes: Dict[str, Optional[TestProcess]] = {}
+        self._external_stdout: Dict[str, str] = {}
 
     def _test_file_dir(self, file: str) -> str:
         return os.path.join(
@@ -150,6 +151,14 @@ class ProcessManager:
     def register_new_test(self, test: Test):
         self._processes[test.id] = None
 
+    def register_external_output(self, test_id: str, path: str):
+        self._vim.log.finfo("Saving external stdout path '{path}' for test {test_id}")
+        self._external_stdout[test_id] = path
+
+    def clear_external_output(self, test_id: str):
+        self._vim.log.finfo("Removing external stdout path for test {test_id}")
+        self._external_stdout.pop(test_id, None)
+
     def is_running(self, test_id: str) -> int:
         return int(test_id in self._processes)
 
@@ -167,12 +176,20 @@ class ProcessManager:
         which is a FIFO/named pipe.
         """
         test_process = self._processes.get(test_id)
-        if not test_process:
+        if test_process:
+            OUT_FILE = test_process.out_path
+            IN_FILE = test_process.in_path
+        else:
+            OUT_FILE = self._external_stdout.get(test_id)
+            IN_FILE = None
+
+        if not OUT_FILE:
             return None
+
         from . import attach
 
-        source = inspect.getsource(attach).format(**vars())
+        source = inspect.getsource(attach).format(IN_FILE=IN_FILE, OUT_FILE=OUT_FILE)
         script_path = os.path.join(self._dir.name, "attach.py")
         with open(script_path, "w") as script_file:
             script_file.write(source)
-        return (test_process.out_path, script_path)
+        return (OUT_FILE, script_path)
