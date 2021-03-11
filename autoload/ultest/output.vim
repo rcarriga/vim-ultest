@@ -71,7 +71,7 @@ endfunction
 
 function ultest#output#jumpto() abort
   if !s:OutputIsOpen()
-    call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+    call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:false))
     if !s:OutputIsOpen()
       return
     endif

@@ -225,12 +225,12 @@ command! UltestNearest call ultest#run_nearest()
 
 ""
 " Show the output of the nearest test in the current file
-command! UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+command! UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:false))
 
 ""
 " Attach to the running process of a test to be able to send input and read
 " output as it runs. This is useful for debugging
-command! UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%"), v:false))
+command! UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%:."), v:false))
 
 ""
 " Stop all running jobs for the current file
@@ -292,7 +292,7 @@ nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
 if g:ultest_output_on_line
   augroup UltestOutputOnLine
     au!
-    au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%"), v:true))
+    au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:true))
   augroup END
 endif
 
