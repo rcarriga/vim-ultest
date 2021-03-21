@@ -149,7 +149,13 @@ class Handler:
 
         if not os.path.isfile(file_name):
             return
-        vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
+        try:
+            vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
+        except Exception:
+            self._vim.log.exception(
+                f"Error whilte evaluating patterns for file {file_name}"
+            )
+            return
         if not vim_patterns:
             self._vim.log.fdebug("No patterns found for {file_name}")
             return
