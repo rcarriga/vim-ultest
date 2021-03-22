@@ -220,6 +220,11 @@ let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "attach": "a",
       \ "stop": "s"
       \ })
+
+call sign_define("test_pass", {"text":g:ultest_pass_sign, "texthl": "UltestPass"})
+call sign_define("test_fail", {"text":g:ultest_fail_sign, "texthl": "UltestFail"})
+call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "UltestRunning"})
+
 ""
 " Run all tests in the current file
 command! Ultest call ultest#run_file()
@@ -336,6 +341,3 @@ if !has("vim_starting")
   endfor
 end
 
-call sign_define("test_pass", {"text":g:ultest_pass_sign, "texthl": "UltestPass"})
-call sign_define("test_fail", {"text":g:ultest_fail_sign, "texthl": "UltestFail"})
-call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "UltestRunning"})
