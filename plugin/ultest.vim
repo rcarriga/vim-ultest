@@ -1,3 +1,8 @@
+if get(g:, "ultest_loaded")
+  finish
+endif
+let g:ultest_loaded = 1
+
 let s:strategy = "ultest"
 let g:test#custom_strategies = get(g:, "test#custom#strategies", {})
 let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
@@ -295,13 +300,21 @@ if g:ultest_output_on_line
     au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:true))
   augroup END
 endif
+let s:monitored = {}
 
 function! s:MonitorFile(file) abort
-  if !test#test_file(a:file) | return | endif
+  if has_key(s:monitored, a:file)
+    return
+  end
+  if !test#test_file(a:file)
+    let s:monitored[a:file] = v:false
+    return 
+  endif
   let buffer = bufnr(a:file)
   call ultest#handler#update_positions(a:file)
   exec 'au BufWrite <buffer='.buffer.'> call ultest#handler#update_positions("'.a:file.'")'
   exec 'au BufUnload <buffer='.buffer.'> au! * <buffer='.buffer'>'
+  let s:monitored[a:file] = v:true
 endfunction
 
 augroup UltestPositionUpdater
@@ -312,8 +325,17 @@ augroup UltestPositionUpdater
   endif
 augroup END
 
+if !has("vim_starting")
+  " Avoids race condition https://github.com/neovim/pynvim/issues/341
+  call ultest#handler#safe_split([])
+  for open_file in split(execute("buffers"), "\n")
+    let file_name = matchstr(open_file, '".\+"')
+    if file_name != ""
+      call s:MonitorFile(file_name[1:-2])
+    endif
+  endfor
+end
 
 call sign_define("test_pass", {"text":g:ultest_pass_sign, "texthl": "UltestPass"})
 call sign_define("test_fail", {"text":g:ultest_fail_sign, "texthl": "UltestFail"})
 call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "UltestRunning"})
-
