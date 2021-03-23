@@ -332,7 +332,7 @@ augroup END
 
 if !has("vim_starting")
   " Avoids race condition https://github.com/neovim/pynvim/issues/341
-  call ultest#handler#safe_split([])
+  call ultest#handler#get_attach_script("")
   for open_file in split(execute("buffers"), "\n")
     let file_name = matchstr(open_file, '".\+"')
     if file_name != ""
