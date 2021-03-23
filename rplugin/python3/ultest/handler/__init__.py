@@ -223,7 +223,6 @@ class Handler:
         return test and test.dict()
 
     def get_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:
-        self._vim.message("heleele")
         self._vim.log.finfo("Creating script to attach to test {test_id}")
         return self._process_manager.create_attach_script(test_id)
 
