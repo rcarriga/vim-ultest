@@ -1,10 +1,13 @@
 let s:buffer_name = "Ultest Summary"
+let s:test_line_map = []
 let s:mappings = {
       \ "run": "r",
       \ "jumpto": "<CR>",
       \ "output": "o",
       \ "attach": "a",
-      \ "stop": "s"
+      \ "stop": "s",
+      \ "next_fail": "<S-j>",
+      \ "prev_fail": "<S-k>",
       \ }
 
 call extend(s:mappings, g:ultest_summary_mappings)
@@ -17,6 +20,8 @@ function! s:CreateMappings()
   exec "nnoremap <silent><buffer> ".s:mappings["jumpto"]." :call <SID>JumpToCurrent()<CR>"
   exec "nnoremap <silent><buffer> ".s:mappings["attach"]." :call <SID>AttachToCurrent()<CR>"
   exec "nnoremap <silent><buffer> ".s:mappings["stop"]." :call <SID>StopCurrent()<CR>"
+  exec "nnoremap <silent><buffer> ".s:mappings["next_fail"]." :call <SID>JumpToFail(1)<CR>"
+  exec "nnoremap <silent><buffer> ".s:mappings["prev_fail"]." :call <SID>JumpToFail(-1)<CR>"
 endfunction
 
 function! s:IsOpen() abort
@@ -98,11 +103,13 @@ function! s:FullRender() abort
   call s:Clear()
   let lines = []
   let win = bufwinnr(s:buffer_name)
+  let s:test_line_map = [["", ""]]
   for test_file in g:ultest_buffers
     let sorted_ids = getbufvar(test_file, "ultest_sorted_tests")
     let tests = getbufvar(test_file, "ultest_tests", {})
     let results = getbufvar(test_file, "ultest_results", {})
     if len(tests) == 0 | continue | endif
+    call extend(s:test_line_map, [["", ""],[test_file, ""]])
     let lines = lines + ["", " ".fnamemodify(test_file, ":t")]
     call matchaddpos("UltestInfo", [len(lines) - 1], 10, -1, {"window": win})
     let line_offset = len(lines)
@@ -110,11 +117,13 @@ function! s:FullRender() abort
       let test_id = sorted_ids[index]
       let test = get(tests, test_id, {})
       let result = get(results, test_id, {})
+      call add(s:test_line_map, has_key(test, "id") ? [test.file, test.id] : ["", ""])
       if test == {} | continue | endif
       call add(lines, s:RenderLine(test, result, index+line_offset, win, index == len(sorted_ids) - 1))
     endfor
   endfor
   if len(lines) > 0
+    call remove(s:test_line_map, 0)
     call remove(lines, 0)
   endif
   if has("nvim")
@@ -157,7 +166,7 @@ function! s:Clear() abort
 endfunction
 
 
-function! s:RunCurrent()
+function! s:RunCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == ""
     return
@@ -168,7 +177,7 @@ function! s:RunCurrent()
   endif
 endfunction
 
-function! s:JumpToCurrent()
+function! s:JumpToCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == ""
     return
@@ -189,7 +198,7 @@ function! s:JumpToCurrent()
   endif
 endfunction
 
-function! s:AttachToCurrent()
+function! s:AttachToCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == "" || cur_test == ""
     return
@@ -199,7 +208,7 @@ function! s:AttachToCurrent()
   endif
 endfunction
 
-function! s:StopCurrent()
+function! s:StopCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == "" || cur_test == ""
     return
@@ -209,7 +218,7 @@ function! s:StopCurrent()
   endif
 endfunction
 
-function! s:OpenCurrentOutput()
+function! s:OpenCurrentOutput() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == "" || cur_test == ""
     return
@@ -220,27 +229,28 @@ function! s:OpenCurrentOutput()
   endif
 endfunction
 
-""
-" Returns a tuple of
-" 1) Currently selected test file (or "")
-" 2) Currently selected test (or "")
-function! s:GetCurrentLine()
+function! s:JumpToFail(direction) abort
+  let index = s:GetCurrentLine() + a:direction
+  let fail = {}
+  while index > 0 && index < len(s:test_line_map)
+    let [cur_file, cur_test] = s:test_line_map[index]
+    if cur_test != ""
+      let result = get(getbufvar(cur_file, "ultest_results", {}), cur_test, {})
+      if get(result, "code") > 0
+        call setpos(".", [0, index, 1, 0])
+        return
+      end
+    end
+    let index += a:direction
+  endwhile
+endfunction
+
+function! s:GetCurrentLine() abort
   if !s:IsOpen() | return 0 | endif
   return getbufinfo(s:buffer_name)[0]["lnum"]
 endfunction
 
-function! s:GetAtLine(line)
+function! s:GetAtLine(line) abort
   let lines_to_go = a:line
-  for test_file in g:ultest_buffers
-    let sorted_ids = getbufvar(test_file, "ultest_sorted_tests")
-    if lines_to_go == 1
-      return [test_file, ""]
-    endif
-    let lines_to_go -= 1
-    if lines_to_go <= len(sorted_ids)
-      return [test_file, sorted_ids[lines_to_go - 1]]
-    endif
-    let lines_to_go -= len(sorted_ids) + 1
-  endfor
-  return ["", ""]
+  return s:test_line_map[a:line]
 endfunction

@@ -203,13 +203,17 @@ let g:ultest_patterns = extend({
 "
 " 'run': (default "r") Runs the test currently selected or whole file if file name is selected.
 "
-" 'jumpto': (default "<CR>") Jump to currently selected test.
+" 'jumpto': (default "<CR>") Jump to currently selected test in its file.
 "
 " 'output': (default "o") Open the output to the current test if failed.
 "
 " 'attach': (default "a") Attach to the running process of the current test.
 "
 " 'stop': (default "s") Stop the running process of the current test.
+"
+" 'next_fail': (default "<S-j>") Jump down to the next fail.
+"
+" 'prev_fail': (default "<S-k>") Jump up to the next fail.
 "
 " The summary window also defines folds for each test file so they can be
 " hidden as desired using the regular fold mappings.
@@ -218,7 +222,9 @@ let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "jumpto": "<CR>",
       \ "output": "o",
       \ "attach": "a",
-      \ "stop": "s"
+      \ "stop": "s",
+      \ "next_fail": "<S-j>",
+      \ "prev_fail": "<S-k>"
       \ })
 
 call sign_define("test_pass", {"text":g:ultest_pass_sign, "texthl": "UltestPass"})
