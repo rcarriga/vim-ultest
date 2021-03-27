@@ -1,6 +1,6 @@
 import os
 from shlex import split
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from pynvim import Nvim
 
@@ -90,21 +90,34 @@ class Handler:
             if nearest and nearest.id == result.id:
                 self._vim.sync_call("ultest#output#open", result.dict())
 
-    def run_all(self, file_name: str):
+    def run_all(self, file_name: str, update_empty: bool = True):
         """
         Run all tests in a file.
 
         :param file_name: File to run in.
         """
 
-        async def run():
-            self._vim.log.finfo("Running all tests in {file_name}")
-            tests = self._stored_tests.get(file_name, [])
-            await self._process_manager.run_tests(tests)
+        self._vim.log.finfo("Running all tests in {file_name}")
+        tests = self._stored_tests.get(file_name, [])
 
-        self._vim.launch(run(), "run_all")
+        if not tests and update_empty:
+            self._vim.log.finfo(
+                "No tests found for {file_name}, rerunning after processing positions"
+            )
 
-    def run_nearest(self, line: int, file_name: str):
+            def run_after_update():
+                self.run_all(file_name, update_empty=False)
+
+            self.update_positions(file_name, callback=run_after_update)
+
+        if tests:
+
+            async def run():
+                await self._process_manager.run_tests(tests)
+
+            self._vim.launch(run(), "run_all")
+
+    def run_nearest(self, line: int, file_name: str, update_empty: bool = True):
         """
         Run nearest test to cursor in file.
 
@@ -114,6 +127,17 @@ class Handler:
 
         self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
         tests = self._stored_tests.get(file_name, [])
+
+        if not tests and update_empty:
+            self._vim.log.finfo(
+                "No tests found for {file_name}, rerunning after processing positions"
+            )
+
+            def run_after_update():
+                self.run_nearest(line, file_name, update_empty=False)
+
+            return self.update_positions(file_name, callback=run_after_update)
+
         test = self._finder.get_nearest_from(line, tests, strict=False)
         if test:
 
@@ -140,7 +164,7 @@ class Handler:
 
         self._vim.launch(run(), test_id)
 
-    def update_positions(self, file_name: str):
+    def update_positions(self, file_name: str, callback: Optional[Callable] = None):
         """
         Check for new, moved and removed tests and send appropriate events.
 
@@ -206,6 +230,8 @@ class Handler:
             else:
                 self._vim.log.fdebug("No tests removed")
             self._vim.command("doau User UltestPositionsUpdate")
+            if callback:
+                callback()
 
         self._vim.launch(runner(), "update_positions")
 
