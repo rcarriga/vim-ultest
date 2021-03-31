@@ -317,10 +317,14 @@ function! s:MonitorFile(file) abort
   if has_key(s:monitored, a:file)
     return
   end
-  if !test#test_file(a:file)
-    let s:monitored[a:file] = v:false
-    return 
-  endif
+  try
+    if !test#test_file(a:file)
+      let s:monitored[a:file] = v:false
+      return 
+    endif
+  catch /.*/
+    " vim-test throws error on new test files that don't exist in fs. See #30
+  endtry
   let buffer = bufnr(a:file)
   call ultest#handler#update_positions(a:file)
   exec 'au BufWrite <buffer='.buffer.'> call ultest#handler#update_positions("'.a:file.'")'
