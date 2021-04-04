@@ -10,7 +10,8 @@ If you experience any problems please open an issue with as much detail as possi
    1. [Configuration](#configuration)
    2. [Commands](#commands)
    3. [Plug mappings](#plug-mappings)
-5. [Feedback](#feedback)
+5. [Debugging](#debugging)
+6. [Feedback](#feedback)
 
 ## Introduction
 
@@ -160,6 +161,14 @@ nmap [t <Plug>(ultest-prev-fail)
 ```
 
 For configuration options and more documentation see `:h ultest`
+
+## Debugging
+
+`:help ultest-debugging`
+
+Debugging with nvim-dap is supported but some user configuration is required.
+See the [debugging recipes](https://github.com/rcarriga/vim-ultest/wiki/Debugging-Recipes) for some working configurations.
+If you do not see one for your runner/language, please submit a change to the wiki so others can use it too!
 
 ## Feedback
 
