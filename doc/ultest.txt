@@ -270,7 +270,7 @@ behabviour as <Plug>(ultest-output-show) in Vim)
 DEBUGGING                                                   *ultest-debugging*
 
 
-vim-ultest supports debugging through nvim-dap. Due to the how debuggng
+vim-ultest supports debugging through nvim-dap. Due to how debugging
 configurations can vary greatly between users and projects, some configuration
 is required for test debugging to work.
 
@@ -313,7 +313,7 @@ multiple runners, the key can be in the form of '<language>#<runner>'
 >
   require("ultest").setup({
     builders = {
-      ['pyton#pytest'] = function (cmd)
+      ['python#pytest'] = function (cmd)
         ...
       end
     }
