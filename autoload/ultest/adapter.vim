@@ -4,6 +4,7 @@ function! ultest#adapter#get_runner(file)
 endfunction
 
 function! ultest#adapter#build_cmd(test) abort
+  let a:test.file = fnamemodify(a:test.file, get(g:, "test#filename_modifier", ":."))
   call ultest#process#pre(a:test)
   let runner = ultest#adapter#get_runner(a:test.file)
   let executable = test#base#executable(runner)
