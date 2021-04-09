@@ -96,7 +96,7 @@ function M.dap_run_nearest(config)
   end
 
   local test = vim.fn["ultest#handler#get_nearest_test"](line, file, false)
-  if test == nil then
+  if test == vim.NIL then
     return
   end
 

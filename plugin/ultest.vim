@@ -238,15 +238,15 @@ call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "Ultes
 
 ""
 " Run all tests in the current file
-command! Ultest call ultest#run_file({"pre_run": get(g:, "ultest_pre_run")})
+command! Ultest call ultest#run_file({"pre_run": g:ultest_pre_run})
 
 ""
 " Run nearest test in the current file
-command! UltestNearest call ultest#run_nearest({"pre_run": get(g:, "ultest_pre_run")})
+command! UltestNearest call ultest#run_nearest({"pre_run": g:ultest_pre_run})
 
 ""
 " Debug the nearest test with nvim-dap
-command! UltestDebugNearest lua require("ultest").dap_run_nearest()
+command! UltestDebugNearest call ultest#run_nearest({"pre_run": g:ultest_pre_run, "runner": "nvim-dap"})
 
 ""
 " Show the output of the nearest test in the current file
@@ -315,7 +315,7 @@ nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-attach) :UltestAttach<CR>
 nnoremap <silent><Plug>(ultest-stop-file) :UltestStop<CR>
 nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
-nnoremap <silent><Plug>(ultest-debug-nearest) :lua require("ultest").dap_run_nearest()<CR>
+nnoremap <silent><Plug>(ultest-debug-nearest) :UltestDebugNearest<CR>
 
 if g:ultest_output_on_line
   augroup UltestOutputOnLine
