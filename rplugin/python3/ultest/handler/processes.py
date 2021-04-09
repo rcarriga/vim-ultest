@@ -100,7 +100,7 @@ class ProcessManager:
     def stdout_name(self, test: Test) -> str:
         return path.join(self._test_file_dir(test.file), f"{test.id}_out")
 
-    async def run(self, cmd: List[str], test: Test):
+    async def run(self, cmd: List[str], test: Test, cwd: Optional[str] = None):
         """
         Run a test with the given command.
 
@@ -125,7 +125,11 @@ class ProcessManager:
                 with test_process.open() as (in_handle, out_handle):
                     try:
                         process = await subprocess.create_subprocess_exec(
-                            *cmd, stdin=in_handle, stderr=out_handle, stdout=out_handle
+                            *cmd,
+                            stdin=in_handle,
+                            stderr=out_handle,
+                            stdout=out_handle,
+                            cwd=cwd,
                         )
                     except CancelledError:
                         raise

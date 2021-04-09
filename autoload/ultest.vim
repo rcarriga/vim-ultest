@@ -52,13 +52,23 @@ function! ultest#is_test_file(...) abort
 endfunction
 
 function! ultest#run_file(...) abort
-  let file = a:0 == 1 ? a:1 : expand("%:.")
+  let args = a:0 == 1 ? a:1 : {}
+  let file = get(args, "file", expand("%:."))
+  let pre_run = get(args, "pre_run")
+  if type(pre_run) != v:t_number
+    call call(pre_run, [file])
+  endif
   call ultest#handler#run_all(file)
 endfunction
 
 function! ultest#run_nearest(...) abort
-  let file = a:0 == 1 ? a:1 : expand("%:.")
+  let args = a:0 == 1 ? a:1 : {}
+  let file = get(args, "file", expand("%:."))
   let line = getbufinfo(file)[0]["lnum"]
+  let pre_run = get(args, "pre_run")
+  if type(pre_run) != v:t_number
+    call call(pre_run, [file])
+  endif
   call ultest#handler#run_nearest(line, file)
 endfunction
 

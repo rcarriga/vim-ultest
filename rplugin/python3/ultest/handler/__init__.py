@@ -80,13 +80,14 @@ class Handler:
         Run a list of tests. Each will be done in
         a separate thread.
         """
+        root = self._vim.sync_call("get", "g:", "test#project_root") or None
         for test in tests:
             self._vim.log.fdebug("Sending {test.id} to vim-test")
             self._register_started(test)
             cmd = self._vim.sync_call("ultest#adapter#build_cmd", test)
 
             async def run(cmd=cmd, test=test):
-                result = await self._process_manager.run(cmd, test)
+                result = await self._process_manager.run(cmd, test, cwd=root)
                 self._register_result(test, result)
 
             self._vim.launch(run(), test.id)

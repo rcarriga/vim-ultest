@@ -99,6 +99,10 @@ Virtual text for passing tests (string) (default: g:ultest_icons?
                                                       *g:ultest_summary_width*
 Width of the summary window (default: 50)
 
+                                                            *g:ultest_pre_run*
+A function name to call before running any tests in a file. Receives the
+relative file path as an argument.
+
                                                        *g:ultest_attach_width*
 Width of the attach window Some test runners don't output anyting until
 finished (e.g. Jest) so the attach window can't figure out a good width. Use

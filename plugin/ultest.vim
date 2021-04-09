@@ -133,6 +133,11 @@ let g:ultest_running_text = get(g:, "ultest_running_text", g:ultest_icons? "●"
 let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
 
 ""
+" A function name to call before running any tests in a file.
+" Receives the relative file path as an argument.
+let g:ultest_pre_run = get(g:, "ultest_pre_run")
+
+""
 " Width of the attach window
 " Some test runners don't output anyting until finished (e.g. Jest) so the
 " attach window can't figure out a good width. Use this to hardcode a size.
@@ -233,11 +238,11 @@ call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "Ultes
 
 ""
 " Run all tests in the current file
-command! Ultest call ultest#run_file()
+command! Ultest call ultest#run_file({"pre_run": get(g:, "ultest_pre_run")})
 
 ""
 " Run nearest test in the current file
-command! UltestNearest call ultest#run_nearest()
+command! UltestNearest call ultest#run_nearest({"pre_run": get(g:, "ultest_pre_run")})
 
 ""
 " Debug the nearest test with nvim-dap
