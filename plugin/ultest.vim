@@ -367,7 +367,7 @@ end
 ""
 " @section Debugging
 "
-" vim-ultest supports debugging through nvim-dap. Due to the how debuggng
+" vim-ultest supports debugging through nvim-dap. Due to how debugging
 " configurations can vary greatly between users and projects, some
 " configuration is required for test debugging to work.
 "
@@ -410,7 +410,7 @@ end
 " >
 "   require("ultest").setup({
 "     builders = {
-"       ['pyton#pytest'] = function (cmd)
+"       ['python#pytest'] = function (cmd)
 "         ...
 "       end
 "     }
