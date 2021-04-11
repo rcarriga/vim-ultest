@@ -1,5 +1,4 @@
-import inspect
-from typing import Any, Callable, Coroutine, List, Optional, Union
+from typing import Any, Callable, Coroutine, List
 
 from pynvim import Nvim
 

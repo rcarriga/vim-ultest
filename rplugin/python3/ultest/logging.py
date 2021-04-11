@@ -1,6 +1,4 @@
 import logging
-from traceback import TracebackException
-import sys
 import os
 import tempfile
 from logging import handlers
@@ -48,6 +46,7 @@ class UltestLogger(logging.Logger):
         if self.isEnabledFor(level):
             try:
                 import inspect
+
                 frame = inspect.currentframe().f_back.f_back
                 code = frame.f_code
                 extra = {

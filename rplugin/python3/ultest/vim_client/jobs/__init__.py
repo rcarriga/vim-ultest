@@ -1,12 +1,14 @@
 import asyncio
+import sys
 import traceback
 from asyncio import CancelledError, Event, Semaphore
+from asyncio.events import AbstractEventLoop
 from collections import defaultdict
 from threading import Thread
 from typing import Coroutine, Dict
 from uuid import uuid4
 
-from ..logging import UltestLogger
+from ...logging import UltestLogger
 
 
 class JobManager:
@@ -17,6 +19,13 @@ class JobManager:
         self._thread = Thread(target=self._loop.run_forever, daemon=True)
         self._sem = Semaphore(num_threads, loop=self._loop)
         self._thread.start()
+        if sys.version_info < (3, 8):
+            # Use the new default watcher from  >= 3.8, implemented locally
+            # https://bugs.python.org/issue35621
+            from .watcher import ThreadedChildWatcher
+
+            self._logger.info("Using local threaded child watcher")
+            asyncio.set_child_watcher(ThreadedChildWatcher())
 
     @property
     def semaphore(self) -> Semaphore:
