@@ -1,9 +1,9 @@
 import logging
+from traceback import TracebackException
+import sys
 import os
 import tempfile
 from logging import handlers
-
-_logger_name = "ultest"
 
 
 class UltestLogger(logging.Logger):
@@ -23,19 +23,44 @@ class UltestLogger(logging.Logger):
         """
         self.__deferred_flog(fstr, logging.INFO, *args)
 
+    def makeRecord(
+        self,
+        name,
+        level,
+        fn,
+        lno,
+        msg,
+        args,
+        exc_info,
+        func=None,
+        extra=None,
+        sinfo=None,
+    ):
+        rv = logging.getLogRecordFactory()(
+            name, level, fn, lno, msg, args, exc_info, func, sinfo
+        )
+        if extra is not None:
+            for key in extra:
+                rv.__dict__[key] = extra[key]
+        return rv
+
     def __deferred_flog(self, fstr, level, *args):
         if self.isEnabledFor(level):
-            import inspect
-
-            frame = inspect.currentframe().f_back.f_back
             try:
+                import inspect
+                frame = inspect.currentframe().f_back.f_back
+                code = frame.f_code
+                extra = {
+                    "filename": os.path.split(code.co_filename)[-1],
+                    "funcName": code.co_name,
+                    "lineno": frame.f_lineno,
+                }
                 fstr = 'f"' + fstr + '"'
                 self.log(
-                    level, eval(fstr, frame.f_globals, frame.f_locals), stacklevel=3
+                    level, eval(fstr, frame.f_globals, frame.f_locals), extra=extra
                 )
-            except:
-                self.exception("Error converting args to str")
-                del frame
+            except Exception as e:
+                self.error(f"Error {e} converting args to str {fstr}")
 
 
 def create_logger() -> UltestLogger:
