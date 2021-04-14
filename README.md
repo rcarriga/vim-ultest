@@ -109,7 +109,7 @@ Plug "rcarriga/vim-ultest", { "do": ":UpdateRemotePlugins" }
 [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
-use { "rcarriga/vim-ultest", requires = {"janko/vim-test"}, run = ":UpdateRemotePlugins" } }
+use { "rcarriga/vim-ultest", requires = {"janko/vim-test"}, run = ":UpdateRemotePlugins" }
 ```
 
 ## Usage
