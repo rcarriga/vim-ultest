@@ -8,6 +8,7 @@ from ..logging import UltestLogger
 from ..models import Result, Test
 from ..vim_client import VimClient
 from .finder import TestFinder
+from .parser import OutputParser
 from .processes import ProcessManager
 from .results import ResultStore
 
@@ -19,7 +20,8 @@ class HandlerFactory:
         finder = TestFinder(client)
         process_manager = ProcessManager(client)
         results = ResultStore()
-        return Handler(client, process_manager, finder, results)
+        output_parser = OutputParser(logger)
+        return Handler(client, process_manager, finder, results, output_parser)
 
 
 class Handler:
@@ -29,11 +31,13 @@ class Handler:
         process_manager: ProcessManager,
         finder: TestFinder,
         results: ResultStore,
+        output_parser: OutputParser,
     ):
         self._vim = nvim
         self._process_manager = process_manager
         self._finder = finder
         self._results = results
+        self._output_parser = output_parser
         self._stored_tests: Dict[str, List[Test]] = {}
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
@@ -84,17 +88,22 @@ class Handler:
         for test in tests:
             self._vim.log.fdebug("Sending {test.id} to vim-test")
             self._register_started(test)
-            cmd = self._vim.sync_call("ultest#adapter#build_cmd", test)
+            cmd = self._vim.sync_call("ultest#adapter#build_cmd", test, "nearest")
 
             async def run(cmd=cmd, test=test):
-                result = await self._process_manager.run(cmd, test, cwd=root)
-                self._register_result(test, result)
+                (code, output_path) = await self._process_manager.run(
+                    cmd, test.file, test.id, cwd=root
+                )
+                self._register_result(
+                    test,
+                    Result(id=test.id, file=test.file, code=code, output=output_path),
+                )
 
             self._vim.launch(run(), test.id)
 
     def _register_started(self, test: Test):
         test.running = 1
-        self._process_manager.register_new_test(test)
+        self._process_manager.register_new_process(test.id)
         self._vim.call("ultest#process#start", test)
 
     def _register_result(self, test: Test, result: Result):
@@ -130,8 +139,55 @@ class Handler:
                 self._vim.schedule(self.run_all, file_name, update_empty=False)
 
             self.update_positions(file_name, callback=run_after_update)
+
         if tests:
-            self._run_tests(tests)
+            runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
+            if not self._output_parser.can_parse(runner):
+                self._run_tests(tests)
+                return
+
+            root = self._vim.sync_call("get", "g:", "test#project_root") or None
+            for test in tests:
+                self._register_started(test)
+            cmd = self._vim.sync_call("ultest#adapter#build_cmd", tests[0], "file")
+
+            async def run(cmd=cmd):
+                (code, output_path) = await self._process_manager.run(
+                    cmd, file_name, file_name, cwd=root
+                )
+                output = []
+                if code:
+                    with open(output_path, "r") as cmd_out:
+                        output = cmd_out.readlines()
+                failed = {
+                    (failed.name, *failed.namespaces)
+                    for failed in self._output_parser.parse_failed(runner, output)
+                }
+
+                def get_code(test: Test) -> int:
+                    if not code:
+                        return 0
+                    # If none were parsed but the process failed then something else went wrong,
+                    # and we treat it as all failed
+                    if not failed:
+                        return code
+                    if (test.name, *test.namespaces) in failed:
+                        return code
+
+                    return 0
+
+                for test in tests:
+                    self._register_result(
+                        test,
+                        Result(
+                            id=test.id,
+                            file=test.file,
+                            code=get_code(test),
+                            output=output_path,
+                        ),
+                    )
+
+            self._vim.launch(run(), file_name)
 
     def run_nearest(self, line: int, file_name: str, update_empty: bool = True):
         """
@@ -202,7 +258,7 @@ class Handler:
 
         async def runner():
             self._vim.log.finfo("Updating positions in {file_name}")
-            tests = await self._finder.find_all(file_name, vim_patterns)
+            tests, _ = await self._finder.find_all(file_name, vim_patterns)
             self._stored_tests[file_name] = tests
             self._vim.call(
                 "ultest#process#store_sorted_ids",
@@ -231,7 +287,7 @@ class Handler:
 
             if recorded_tests:
                 self._vim.log.fdebug(
-                    "Removing tests {[recorded.id for recorded in recorded_tests]} from {file_name}"
+                    "Removing tests {[recorded for recorded in recorded_tests]} from {file_name}"
                 )
                 for removed in recorded_tests.values():
                     self._vim.call("ultest#process#clear", removed)
@@ -256,9 +312,9 @@ class Handler:
         test = self.get_nearest_test(line, file_name, strict)
         return test and test.dict()
 
-    def get_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:
-        self._vim.log.finfo("Creating script to attach to test {test_id}")
-        return self._process_manager.create_attach_script(test_id)
+    def get_attach_script(self, process_id: str) -> Optional[Tuple[str, str]]:
+        self._vim.log.finfo("Creating script to attach to process {process_id}")
+        return self._process_manager.create_attach_script(process_id)
 
     def stop_test(self, test_dict: Optional[Dict]):
         if not test_dict:

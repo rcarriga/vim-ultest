@@ -1,8 +1,5 @@
 # vim-ultest
 
-This plugin is in the early stages of development so there will likely be bugs!
-If you experience any problems please open an issue with as much detail as possible i.e. error messages, file type, test runner and minimal example.
-
 1. [Introduction](#introduction)
 2. [Features](#features)
 3. [Installation](#installation)
@@ -78,8 +75,7 @@ Due to the differences between Vim and NeoVim and their RPC libraries, it is ine
 I primarily use NeoVim so I will catch issues in it myself.
 Please file bug reports for Vim if you find them!
 
-I have not had the chance to extensively test (Neo)Vim versions, it is recommended to stay on the latest nightly version.
-If you have issues with missing features, please open an issue with your editor version.
+NeoVim >= 0.4.4 is supported for now, but once 0.5 is released support will be dropped due to added complexity from handling missing features.
 
 vim-ultest can be installed as usual with your favourite plugin manager.
 **Note:** NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
@@ -148,6 +144,15 @@ augroup UltestRunner
     au BufWritePost * UltestNearest
 augroup END
 ```
+
+**Need user contributions**
+
+The `Ultest` command runs all tests in a file. For some test runners the plugin
+can parse the output of the runner to get results so that they can all be run
+as a single process. For other runners the tests all have to be run as
+inidividual processes, which can have a significant performance impact. Please
+check the wiki to see if your runner is supported.  If it is not please open an
+issue with example output and I can add support for it!
 
 ### Plug mappings
 

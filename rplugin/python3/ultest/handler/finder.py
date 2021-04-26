@@ -1,7 +1,7 @@
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Pattern, Tuple
 
-from ..models import Test
+from ..models import Namespace, Test
 from ..vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
@@ -16,7 +16,9 @@ class TestFinder:
         self._vim.log.fdebug("Converted pattern {vim_patterns} to {patterns}")
         with open(file_name, "r") as test_file:
             lines = test_file.readlines()
-        return self._calculate_tests(file_name, patterns, lines)
+        return self._calculate_tests(
+            file_name, patterns["test"], patterns["namespace"], lines
+        )
 
     def get_nearest_from(
         self, line: int, tests: List[Test], strict: bool = False
@@ -38,51 +40,102 @@ class TestFinder:
             tests[r] if not strict and len(tests) > r and tests[r].line < line else None
         )
 
-    def _convert_patterns(self, vim_patterns: Dict[str, List[str]]):
-        return [
+    def _convert_patterns(
+        self, vim_patterns: Dict[str, List[str]]
+    ) -> Dict[str, List[Pattern]]:
+        tests = [
             self._convert_regex(pattern) for pattern in vim_patterns.get("test", "")
         ]
+        namespaces = [
+            self._convert_regex(pattern)
+            for pattern in vim_patterns.get("namespace", "")
+        ]
+        return {"test": tests, "namespace": namespaces}
 
-    def _convert_regex(self, vim_regex: str) -> str:
+    def _convert_regex(self, vim_regex: str) -> Pattern:
         regex = vim_regex
         for pattern, repl in REGEX_CONVERSIONS.items():
             regex = re.sub(pattern, repl, regex)
-        return regex
+        return re.compile(regex)
 
     def _calculate_tests(
         self,
         file_name: str,
-        patterns: List[str],
+        test_patterns: List[Pattern],
+        namespace_patterns: List[Pattern],
         lines: List[str],
-    ) -> List[Test]:
+    ) -> Tuple[List[Test], List[Namespace]]:
         tests = []
-        current_test_text = ""
-        for line_index, line in reversed(list(enumerate(lines))):
-            test_name = self._find_test_name(line, patterns)
+        namespaces = []
+        current_namespaces: List[Tuple[str, int]] = []
+        indent_match = re.compile(r"^\s*")
+        for line_no, line in enumerate(lines, start=1):
+            test_name = self._find_match(line, test_patterns)
+            namespace_name = self._find_match(line, namespace_patterns)
+
+            current_indent = len(indent_match.match(line)[0])
+            while current_namespaces:
+                name, indent = current_namespaces[-1]
+                if namespace_name == name or indent < current_indent:
+                    break
+                current_namespaces.pop()
+
             if test_name:
-                line_no = line_index + 1
-                test_id = self._clean_id(test_name + str(hash(current_test_text)))
                 tests.append(
                     Test(
-                        id=test_id,
+                        id=self._clean_id(
+                            test_name
+                            + str(
+                                hash(
+                                    (
+                                        file_name,
+                                        " ".join(
+                                            [name for name, _ in current_namespaces]
+                                        ),
+                                    )
+                                )
+                            )
+                        ),
                         file=file_name,
                         line=line_no,
                         col=1,
                         name=test_name,
                         running=0,
+                        namespaces=[name for name, _ in current_namespaces],
                     )
                 )
-                current_test_text = ""
-            else:
-                current_test_text += line.strip()
-        return list(reversed(tests))
+            elif namespace_name:
+                namespaces.append(
+                    Namespace(
+                        id=self._clean_id(
+                            namespace_name
+                            + str(
+                                hash(
+                                    (
+                                        file_name,
+                                        " ".join(
+                                            [name for name, _ in current_namespaces]
+                                        ),
+                                    )
+                                )
+                            )
+                        ),
+                        file=file_name,
+                        line=line_no,
+                        col=1,
+                        name=namespace_name,
+                    )
+                )
+                current_namespaces.append((namespace_name, current_indent))
+
+        return tests, namespaces
 
     def _clean_id(self, id: str) -> str:
         return re.subn(r"[.'\" \\/]", "_", id)[0]
 
-    def _find_test_name(self, line: str, patterns: List[str]) -> Optional[str]:
+    def _find_match(self, line: str, patterns: List[Pattern]) -> Optional[str]:
         for pattern in patterns:
-            matched = re.match(pattern, line)
+            matched = pattern.match(line)
             if matched:
                 return matched[1]
         return None

@@ -1,0 +1,47 @@
+[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2mspec/[22m[1multest a.test.ts[22m
+  [31m✕[39m [2mit shouldn't pass again[22m
+  [32m✓[39m [2mit shouldn pass (1 ms)[22m
+  First namespace
+    Another namespace
+      [31m✕[39m [2mit shouldn't pass (3 ms)[22m
+
+[1m[31m  [1m● [22m[1mFirst namespace › Another namespace › it shouldn't pass[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeFalsy[2m()[22m
+
+    Received: [31mtrue[39m
+[2m[22m
+[2m    [0m [90m 2 | [39m  describe([32m"Another namespace"[39m[33m,[39m () [33m=>[39m {[0m[22m
+[2m    [0m [90m 3 | [39m    test([32m"it shouldn't pass"[39m[33m,[39m () [33m=>[39m {[0m[22m
+[2m    [0m[31m[1m>[22m[2m[39m[90m 4 | [39m      expect([36mtrue[39m)[33m.[39mtoBeFalsy()[0m[22m
+[2m    [0m [90m   | [39m                   [31m[1m^[22m[2m[39m[0m[22m
+[2m    [0m [90m 5 | [39m    })[33m;[39m[0m[22m
+[2m    [0m [90m 6 | [39m  })[33m;[39m[0m[22m
+[2m    [0m [90m 7 | [39m})[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mspec/ultest a.test.ts[39m[0m[2m:4:20)[22m[2m[22m
+[2m      [2mat processTicksAndRejections ([22m[2mnode:internal/process/task_queues[2m:94:5)[22m[2m[22m
+
+[1m[31m  [1m● [22m[1mit shouldn't pass again[39m[22m
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeFalsy[2m()[22m
+
+    Received: [31mtrue[39m
+[2m[22m
+[2m    [0m [90m  7 | [39m})[33m;[39m[0m[22m
+[2m    [0m [90m  8 | [39mtest([32m"it shouldn't pass again"[39m[33m,[39m () [33m=>[39m {[0m[22m
+[2m    [0m[31m[1m>[22m[2m[39m[90m  9 | [39m  expect([36mtrue[39m)[33m.[39mtoBeFalsy()[0m[22m
+[2m    [0m [90m    | [39m               [31m[1m^[22m[2m[39m[0m[22m
+[2m    [0m [90m 10 | [39m})[33m;[39m[0m[22m
+[2m    [0m [90m 11 | [39mtest([32m"it shouldn pass"[39m[33m,[39m () [33m=>[39m {[0m[22m
+[2m    [0m [90m 12 | [39m  expect([36mfalse[39m)[33m.[39mtoBeFalsy()[0m[22m
+[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36mspec/ultest a.test.ts[39m[0m[2m:9:16)[22m[2m[22m
+[2m      [2mat processTicksAndRejections ([22m[2mnode:internal/process/task_queues[2m:94:5)[22m[2m[22m
+
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 total
+[1mTests:       [22m[1m[31m2 failed[39m[22m, [1m[32m1 passed[39m[22m, 3 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        1.658 s
+[2mRan all test suites[22m[2m matching [22m/spec\/ultest a.test.ts/i[2m.[22m
+

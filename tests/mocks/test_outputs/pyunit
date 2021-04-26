@@ -1,0 +1,13 @@
+F.
+======================================================================
+FAIL: test_d (test_a.TestMyClass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ronan/tests/test_a.py", line 9, in test_d
+    assert 33 == 3
+AssertionError
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)

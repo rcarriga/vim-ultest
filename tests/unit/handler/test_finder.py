@@ -8,7 +8,7 @@ from hypothesis.strategies import builds, integers, lists
 
 from rplugin.python3.ultest.handler.finder import TestFinder
 from rplugin.python3.ultest.models.test import Test
-from tests.mocks.test_files import mock_python_file
+from tests.mocks import get_test_file
 
 
 def sorted_tests(
@@ -62,8 +62,7 @@ def test_get_nearest_from_non_strict_no_match(tests: List[Test]):
     assert result is None
 
 
-@patch("builtins.open", mock_open(read_data=mock_python_file))
-@patch("builtins.hash", lambda o: len(".".join(o)))
+@patch("builtins.open", mock_open(read_data=get_test_file("python")))
 @patch("os.path.isfile", lambda _: True)
 @pytest.mark.asyncio
 async def test_find_python_tests():
@@ -72,25 +71,36 @@ async def test_find_python_tests():
         "namespace": [r"\v^\s*class (\w+)"],
     }
 
+    tests, namespaces = await finder.find_all("", patterns)
+
     expected = [
         Test(
-            id="test_a3025",
+            id=tests[0].id,
             name="test_a30",
             file="",
-            line=4,
+            line=3,
             col=1,
             running=0,
+            namespaces=[],
         ),
         Test(
-            id="test_a4341",
-            name="test_a43",
+            id=tests[1].id,
+            name="test_a10",
             file="",
             line=7,
             col=1,
             running=0,
+            namespaces=["TestMock"],
+        ),
+        Test(
+            id=tests[2].id,
+            name="test_a43",
+            file="",
+            line=10,
+            col=1,
+            running=0,
+            namespaces=[],
         ),
     ]
 
-    result = await finder.find_all("", patterns)
-
-    assert result == expected
+    assert tests == expected

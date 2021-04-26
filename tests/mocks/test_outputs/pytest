@@ -1,0 +1,33 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.9.2, pytest-6.2.3, py-1.10.0, pluggy-0.13.1
+rootdir: /home/ronan/tests
+plugins: cov-2.11.1
+collected 3 items
+
+test_a.py [31mF[0m[32m.[0m[31mE[0m[31m                                                            [100%][0m
+
+==================================== ERRORS ====================================
+[31m[1m___________________________ ERROR at setup of test_a ___________________________[0m
+file /home/ronan/tests/test_a.py, line 17
+  def test_a(self):
+[31mE       fixture 'self' not found[0m
+[31m>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cov, doctest_namespace, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory[0m
+[31m>       use 'pytest --fixtures [testpath]' for help on them.[0m
+
+/home/ronan/tests/test_a.py:17
+=================================== FAILURES ===================================
+[31m[1m______________________________ TestMyClass.test_d ______________________________[0m
+
+self = <test_a.TestMyClass testMethod=test_d>
+
+    [94mdef[39;49;00m [92mtest_d[39;49;00m([96mself[39;49;00m): [90m# type: ignore[39;49;00m
+        [94mclass[39;49;00m [04m[92mMyClass[39;49;00m:
+            ...
+>       [94massert[39;49;00m [94m33[39;49;00m == [94m3[39;49;00m
+[1m[31mE       AssertionError: assert 33 == 3[0m
+
+[1m[31mtest_a.py[0m:7: AssertionError
+=========================== short test summary info ============================
+FAILED test_a.py::TestMyClass::test_d - AssertionError: assert 33 == 3
+ERROR test_a.py::test_a
+[31m===================== [31m[1m1 failed[0m, [32m1 passed[0m, [31m[1m1 error[0m[31m in 0.07s[0m[31m =====================[0m
