@@ -135,8 +135,7 @@ dictionary with the following keys:
 a line of code
 
 'namepsace': A list of python-style regex patterns that can idenitfy test
-namespaces (e.g. Classes). This feature is currently unsupporte but will be in
-the future.
+namespaces (e.g. Classes).
 
 If you find a missing language that requires you to set this value,
 considering onpening an issue/PR to make it available to others.
@@ -166,7 +165,13 @@ as desired using the regular fold mappings.
 COMMANDS                                                     *ultest-commands*
 
 :Ultest                                                              *:Ultest*
-  Run all tests in the current file
+  Run all tests in the current file Some runners can be run as a single
+  command if the output can be parsed to gain results. Otherwise, each test is
+  run as a single command.
+
+  Running as a single command can significanly improve performance, so if your
+  runner is not yet supported please open an issue with sample output! Check
+  the repo wiki for an updated list of runners.
 
 :UltestNearest                                                *:UltestNearest*
   Run nearest test in the current file

@@ -10,7 +10,6 @@ from threading import Event, Thread
 from typing import Dict, Iterator, List, Optional, Tuple
 
 from ..logging import UltestLogger
-from ..models import Result, Test
 from ..vim_client import VimClient
 
 
@@ -84,23 +83,21 @@ class ProcessManager:
         self._processes: Dict[str, Optional[TestProcess]] = {}
         self._external_stdout: Dict[str, str] = {}
 
-    def _test_file_dir(self, file: str) -> str:
-        return os.path.join(
-            self._dir.name, re.subn(r"[.'\" \\/]", "_", file.replace(os.sep, "__"))[0]
-        )
+    def _safe_file_name(self, name: str) -> str:
+        return re.subn(r"[.'\" \\/]", "_", name.replace(os.sep, "__"))[0]
 
-    def _create_test_file_dir(self, file: str):
-        path = self._test_file_dir(file)
+    def _group_dir(self, file: str) -> str:
+        return os.path.join(self._dir.name, self._safe_file_name(file))
+
+    def _create_group_dir(self, file: str):
+        path = self._group_dir(file)
         if not os.path.isdir(path):
             os.mkdir(path)
+        return path
 
-    def stdin_name(self, test: Test) -> str:
-        return path.join(self._test_file_dir(test.file), f"{test.id}_in")
-
-    def stdout_name(self, test: Test) -> str:
-        return path.join(self._test_file_dir(test.file), f"{test.id}_out")
-
-    async def run(self, cmd: List[str], test: Test, cwd: Optional[str] = None):
+    async def run(
+        self, cmd: List[str], group_id: str, process_id: str, cwd: Optional[str] = None
+    ) -> Tuple[int, str]:
         """
         Run a test with the given command.
 
@@ -108,18 +105,17 @@ class ProcessManager:
 
         :param cmd: Command arguments to run
         :param test: Test to build result from.
-        :return: Result of test running.
-        :rtype: Result
+        :return: Exit code and path to file containing stdout/stderr
         """
 
-        self._create_test_file_dir(test.file)
-        stdin_path = self.stdin_name(test)
-        stdout_path = self.stdout_name(test)
+        parent_dir = self._create_group_dir(group_id)
+        stdin_path = path.join(parent_dir, f"{self._safe_file_name(process_id)}_in")
+        stdout_path = path.join(parent_dir, f"{self._safe_file_name(process_id)}_out")
         test_process = TestProcess(
             in_path=stdin_path, out_path=stdout_path, logger=self._vim.log
         )
-        self._processes[test.id] = test_process
-        self._vim.log.fdebug("Starting test process {test.id} with command: {cmd}")
+        self._processes[process_id] = test_process
+        self._vim.log.fdebug("Starting test process {process_id} with command: {cmd}")
         try:
             async with self._vim.semaphore:
                 with test_process.open() as (in_handle, out_handle):
@@ -135,7 +131,7 @@ class ProcessManager:
                         raise
                     except Exception:
                         self._vim.log.warn(
-                            f"An exception was thrown when starting test {test.id} with command: {cmd}",
+                            f"An exception was thrown when starting process {process_id} with command: {cmd}",
                             exc_info=True,
                         )
                         code = 1
@@ -143,34 +139,33 @@ class ProcessManager:
                         test_process.process = process
                         code = await process.wait()
                     self._vim.log.fdebug(
-                        "Test {test.id} complete with exit code: {code}"
+                        "Process {process_id} complete with exit code: {code}"
                     )
-                    result = Result(
-                        id=test.id, file=test.file, code=code, output=stdout_path
-                    )
-                    return result
+                    return (code, stdout_path)
         finally:
-            del self._processes[test.id]
+            del self._processes[process_id]
 
-    def register_new_test(self, test: Test):
-        self._processes[test.id] = None
+    def register_new_process(self, process_id: str):
+        self._processes[process_id] = None
 
-    def register_external_output(self, test_id: str, path: str):
-        self._vim.log.finfo("Saving external stdout path '{path}' for test {test_id}")
-        self._external_stdout[test_id] = path
+    def register_external_output(self, process_id: str, path: str):
+        self._vim.log.finfo(
+            "Saving external stdout path '{path}' for test {process_id}"
+        )
+        self._external_stdout[process_id] = path
 
-    def clear_external_output(self, test_id: str):
-        self._vim.log.finfo("Removing external stdout path for test {test_id}")
-        self._external_stdout.pop(test_id, None)
+    def clear_external_output(self, process_id: str):
+        self._vim.log.finfo("Removing external stdout path for test {process_id}")
+        self._external_stdout.pop(process_id, None)
 
-    def is_running(self, test_id: str) -> int:
-        return int(test_id in self._processes)
+    def is_running(self, process_id: str) -> int:
+        return int(process_id in self._processes)
 
     def clear(self):
         self._vim.log.debug("Clearing temp files")
         self._dir.cleanup()
 
-    def create_attach_script(self, test_id: str) -> Optional[Tuple[str, str]]:
+    def create_attach_script(self, process_id: str) -> Optional[Tuple[str, str]]:
         """
         Create a python script to attach to a running tests process.
 
@@ -179,12 +174,12 @@ class ProcessManager:
         written to a temp file, and sending all input to the process's stdin
         which is a FIFO/named pipe.
         """
-        test_process = self._processes.get(test_id)
+        test_process = self._processes.get(process_id)
         if test_process:
             OUT_FILE = test_process.out_path
             IN_FILE = test_process.in_path
         else:
-            OUT_FILE = self._external_stdout.get(test_id)
+            OUT_FILE = self._external_stdout.get(process_id)
             IN_FILE = None
 
         if not OUT_FILE:

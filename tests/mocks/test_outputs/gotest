@@ -1,0 +1,7 @@
+--- FAIL: TestA (0.00s)
+    main_test.go:10: 2 != 2
+--- FAIL: TestB (0.00s)
+    main_test.go:19: 2 != 2
+FAIL
+FAIL	command-line-arguments	0.002s
+FAIL

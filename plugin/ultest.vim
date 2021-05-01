@@ -191,8 +191,7 @@ let g:ultest#processors = [
 " in a line of code
 "
 " 'namepsace': A list of python-style regex patterns that can idenitfy test
-" namespaces (e.g. Classes). This feature is currently unsupporte but will be
-" in the future.
+" namespaces (e.g. Classes).
 "
 " If you find a missing language that requires you to set this value,
 " considering onpening an issue/PR to make it available to others.
@@ -238,6 +237,12 @@ call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "Ultes
 
 ""
 " Run all tests in the current file
+" Some runners can be run as a single command if the output can be parsed to
+" gain results. Otherwise, each test is run as a single command.
+"
+" Running as a single command can significanly improve performance, so if your
+" runner is not yet supported please open an issue with sample output! Check
+" the repo wiki for an updated list of runners.
 command! Ultest call ultest#run_file({"pre_run": g:ultest_pre_run})
 
 ""

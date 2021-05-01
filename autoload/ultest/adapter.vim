@@ -3,13 +3,13 @@ function! ultest#adapter#get_runner(file)
   return test#determine_runner(a:file)
 endfunction
 
-function! ultest#adapter#build_cmd(test) abort
+function! ultest#adapter#build_cmd(test, scope) abort
   let a:test.file = fnamemodify(a:test.file, get(g:, "test#filename_modifier", ":."))
   call ultest#process#pre(a:test)
   let runner = ultest#adapter#get_runner(a:test.file)
   let executable = test#base#executable(runner)
 
-  let base_args = test#base#build_position(runner, "nearest", a:test)
+  let base_args = test#base#build_position(runner, a:scope, a:test)
   let args = test#base#options(runner, base_args)
   let args = test#base#build_args(runner, args, "ultest")
 

@@ -4,7 +4,7 @@ local builders = {}
 
 local function dap_run_test(test, build_config)
   local dap = require("dap")
-  local cmd = vim.fn["ultest#adapter#build_cmd"](test)
+  local cmd = vim.fn["ultest#adapter#build_cmd"](test, "nearest")
 
   local output_name = vim.fn["tempname"]()
 
