@@ -1,13 +1,13 @@
 import os
 from shlex import split
-from typing import Callable, Dict, Iterable, List, Literal, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import Result, Test, Namespace
+from ..models import Namespace, Result, Test, Tree
 from ..vim_client import VimClient
-from .finder import PositionFinder
+from .finder import Position, PositionFinder
 from .parser import OutputParser
 from .processes import ProcessManager
 from .results import ResultStore
@@ -38,7 +38,7 @@ class Handler:
         self._finder = finder
         self._results = results
         self._output_parser = output_parser
-        self._stored_positions: Dict[str, List[Union[Test, Namespace]]] = {}
+        self._stored_positions: Dict[str, Tree[Position]] = {}
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
         self._vim.log.debug("Handler created")
@@ -101,7 +101,13 @@ class Handler:
 
             self._vim.launch(run(), test.id)
 
-    def _run_group(self, cmd: List[str], tests: List[Test], namespaces: Dict[str, Namespace], file_name: str):
+    def _run_group(
+        self,
+        cmd: List[str],
+        tests: List[Test],
+        namespaces: Dict[str, Namespace],
+        file_name: str,
+    ):
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         if not self._output_parser.can_parse(runner):
             raise ValueError("Unsupported runner for grouped running")
@@ -182,7 +188,7 @@ class Handler:
         """
 
         self._vim.log.finfo("Running all tests in {file_name}")
-        positions = self._stored_positions.get(file_name, [])
+        positions = self._stored_positions.get(file_name)
 
         if not positions and update_empty:
             self._vim.log.finfo(
@@ -193,6 +199,9 @@ class Handler:
                 self._vim.schedule(self.run_all, file_name, update_empty=False)
 
             self.update_positions(file_name, callback=run_after_update)
+
+        if not positions:
+            return
 
         tests = []
         namespaces = {}
@@ -218,7 +227,7 @@ class Handler:
         """
 
         self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
-        positions = self._stored_positions.get(file_name, [])
+        positions = self._stored_positions.get(file_name)
 
         if not positions and update_empty:
             self._vim.log.finfo(
@@ -232,18 +241,18 @@ class Handler:
 
             return self.update_positions(file_name, callback=run_after_update)
 
-        position = self._finder.get_nearest_from(line, positions, strict=False, include_namespace=True)
+        position = positions.sorted_search(line, key=lambda pos: pos.line, strict=False)
         if isinstance(position, Test):
             self._vim.log.finfo("Nearest test found is {test.id}")
             self._run_tests([position])
         elif isinstance(position, Namespace):
             ...
-#             try:
-#                 cmd = self._vim.sync_call("ultest#adapter#build_cmd", positions[0], "file")
-#                 self._run_group(cmd, positions, namespaces, file_name)
-#             except ValueError:
-#                 self._run_tests(positions)
-            
+
+    #             try:
+    #                 cmd = self._vim.sync_call("ultest#adapter#build_cmd", positions[0], "file")
+    #                 self._run_group(cmd, positions, namespaces, file_name)
+    #             except ValueError:
+    #                 self._run_tests(positions)
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -339,11 +348,10 @@ class Handler:
     def get_nearest_test(
         self, line: int, file_name: str, strict: bool, include_namespace: bool = False
     ) -> Optional[Union[Test, Namespace]]:
-        tests = self._stored_positions.get(file_name, [])
-        test = self._finder.get_nearest_from(
-            line, tests, strict=strict, include_namespace=include_namespace
-        )
-        return test
+        positions = self._stored_positions.get(file_name)
+        if not positions:
+            return None
+        return positions.sorted_search(line, key=lambda pos: pos.line, strict=strict)
 
     def get_nearest_test_dict(
         self, line: int, file_name: str, strict: bool, include_namespace: bool = False
