@@ -1,13 +1,13 @@
 import os
 from shlex import split
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import Result, Test
+from ..models import Result, Test, Namespace
 from ..vim_client import VimClient
-from .finder import TestFinder
+from .finder import PositionFinder
 from .parser import OutputParser
 from .processes import ProcessManager
 from .results import ResultStore
@@ -17,7 +17,7 @@ class HandlerFactory:
     @staticmethod
     def create(vim: Nvim, logger: UltestLogger) -> "Handler":
         client = VimClient(vim, logger)
-        finder = TestFinder(client)
+        finder = PositionFinder(client)
         process_manager = ProcessManager(client)
         results = ResultStore()
         output_parser = OutputParser(logger)
@@ -29,7 +29,7 @@ class Handler:
         self,
         nvim: VimClient,
         process_manager: ProcessManager,
-        finder: TestFinder,
+        finder: PositionFinder,
         results: ResultStore,
         output_parser: OutputParser,
     ):
@@ -38,7 +38,7 @@ class Handler:
         self._finder = finder
         self._results = results
         self._output_parser = output_parser
-        self._stored_tests: Dict[str, List[Test]] = {}
+        self._stored_positions: Dict[str, List[Union[Test, Namespace]]] = {}
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
         self._vim.log.debug("Handler created")
@@ -101,6 +101,60 @@ class Handler:
 
             self._vim.launch(run(), test.id)
 
+    def _run_group(self, cmd: List[str], tests: List[Test], namespaces: Dict[str, Namespace], file_name: str):
+        runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
+        if not self._output_parser.can_parse(runner):
+            raise ValueError("Unsupported runner for grouped running")
+
+        root = self._vim.sync_call("get", "g:", "test#project_root") or None
+        for test in tests:
+            self._register_started(test)
+
+        async def run(cmd=cmd):
+            (code, output_path) = await self._process_manager.run(
+                cmd, file_name, file_name, cwd=root
+            )
+            output = []
+            if code:
+                with open(output_path, "r") as cmd_out:
+                    output = cmd_out.readlines()
+            failed = {
+                (failed.name, *failed.namespaces)
+                for failed in self._output_parser.parse_failed(runner, output)
+            }
+
+            def get_code(test: Test) -> int:
+                if not code:
+                    return 0
+                # If none were parsed but the process failed then something else went wrong,
+                # and we treat it as all failed
+                if not failed:
+                    return code
+                if (
+                    test.name,
+                    *[
+                        namespaces[namespace_id].name
+                        for namespace_id in test.namespaces
+                    ],
+                ) in failed:
+                    return code
+
+                return 0
+
+            for test in tests:
+                self._register_result(
+                    test,
+                    Result(
+                        id=test.id,
+                        file=test.file,
+                        code=get_code(test),
+                        output=output_path,
+                    ),
+                )
+
+        self._vim.launch(run(), file_name)
+        ...
+
     def _register_started(self, test: Test):
         test.running = 1
         self._process_manager.register_new_process(test.id)
@@ -128,9 +182,9 @@ class Handler:
         """
 
         self._vim.log.finfo("Running all tests in {file_name}")
-        tests = self._stored_tests.get(file_name, [])
+        positions = self._stored_positions.get(file_name, [])
 
-        if not tests and update_empty:
+        if not positions and update_empty:
             self._vim.log.finfo(
                 "No tests found for {file_name}, rerunning after processing positions"
             )
@@ -140,54 +194,20 @@ class Handler:
 
             self.update_positions(file_name, callback=run_after_update)
 
+        tests = []
+        namespaces = {}
+        for position in positions:
+            if isinstance(position, Test):
+                tests.append(position)
+            else:
+                namespaces[position.id] = position
+
         if tests:
-            runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
-            if not self._output_parser.can_parse(runner):
+            try:
+                cmd = self._vim.sync_call("ultest#adapter#build_cmd", tests[0], "file")
+                self._run_group(cmd, tests, namespaces, file_name)
+            except ValueError:
                 self._run_tests(tests)
-                return
-
-            root = self._vim.sync_call("get", "g:", "test#project_root") or None
-            for test in tests:
-                self._register_started(test)
-            cmd = self._vim.sync_call("ultest#adapter#build_cmd", tests[0], "file")
-
-            async def run(cmd=cmd):
-                (code, output_path) = await self._process_manager.run(
-                    cmd, file_name, file_name, cwd=root
-                )
-                output = []
-                if code:
-                    with open(output_path, "r") as cmd_out:
-                        output = cmd_out.readlines()
-                failed = {
-                    (failed.name, *failed.namespaces)
-                    for failed in self._output_parser.parse_failed(runner, output)
-                }
-
-                def get_code(test: Test) -> int:
-                    if not code:
-                        return 0
-                    # If none were parsed but the process failed then something else went wrong,
-                    # and we treat it as all failed
-                    if not failed:
-                        return code
-                    if (test.name, *test.namespaces) in failed:
-                        return code
-
-                    return 0
-
-                for test in tests:
-                    self._register_result(
-                        test,
-                        Result(
-                            id=test.id,
-                            file=test.file,
-                            code=get_code(test),
-                            output=output_path,
-                        ),
-                    )
-
-            self._vim.launch(run(), file_name)
 
     def run_nearest(self, line: int, file_name: str, update_empty: bool = True):
         """
@@ -198,9 +218,9 @@ class Handler:
         """
 
         self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
-        tests = self._stored_tests.get(file_name, [])
+        positions = self._stored_positions.get(file_name, [])
 
-        if not tests and update_empty:
+        if not positions and update_empty:
             self._vim.log.finfo(
                 "No tests found for {file_name}, rerunning after processing positions"
             )
@@ -212,21 +232,37 @@ class Handler:
 
             return self.update_positions(file_name, callback=run_after_update)
 
-        test = self._finder.get_nearest_from(line, tests, strict=False)
-        if test:
+        position = self._finder.get_nearest_from(line, positions, strict=False, include_namespace=True)
+        if isinstance(position, Test):
             self._vim.log.finfo("Nearest test found is {test.id}")
-            self._run_tests([test])  # type: ignore
+            self._run_tests([position])
+        elif isinstance(position, Namespace):
+            ...
+#             try:
+#                 cmd = self._vim.sync_call("ultest#adapter#build_cmd", positions[0], "file")
+#                 self._run_group(cmd, positions, namespaces, file_name)
+#             except ValueError:
+#                 self._run_tests(positions)
+            
 
     def run_single(self, test_id: str, file_name: str):
         """
-        Run nearest test to cursor in file.
+        Run a test with the given ID
 
         :param test_id: Test to run
         :param file_name: File to run in.
         """
         self._vim.log.finfo("Running test {test_id} in {file_name}")
-        tests = self._stored_tests.get(file_name, [])
-        self._run_tests([test for test in tests if test.id == test_id])
+        tests = self._stored_positions.get(file_name, [])
+        match = None
+        for position in tests:
+            if test_id == position.id:
+                match = position
+        if isinstance(match, Test):
+            self._vim.log.finfo("Nearest test found is {test.id}")
+            self._run_tests([match])
+        elif isinstance(match, Namespace):
+            ...
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
         """
@@ -249,7 +285,7 @@ class Handler:
             return
 
         recorded_tests = {
-            test.id: test for test in self._stored_tests.get(file_name, [])
+            test.id: test for test in self._stored_positions.get(file_name, [])
         }
         if not recorded_tests:
             self._vim.call("setbufvar", file_name, "ultest_results", {})
@@ -258,11 +294,12 @@ class Handler:
 
         async def runner():
             self._vim.log.finfo("Updating positions in {file_name}")
-            tests, _ = await self._finder.find_all(file_name, vim_patterns)
-            self._stored_tests[file_name] = tests
+            tests = await self._finder.find_all(file_name, vim_patterns)
+            self._stored_positions[file_name] = tests
             self._vim.call(
-                "ultest#process#store_sorted_ids",
+                "setbufvar",
                 file_name,
+                "ultest_sorted_tests",
                 [test.id for test in tests],
             )
             for test in tests:
@@ -300,16 +337,18 @@ class Handler:
         self._vim.launch(runner(), "update_positions")
 
     def get_nearest_test(
-        self, line: int, file_name: str, strict: bool
-    ) -> Optional[Test]:
-        tests = self._stored_tests.get(file_name, [])
-        test = self._finder.get_nearest_from(line, tests, strict)
+        self, line: int, file_name: str, strict: bool, include_namespace: bool = False
+    ) -> Optional[Union[Test, Namespace]]:
+        tests = self._stored_positions.get(file_name, [])
+        test = self._finder.get_nearest_from(
+            line, tests, strict=strict, include_namespace=include_namespace
+        )
         return test
 
     def get_nearest_test_dict(
-        self, line: int, file_name: str, strict: bool
+        self, line: int, file_name: str, strict: bool, include_namespace: bool = False
     ) -> Optional[Dict]:
-        test = self.get_nearest_test(line, file_name, strict)
+        test = self.get_nearest_test(line, file_name, strict, include_namespace)
         return test and test.dict()
 
     def get_attach_script(self, process_id: str) -> Optional[Tuple[str, str]]:

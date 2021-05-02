@@ -1,13 +1,14 @@
 import random
-from typing import List
+from rplugin.python3.ultest.models.namespace import Namespace
+from typing import List, Union
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
 from hypothesis import given
 from hypothesis.strategies import builds, integers, lists
 
-from rplugin.python3.ultest.handler.finder import TestFinder
-from rplugin.python3.ultest.models.test import Test
+from rplugin.python3.ultest.handler.finder import PositionFinder
+from rplugin.python3.ultest.models import Test, Namespace
 from tests.mocks import get_test_file
 
 
@@ -29,11 +30,11 @@ def sorted_tests(
 
 vim = Mock()
 vim.launch = lambda f, _: f()
-finder = TestFinder(vim)
+finder = PositionFinder(vim)
 
 
 @given(sorted_tests())
-def test_get_nearest_from_strict_match(tests: List[Test]):
+def test_get_nearest_from_strict_match(tests: List[Union[Test, Namespace]]):
     test_i = int(random.random() * len(tests))
     expected = tests[test_i]
     result = finder.get_nearest_from(expected.line, tests, strict=True)
@@ -41,14 +42,14 @@ def test_get_nearest_from_strict_match(tests: List[Test]):
 
 
 @given(sorted_tests())
-def test_get_nearest_from_strict_no_match(tests: List[Test]):
+def test_get_nearest_from_strict_no_match(tests: List[Union[Test, Namespace]]):
     test_i = int(random.random() * len(tests))
     result = finder.get_nearest_from(tests[test_i].line + 1, tests, strict=True)
     assert result is None
 
 
 @given(sorted_tests())
-def test_get_nearest_from_non_strict_match(tests: List[Test]):
+def test_get_nearest_from_non_strict_match(tests: List[Union[Test, Namespace]]):
     test_i = int(random.random() * len(tests))
     expected = tests[test_i]
     result = finder.get_nearest_from(expected.line + 1, tests, strict=False)
@@ -56,7 +57,7 @@ def test_get_nearest_from_non_strict_match(tests: List[Test]):
 
 
 @given(sorted_tests(min_line=20))
-def test_get_nearest_from_non_strict_no_match(tests: List[Test]):
+def test_get_nearest_from_non_strict_no_match(tests: List[Union[Test, Namespace]]):
     line = 10
     result = finder.get_nearest_from(line, tests, strict=False)
     assert result is None
@@ -71,7 +72,7 @@ async def test_find_python_tests():
         "namespace": [r"\v^\s*class (\w+)"],
     }
 
-    tests, namespaces = await finder.find_all("", patterns)
+    tests = await finder.find_all("", patterns)
 
     expected = [
         Test(
@@ -83,17 +84,26 @@ async def test_find_python_tests():
             running=0,
             namespaces=[],
         ),
-        Test(
+        Namespace(
             id=tests[1].id,
+            name="TestMock",
+            file="",
+            line=6,
+            col=1,
+            running=0,
+            namespaces=[],
+        ),
+        Test(
+            id=tests[2].id,
             name="test_a10",
             file="",
             line=7,
             col=1,
             running=0,
-            namespaces=["TestMock"],
+            namespaces=[tests[1].id],
         ),
         Test(
-            id=tests[2].id,
+            id=tests[3].id,
             name="test_a43",
             file="",
             line=10,
