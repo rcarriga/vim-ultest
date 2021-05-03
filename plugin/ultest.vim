@@ -48,8 +48,11 @@ let g:ultest_buffers = []
 hi default UltestPass ctermfg=Green guifg=#96F291
 hi default UltestFail ctermfg=Red guifg=#F70067
 hi default UltestRunning ctermfg=Yellow guifg=#FFEC63
+hi default UltestDefault ctermfg=Grey guifg=#8B8B8B
 hi default UltestBorder ctermfg=Red guifg=#F70067
-hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
+hi default UltestInfo ctermfg=cyan guifg=#00F1F5
+hi default link UltestFile UltestInfo
+hi default link UltestNamespace UltestInfo
 
 ""
 " Number of workers that are used for running tests.
