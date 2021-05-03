@@ -241,9 +241,9 @@ class Handler:
 
             return self.update_positions(file_name, callback=run_after_update)
 
-        position = positions.sorted_search(line, key=lambda pos: pos.line, strict=False)
+        position = self.get_nearest_test(line, file_name, strict=False, include_namespace=False)
         if isinstance(position, Test):
-            self._vim.log.finfo("Nearest test found is {test.id}")
+            self._vim.log.finfo("Nearest test found is {position.id}")
             self._run_tests([position])
         elif isinstance(position, Namespace):
             ...
@@ -300,11 +300,20 @@ class Handler:
             self._vim.call("setbufvar", file_name, "ultest_results", {})
             self._vim.call("setbufvar", file_name, "ultest_tests", {})
             self._vim.call("setbufvar", file_name, "ultest_sorted_tests", [])
+            self._vim.call("setbufvar", file_name, "ultest_file_structure", [])
 
         async def runner():
             self._vim.log.finfo("Updating positions in {file_name}")
-            tests = await self._finder.find_all(file_name, vim_patterns)
-            self._stored_positions[file_name] = tests
+            positions = await self._finder.find_all(file_name, vim_patterns)
+            self._stored_positions[file_name] = positions
+            self._vim.call(
+                "setbufvar",
+                file_name,
+                "ultest_file_structure",
+                positions.map(lambda pos: {"type": pos.type, "id": pos.id}).to_list(),
+            )
+
+            tests = list(positions)
             self._vim.call(
                 "setbufvar",
                 file_name,
@@ -315,7 +324,8 @@ class Handler:
                 if test.id in recorded_tests:
                     recorded = recorded_tests.pop(test.id)
                     if recorded.line != test.line:
-                        test.running = self._process_manager.is_running(test.id)
+                        if isinstance(test ,Test):
+                            test.running = self._process_manager.is_running(test.id)
                         self._vim.log.fdebug(
                             "Moving test {test.id} from {recorded.line} to {test.line} in {file_name}"
                         )
@@ -347,11 +357,11 @@ class Handler:
 
     def get_nearest_test(
         self, line: int, file_name: str, strict: bool, include_namespace: bool = False
-    ) -> Optional[Union[Test, Namespace]]:
+    ) -> Optional[Position]:
         positions = self._stored_positions.get(file_name)
         if not positions:
             return None
-        return positions.sorted_search(line, key=lambda pos: pos.line, strict=strict)
+        return positions.sorted_search(line, key=lambda pos: pos.line if isinstance(pos, Test) else -1, strict=strict)
 
     def get_nearest_test_dict(
         self, line: int, file_name: str, strict: bool, include_namespace: bool = False

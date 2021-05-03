@@ -13,6 +13,7 @@ class Test:
     col: int
     running: int
     namespaces: List[str] = field(default_factory=list)
+    type: str = "test" 
 
     def __str__(self):
         return self.__repr__()

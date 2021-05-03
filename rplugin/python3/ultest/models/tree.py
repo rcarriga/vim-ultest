@@ -2,6 +2,7 @@ from typing import Callable, Generic, Iterator, List, Optional, Protocol, TypeVa
 
 TreeData = TypeVar("TreeData")
 
+
 C = TypeVar("C")
 
 
@@ -23,6 +24,7 @@ class Tree(Generic[TreeData]):
     def __init__(self, data: TreeData, children: List["Tree[TreeData]"]) -> None:
         self._children: List[Tree[TreeData]] = children
         self._data = data
+        self._length = 1 + sum(len(child) for child in self._children)
 
     @classmethod
     def from_list(cls, data) -> "Tree[TreeData]":
@@ -39,10 +41,34 @@ class Tree(Generic[TreeData]):
         else:
             return Tree(data=data, children=[])
 
+    def __len__(self) -> int:
+        return self._length
+
+    def __getitem__(self, index: int) -> TreeData:
+        orig = index
+        if index > len(self):
+            raise IndexError(f"No node found with index {orig}")
+
+        if index == 0:
+            return self._data
+
+        checked = 1
+        for child in self._children:
+            if len(child) > index - checked:
+                return child[index - checked]
+            checked += len(child)
+
+        raise Exception  # Shouldn't happen
+
     def to_list(self):
         if not self._children:
+            return [self._data]
+        return self._to_list()
+
+    def _to_list(self):
+        if not self._children:
             return self._data
-        return [self._data, *[child.to_list() for child in self._children]]
+        return [self._data, *[child._to_list() for child in self._children]]
 
     @property
     def data(self) -> TreeData:
@@ -57,6 +83,17 @@ class Tree(Generic[TreeData]):
             for data in child:
                 yield data
 
+    X = TypeVar("X")
+
+    def map(self, f: Callable[[TreeData], X]) -> "Tree[X]":
+        try:
+            return Tree(
+                data=f(self._data), children=[child.map(f) for child in self._children]
+            )
+        except Exception:
+            breakpoint()
+            raise
+
     def sorted_search(
         self,
         target: SearchKey,
@@ -66,35 +103,24 @@ class Tree(Generic[TreeData]):
         """
         Search through the tree using binary search to search through children
 
-        The tree must be constructed by sorted input
-
         :param target: The target value to find
         :param key: Function to return a value to sort nodes with
         :param strict: The search will only return an exact match, defaults to False
         :return:  The matching node, or nearest one if not strict
         """
-        if not self._children:
-            return self._data if not strict else None
-
-        nodes: List[Tree[TreeData]] = [self, *self._children]
         l = 0
-        r = len(nodes) - 1
+        r = len(self) - 1
         while l <= r:
             m = int((l + r) / 2)
-            mid = nodes[m]
-            if key(mid.data) < target:
+            mid = self[m]
+            if key(mid) < target:
                 l = m + 1
-            elif key(mid.data) > target:
+            elif key(mid) > target:
                 r = m - 1
             else:
-                return mid.data
+                return mid
 
         if r < 0:
             return None
 
-        if r != 0:
-            child_result = nodes[r].sorted_search(target=target, key=key, strict=strict)
-            if child_result:
-                return child_result
-
-        return nodes[r].data if not strict and key(nodes[r].data) < target else None
+        return self[r] if not strict and key(self[r]) < target else None

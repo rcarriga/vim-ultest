@@ -1,12 +1,13 @@
 import re
+import json
 from typing import Dict, List, Optional, Pattern, Tuple, Union
 
-from ..models import Namespace, Test, Tree
+from ..models import Namespace, Test, Tree, File
 from ..vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 
-Position = Union[Test, Namespace]
+Position = Union[File, Test, Namespace]
 PosList = Union[Position, List["PosList"]]
 
 
@@ -22,8 +23,8 @@ class PositionFinder:
         res, _ = self._parse_position_tree(
             file_name, patterns["test"], patterns["namespace"], lines
         )
-
-        return Tree.from_list(res)  # type: ignore
+        x = Tree[Position].from_list([File(id=file_name, name=file_name, file=file_name), *res])
+        return x
 
     def _convert_patterns(
         self, vim_patterns: Dict[str, List[str]]

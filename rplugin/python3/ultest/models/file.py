@@ -1,19 +1,18 @@
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import List
 
 
 @dataclass(repr=False)
-class Namespace:
+class File:
 
     id: str
     name: str
     file: str
-    line: int
-    col: int
-    running: int
-    namespaces: List[str]
-    type: str = "namespace"
+    line: int = 0
+    col: int = 0
+    namespaces: List[str] = field(default_factory=list)
+    type: str = "file"
 
     def __str__(self):
         return self.__repr__()
