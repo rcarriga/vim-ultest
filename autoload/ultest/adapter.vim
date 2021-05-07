@@ -4,6 +4,9 @@ function! ultest#adapter#get_runner(file)
 endfunction
 
 function! ultest#adapter#build_cmd(test, scope) abort
+  if exists('g:test#project_root')
+    execute 'cd' g:test#project_root
+  endif
   let a:test.file = fnamemodify(a:test.file, get(g:, "test#filename_modifier", ":."))
   call ultest#process#pre(a:test)
   let runner = ultest#adapter#get_runner(a:test.file)
@@ -20,6 +23,9 @@ function! ultest#adapter#build_cmd(test, scope) abort
     let cmd = g:test#custom_transformations[g:test#transformation](cmd)
   endif
   let cmd = ultest#handler#safe_split(cmd)
+  if exists('g:test#project_root')
+    cd -
+  endif
   return cmd
 endfunction
 
