@@ -5,7 +5,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import Namespace, Result, Test, Tree
+from ..models import File, Namespace, Result, Test, Tree
 from ..vim_client import VimClient
 from .finder import Position, PositionFinder
 from .parser import OutputParser
@@ -101,24 +101,32 @@ class Handler:
 
             self._vim.launch(run(), test.id)
 
-    def _run_group(
-        self,
-        cmd: List[str],
-        tests: List[Test],
-        namespaces: Dict[str, Namespace],
-        file_name: str,
-    ):
-        runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
-        if not self._output_parser.can_parse(runner):
-            raise ValueError("Unsupported runner for grouped running")
+    def _run_tree(self, tree: Tree[Position], file_name: str):
+        tests = []
+        namespaces = {}
+        for position in tree:
+            if isinstance(position, Test):
+                tests.append(position)
+            elif isinstance(position, Namespace):
+                namespaces[position.id] = position
 
+        runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
+        if not tests:
+            return
+
+        if not self._output_parser.can_parse(runner) or len(tests) == 1:
+            self._run_tests(tests)
+            return
+
+        scope = "file" if isinstance(tree.data, File) else "nearest"
+        cmd = self._vim.sync_call("ultest#adapter#build_cmd", tree[0], scope)
         root = self._vim.sync_call("get", "g:", "test#project_root") or None
         for test in tests:
             self._register_started(test)
 
         async def run(cmd=cmd):
             (code, output_path) = await self._process_manager.run(
-                cmd, file_name, file_name, cwd=root
+                cmd, tree.data.file, tree.data.id, cwd=root
             )
             output = []
             if code:
@@ -159,7 +167,6 @@ class Handler:
                 )
 
         self._vim.launch(run(), file_name)
-        ...
 
     def _register_started(self, test: Test):
         test.running = 1
@@ -176,8 +183,8 @@ class Handler:
         if result.code and self._vim.sync_call("expand", "%") == result.file:
             self._vim.log.fdebug("Showing {result.id} output")
             line = self._vim.sync_call("getbufinfo", result.file)[0].get("lnum")
-            nearest = self.get_nearest_test(line, result.file, strict=False)
-            if nearest and nearest.id == result.id:
+            nearest = self.get_nearest_position(line, result.file, strict=False)
+            if nearest and nearest.data.id == result.id:
                 self._vim.sync_call("ultest#output#open", result.dict())
 
     def run_all(self, file_name: str, update_empty: bool = True):
@@ -203,20 +210,7 @@ class Handler:
         if not positions:
             return
 
-        tests = []
-        namespaces = {}
-        for position in positions:
-            if isinstance(position, Test):
-                tests.append(position)
-            else:
-                namespaces[position.id] = position
-
-        if tests:
-            try:
-                cmd = self._vim.sync_call("ultest#adapter#build_cmd", tests[0], "file")
-                self._run_group(cmd, tests, namespaces, file_name)
-            except ValueError:
-                self._run_tests(tests)
+        self._run_tree(positions, file_name)
 
     def run_nearest(self, line: int, file_name: str, update_empty: bool = True):
         """
@@ -241,18 +235,14 @@ class Handler:
 
             return self.update_positions(file_name, callback=run_after_update)
 
-        position = self.get_nearest_test(line, file_name, strict=False, include_namespace=False)
-        if isinstance(position, Test):
-            self._vim.log.finfo("Nearest test found is {position.id}")
-            self._run_tests([position])
-        elif isinstance(position, Namespace):
-            ...
+        position = self.get_nearest_position(
+            line, file_name, strict=False, include_namespace=True
+        )
 
-    #             try:
-    #                 cmd = self._vim.sync_call("ultest#adapter#build_cmd", positions[0], "file")
-    #                 self._run_group(cmd, positions, namespaces, file_name)
-    #             except ValueError:
-    #                 self._run_tests(positions)
+        if not position:
+            return
+
+        self._run_tree(position, file_name)
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -262,16 +252,18 @@ class Handler:
         :param file_name: File to run in.
         """
         self._vim.log.finfo("Running test {test_id} in {file_name}")
-        tests = self._stored_positions.get(file_name, [])
+        positions = self._stored_positions.get(file_name)
+        if not positions:
+            return
         match = None
-        for position in tests:
-            if test_id == position.id:
+        for position in positions.nodes():
+            if test_id == position.data.id:
                 match = position
-        if isinstance(match, Test):
-            self._vim.log.finfo("Nearest test found is {test.id}")
-            self._run_tests([match])
-        elif isinstance(match, Namespace):
-            ...
+
+        if not match:
+            return
+
+        self._run_tree(match, file_name)
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
         """
@@ -324,7 +316,7 @@ class Handler:
                 if test.id in recorded_tests:
                     recorded = recorded_tests.pop(test.id)
                     if recorded.line != test.line:
-                        if isinstance(test ,Test):
+                        if isinstance(test, Test):
                             test.running = self._process_manager.is_running(test.id)
                         self._vim.log.fdebug(
                             "Moving test {test.id} from {recorded.line} to {test.line} in {file_name}"
@@ -355,19 +347,28 @@ class Handler:
 
         self._vim.launch(runner(), "update_positions")
 
-    def get_nearest_test(
+    def get_nearest_position(
         self, line: int, file_name: str, strict: bool, include_namespace: bool = False
-    ) -> Optional[Position]:
+    ) -> Optional[Tree[Position]]:
         positions = self._stored_positions.get(file_name)
         if not positions:
             return None
-        return positions.sorted_search(line, key=lambda pos: pos.line if isinstance(pos, Test) else -1, strict=strict)
+        key = (
+            (lambda pos: pos.line)
+            if include_namespace
+            else lambda pos: pos.line
+            if isinstance(pos, Test)
+            else -1
+        )
+        return positions.sorted_search(line, key=key, strict=strict)
 
     def get_nearest_test_dict(
         self, line: int, file_name: str, strict: bool, include_namespace: bool = False
     ) -> Optional[Dict]:
-        test = self.get_nearest_test(line, file_name, strict, include_namespace)
-        return test and test.dict()
+        test = self.get_nearest_position(line, file_name, strict, include_namespace)
+        if not test:
+            return None
+        return test.data.dict()
 
     def get_attach_script(self, process_id: str) -> Optional[Tuple[str, str]]:
         self._vim.log.finfo("Creating script to attach to process {process_id}")

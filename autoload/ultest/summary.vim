@@ -135,6 +135,10 @@ function! s:RenderGroup(root_prefix, group, indent, group_state) abort
   let state = a:group_state
   let root = a:group[0]
   call s:RenderGroupMember(a:root_prefix, root, state)
+  if len(a:group) < 2
+    " Empty file
+    return
+  endif
   for index in range(1, len(a:group) - 2)
     let member = a:group[index]
     if type(member) == v:t_dict

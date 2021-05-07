@@ -5,7 +5,7 @@ from hypothesis import given
 from hypothesis.strategies import builds, integers, lists
 
 from rplugin.python3.ultest.handler.finder import Position
-from rplugin.python3.ultest.models import Namespace, Test, Tree, File
+from rplugin.python3.ultest.models import File, Namespace, Test, Tree
 from rplugin.python3.ultest.models.namespace import Namespace
 
 

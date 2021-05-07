@@ -1,8 +1,7 @@
 import re
-import json
 from typing import Dict, List, Optional, Pattern, Tuple, Union
 
-from ..models import Namespace, Test, Tree, File
+from ..models import File, Namespace, Test, Tree
 from ..vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
@@ -23,7 +22,9 @@ class PositionFinder:
         res, _ = self._parse_position_tree(
             file_name, patterns["test"], patterns["namespace"], lines
         )
-        x = Tree[Position].from_list([File(id=file_name, name=file_name, file=file_name), *res])
+        x = Tree[Position].from_list(
+            [File(id=file_name, name=file_name, file=file_name), *res]
+        )
         return x
 
     def _convert_patterns(
@@ -53,6 +54,7 @@ class PositionFinder:
         init_line: int = 1,
         init_indent: int = -1,
         current_namespaces: Optional[List[str]] = None,
+        last_test_indent=-1,
     ) -> Tuple[List[PosList], int]:
         positions = []
         indent_pattern = re.compile(r"(^\s*)\S")
@@ -78,6 +80,9 @@ class PositionFinder:
             if current_indent and len(current_indent[1]) <= init_indent:
                 return positions, line_no - 1 - init_line
 
+            if cls is Test:
+                last_test_indent = len(current_indent[1])
+
             id_suffix = hash((file_name, " ".join(current_namespaces)))
             position = cls(
                 id=self._clean_id(name + str(id_suffix)),
@@ -98,8 +103,10 @@ class PositionFinder:
                     init_line=line_no + 1,
                     init_indent=len(current_indent[1]),
                     current_namespaces=[*current_namespaces, position.id],
+                    last_test_indent=last_test_indent,
                 )
-                positions.append([position, *children])
+                if last_test_indent == -1 or last_test_indent >= len(current_indent[1]):
+                    positions.append([position, *children])
             else:
                 lines_consumed = 1
                 positions.append(position)

@@ -83,6 +83,28 @@ class Tree(Generic[TreeData]):
             for data in child:
                 yield data
 
+    def nodes(self) -> Iterator["Tree[TreeData]"]:
+        yield self
+        for child in self._children:
+            for data in child.nodes():
+                yield data
+
+    def node(self, index: int) -> "Tree[TreeData]":
+        orig = index
+        if index > len(self):
+            raise IndexError(f"No node found with index {orig}")
+
+        if index == 0:
+            return self
+
+        checked = 1
+        for child in self._children:
+            if len(child) > index - checked:
+                return child.node(index - checked)
+            checked += len(child)
+
+        raise Exception  # Shouldn't happen
+
     X = TypeVar("X")
 
     def map(self, f: Callable[[TreeData], X]) -> "Tree[X]":
@@ -99,7 +121,7 @@ class Tree(Generic[TreeData]):
         target: SearchKey,
         key: Callable[[TreeData], SearchKey],
         strict: bool = False,
-    ) -> Optional[TreeData]:
+    ) -> Optional["Tree[TreeData]"]:
         """
         Search through the tree using binary search to search through children
 
@@ -112,10 +134,10 @@ class Tree(Generic[TreeData]):
         r = len(self) - 1
         while l <= r:
             m = int((l + r) / 2)
-            mid = self[m]
-            if key(mid) < target:
+            mid = self.node(m)
+            if key(mid.data) < target:
                 l = m + 1
-            elif key(mid) > target:
+            elif key(mid.data) > target:
                 r = m - 1
             else:
                 return mid
@@ -123,4 +145,4 @@ class Tree(Generic[TreeData]):
         if r < 0:
             return None
 
-        return self[r] if not strict and key(self[r]) < target else None
+        return self.node(r) if not strict and key(self[r]) < target else None
