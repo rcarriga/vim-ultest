@@ -1,44 +1,30 @@
 import re
-from typing import Dict, List, Optional, Pattern, Tuple
+import json
+from typing import Dict, List, Optional, Pattern, Tuple, Union
 
-from ..models import Namespace, Test
+from ..models import Namespace, Test, Tree, File
 from ..vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 
+Position = Union[File, Test, Namespace]
+PosList = Union[Position, List["PosList"]]
 
-class TestFinder:
+
+class PositionFinder:
     def __init__(self, vim: VimClient):
         self._vim = vim
 
-    async def find_all(self, file_name: str, vim_patterns: Dict):
+    async def find_all(self, file_name: str, vim_patterns: Dict) -> Tree[Position]:
         patterns = self._convert_patterns(vim_patterns)
         self._vim.log.fdebug("Converted pattern {vim_patterns} to {patterns}")
         with open(file_name, "r") as test_file:
             lines = test_file.readlines()
-        return self._calculate_tests(
+        res, _ = self._parse_position_tree(
             file_name, patterns["test"], patterns["namespace"], lines
         )
-
-    def get_nearest_from(
-        self, line: int, tests: List[Test], strict: bool = False
-    ) -> Optional[Test]:
-        if not tests:
-            return None
-        l = 0
-        r = len(tests) - 1
-        while l <= r:
-            m = int((l + r) / 2)
-            mid = tests[m]
-            if mid.line < line:
-                l = m + 1
-            elif mid.line > line:
-                r = m - 1
-            else:
-                return mid
-        return (
-            tests[r] if not strict and len(tests) > r and tests[r].line < line else None
-        )
+        x = Tree[Position].from_list([File(id=file_name, name=file_name, file=file_name), *res])
+        return x
 
     def _convert_patterns(
         self, vim_patterns: Dict[str, List[str]]
@@ -58,77 +44,68 @@ class TestFinder:
             regex = re.sub(pattern, repl, regex)
         return re.compile(regex)
 
-    def _calculate_tests(
+    def _parse_position_tree(
         self,
         file_name: str,
         test_patterns: List[Pattern],
         namespace_patterns: List[Pattern],
         lines: List[str],
-    ) -> Tuple[List[Test], List[Namespace]]:
-        tests = []
-        namespaces = []
-        current_namespaces: List[Tuple[str, int]] = []
-        indent_match = re.compile(r"^\s*")
-        for line_no, line in enumerate(lines, start=1):
+        init_line: int = 1,
+        init_indent: int = -1,
+        current_namespaces: Optional[List[str]] = None,
+    ) -> Tuple[List[PosList], int]:
+        positions = []
+        indent_pattern = re.compile(r"(^\s*)\S")
+        current_namespaces = current_namespaces or []
+        line_no = init_line
+        while line_no - init_line < len(lines):
+            line = lines[line_no - init_line]
             test_name = self._find_match(line, test_patterns)
             namespace_name = self._find_match(line, namespace_patterns)
 
-            current_indent = len(indent_match.match(line)[0])
-            while current_namespaces:
-                name, indent = current_namespaces[-1]
-                if namespace_name == name or indent < current_indent:
-                    break
-                current_namespaces.pop()
-
             if test_name:
-                tests.append(
-                    Test(
-                        id=self._clean_id(
-                            test_name
-                            + str(
-                                hash(
-                                    (
-                                        file_name,
-                                        " ".join(
-                                            [name for name, _ in current_namespaces]
-                                        ),
-                                    )
-                                )
-                            )
-                        ),
-                        file=file_name,
-                        line=line_no,
-                        col=1,
-                        name=test_name,
-                        running=0,
-                        namespaces=[name for name, _ in current_namespaces],
-                    )
-                )
+                cls = Test
+                name = test_name
+                children = None
             elif namespace_name:
-                namespaces.append(
-                    Namespace(
-                        id=self._clean_id(
-                            namespace_name
-                            + str(
-                                hash(
-                                    (
-                                        file_name,
-                                        " ".join(
-                                            [name for name, _ in current_namespaces]
-                                        ),
-                                    )
-                                )
-                            )
-                        ),
-                        file=file_name,
-                        line=line_no,
-                        col=1,
-                        name=namespace_name,
-                    )
-                )
-                current_namespaces.append((namespace_name, current_indent))
+                cls = Namespace
+                name = namespace_name
+            else:
+                line_no += 1
+                continue
 
-        return tests, namespaces
+            current_indent = indent_pattern.match(line)
+            if current_indent and len(current_indent[1]) <= init_indent:
+                return positions, line_no - 1 - init_line
+
+            id_suffix = hash((file_name, " ".join(current_namespaces)))
+            position = cls(
+                id=self._clean_id(name + str(id_suffix)),
+                file=file_name,
+                line=line_no,
+                col=1,
+                name=name,
+                running=0,
+                namespaces=current_namespaces,
+            )
+
+            if cls is Namespace:
+                children, lines_consumed = self._parse_position_tree(
+                    file_name,
+                    test_patterns,
+                    namespace_patterns,
+                    lines[line_no - init_line + 1 :],
+                    init_line=line_no + 1,
+                    init_indent=len(current_indent[1]),
+                    current_namespaces=[*current_namespaces, position.id],
+                )
+                positions.append([position, *children])
+            else:
+                lines_consumed = 1
+                positions.append(position)
+
+            line_no += lines_consumed
+        return positions, line_no
 
     def _clean_id(self, id: str) -> str:
         return re.subn(r"[.'\" \\/]", "_", id)[0]
