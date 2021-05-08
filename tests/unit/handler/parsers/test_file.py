@@ -3,30 +3,32 @@ from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
-from rplugin.python3.ultest.handler.finder import PositionFinder
+from rplugin.python3.ultest.handler.parsers import FileParser
 from rplugin.python3.ultest.models import Namespace, Test
+from rplugin.python3.ultest.models.file import File
 from rplugin.python3.ultest.models.namespace import Namespace
 from tests.mocks import get_test_file
 
 vim = Mock()
 vim.launch = lambda f, _: f()
-finder = PositionFinder(vim)
+file_parser = FileParser(vim)
 
 
 @patch("builtins.open", mock_open(read_data=get_test_file("python")))
 @patch("os.path.isfile", lambda _: True)
 @pytest.mark.asyncio
-async def test_find_python_tests():
+async def test_parse_python_tests():
     patterns = {
         "test": [r"\v^\s*%(async )?def (test_\w+)"],
         "namespace": [r"\v^\s*class (\w+)"],
     }
 
-    tests = list(await finder.find_all("", patterns))
+    tests = list(await file_parser.parse_file_structure("", patterns))
 
     expected = [
+        File(id="", name="", file=""),
         Test(
-            id=tests[0].id,
+            id=tests[1].id,
             name="test_a30",
             file="",
             line=3,
@@ -35,7 +37,7 @@ async def test_find_python_tests():
             namespaces=[],
         ),
         Namespace(
-            id=tests[1].id,
+            id=tests[2].id,
             name="TestMock",
             file="",
             line=6,
@@ -44,19 +46,19 @@ async def test_find_python_tests():
             namespaces=[],
         ),
         Test(
-            id=tests[2].id,
+            id=tests[3].id,
             name="test_a10",
             file="",
             line=7,
             col=1,
             running=0,
-            namespaces=[tests[1].id],
+            namespaces=[tests[2].id],
         ),
         Test(
-            id=tests[3].id,
+            id=tests[4].id,
             name="test_a43",
             file="",
-            line=10,
+            line=12,
             col=1,
             running=0,
             namespaces=[],
@@ -75,12 +77,13 @@ async def test_parse_namespace_structure():
         "namespace": [r"\v^\s*class (\w+)"],
     }
 
-    tests = await finder.find_all("", patterns)
+    tests = await file_parser.parse_file_structure("", patterns)
 
     tests: Any = tests.to_list()
     expected = [
+        File(id="", name="", file=""),
         Test(
-            id=tests[0].id,
+            id=tests[1].id,
             name="test_a30",
             file="",
             line=3,
@@ -90,7 +93,7 @@ async def test_parse_namespace_structure():
         ),
         [
             Namespace(
-                id=tests[1][0].id,
+                id=tests[2][0].id,
                 name="TestMock",
                 file="",
                 line=6,
@@ -99,20 +102,20 @@ async def test_parse_namespace_structure():
                 namespaces=[],
             ),
             Test(
-                id=tests[1][1].id,
+                id=tests[2][1].id,
                 name="test_a10",
                 file="",
                 line=7,
                 col=1,
                 running=0,
-                namespaces=[tests[1][0].id],
+                namespaces=[tests[2][0].id],
             ),
         ],
         Test(
-            id=tests[2].id,
+            id=tests[3].id,
             name="test_a43",
             file="",
-            line=10,
+            line=12,
             col=1,
             running=0,
             namespaces=[],

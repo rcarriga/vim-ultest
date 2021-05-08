@@ -1,8 +1,8 @@
 import re
 from typing import Dict, List, Optional, Pattern, Tuple, Union
 
-from ..models import File, Namespace, Test, Tree
-from ..vim_client import VimClient
+from ...models import File, Namespace, Test, Tree
+from ...vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
 
@@ -10,11 +10,13 @@ Position = Union[File, Test, Namespace]
 PosList = Union[Position, List["PosList"]]
 
 
-class PositionFinder:
+class FileParser:
     def __init__(self, vim: VimClient):
         self._vim = vim
 
-    async def find_all(self, file_name: str, vim_patterns: Dict) -> Tree[Position]:
+    async def parse_file_structure(
+        self, file_name: str, vim_patterns: Dict
+    ) -> Tree[Position]:
         patterns = self._convert_patterns(vim_patterns)
         self._vim.log.fdebug("Converted pattern {vim_patterns} to {patterns}")
         with open(file_name, "r") as test_file:

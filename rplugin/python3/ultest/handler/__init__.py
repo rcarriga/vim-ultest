@@ -7,8 +7,7 @@ from pynvim import Nvim
 from ..logging import UltestLogger
 from ..models import File, Namespace, Result, Test, Tree
 from ..vim_client import VimClient
-from .finder import Position, PositionFinder
-from .parser import OutputParser
+from .parsers import FileParser, OutputParser, Position
 from .processes import ProcessManager
 from .results import ResultStore
 
@@ -17,11 +16,11 @@ class HandlerFactory:
     @staticmethod
     def create(vim: Nvim, logger: UltestLogger) -> "Handler":
         client = VimClient(vim, logger)
-        finder = PositionFinder(client)
+        file_parser = FileParser(client)
         process_manager = ProcessManager(client)
         results = ResultStore()
         output_parser = OutputParser(logger)
-        return Handler(client, process_manager, finder, results, output_parser)
+        return Handler(client, process_manager, file_parser, results, output_parser)
 
 
 class Handler:
@@ -29,13 +28,13 @@ class Handler:
         self,
         nvim: VimClient,
         process_manager: ProcessManager,
-        finder: PositionFinder,
+        file_parser: FileParser,
         results: ResultStore,
         output_parser: OutputParser,
     ):
         self._vim = nvim
         self._process_manager = process_manager
-        self._finder = finder
+        self._file_parser = file_parser
         self._results = results
         self._output_parser = output_parser
         self._stored_positions: Dict[str, Tree[Position]] = {}
@@ -296,7 +295,9 @@ class Handler:
 
         async def runner():
             self._vim.log.finfo("Updating positions in {file_name}")
-            positions = await self._finder.find_all(file_name, vim_patterns)
+            positions = await self._file_parser.parse_file_structure(
+                file_name, vim_patterns
+            )
             self._stored_positions[file_name] = positions
             self._vim.call(
                 "setbufvar",

@@ -9,6 +9,6 @@ sys.modules["rplugin.python3.ultest"] = ultest
 
 from hypothesis import settings
 
-settings.register_profile("default", max_examples=30)
+settings.register_profile("default", max_examples=1)
 
 settings.load_profile("default")

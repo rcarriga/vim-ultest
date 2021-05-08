@@ -26,6 +26,9 @@ class Tree(Generic[TreeData]):
         self._data = data
         self._length = 1 + sum(len(child) for child in self._children)
 
+    def __repr__(self) -> str:
+        return f"Tree(data={self._data}, children={self._children})"
+
     @classmethod
     def from_list(cls, data) -> "Tree[TreeData]":
         """

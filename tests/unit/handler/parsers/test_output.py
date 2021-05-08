@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from rplugin.python3.ultest.handler.parser import OutputParser, ParseResult
+from rplugin.python3.ultest.handler.parsers import OutputParser, ParseResult
 from tests.mocks import get_output
 
 
