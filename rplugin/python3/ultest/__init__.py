@@ -22,10 +22,6 @@ try:
             logger = create_logger()
             HANDLER = HandlerFactory.create(vim, logger)
 
-    def _ultest_run_all(*args):
-        _check_started()
-        HANDLER.run_all(*args)
-
     def _ultest_run_nearest(*args):
         _check_started()
         HANDLER.run_nearest(*args)
@@ -80,10 +76,6 @@ except ImportError:
 
                 self._handler = HandlerFactory.create(self._vim, create_logger())
             return self._handler
-
-        @function("_ultest_run_all", allow_nested=True)
-        def _run_all(self, args):
-            self.handler.run_all(*args)
 
         @function("_ultest_run_nearest", allow_nested=True)
         def _run_nearest(self, args):

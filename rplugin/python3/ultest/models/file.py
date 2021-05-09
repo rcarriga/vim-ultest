@@ -1,23 +1,13 @@
-import json
-from dataclasses import asdict, dataclass, field
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Literal
+
+from .base import BasePosition
 
 
 @dataclass
-class File:
-
-    id: str
-    name: str
-    file: str
-    line: int = 0
-    col: int = 0
+class File(BasePosition):
+    running: int = 0
+    line: Literal[0] = 0
+    col: Literal[0] = 0
     namespaces: List[str] = field(default_factory=list)
-    type: str = "file"
-
-    def __str__(self):
-        props = self.dict()
-        props["name"] = [int(char) for char in self.name.encode()]
-        return json.dumps(props)
-
-    def dict(self):
-        return asdict(self)
+    type: Literal["file"] = "file"

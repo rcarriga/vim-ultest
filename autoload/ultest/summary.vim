@@ -157,19 +157,10 @@ endfunction
 
 function! s:RenderGroupMember(prefix, member, group_state) abort
   let state = a:group_state
-  if a:member.type == "test"
-    let test = get(state.tests, a:member.id, {})
-    if test != {}
-      let result = get(state.results, a:member.id, {})
-      call s:RenderTest(a:prefix, test, result, state)
-    endif
-  elseif a:member.type == "namespace"
-    let namespace = get(state.tests, a:member.id, {})
-    if namespace != {}
-      call s:RenderNamespace(a:prefix, namespace, state)
-    endif
-  else
-    call s:RenderFile(a:prefix, a:member, state)
+  let test = get(state.tests, a:member.id, {})
+  if test != {}
+    let result = get(state.results, a:member.id, {})
+    call s:RenderTest(a:prefix, test, result, state)
   endif
 endfunction
 

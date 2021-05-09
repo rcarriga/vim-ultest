@@ -25,7 +25,7 @@ class FileParser:
             file_name, patterns["test"], patterns["namespace"], lines
         )
         x = Tree[Position].from_list(
-            [File(id=file_name, name=file_name, file=file_name), *res]
+            [File(id=file_name, name=file_name, file=file_name, running=0), *res]
         )
         return x
 

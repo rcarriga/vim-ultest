@@ -10,7 +10,7 @@ from rplugin.python3.ultest.models.namespace import Namespace
 
 
 def sorted_tests(
-    min_line: int = 1, max_line: int = 1000, min_length: int = 10, max_length: int = 20
+    min_line: int = 1, max_line: int = 1000, min_length: int = 10, max_length: int = 12
 ):
     return lists(
         builds(
@@ -55,7 +55,7 @@ def test_get_nearest_from_non_strict_match(tests: List[Union[Test, Namespace]]):
 
 @given(sorted_tests(min_line=20))
 def test_get_nearest_from_non_strict_no_match(tests: List[Union[Test, Namespace]]):
-    line = 10
-    tree = Tree[Position].from_list([File(file="", name="", id="", line=11), *tests])
+    line = -1
+    tree = Tree[Position].from_list([File(file="", name="", id=""), *tests])
     result = tree.sorted_search(line, lambda pos: pos.line, strict=False)
     assert result is None

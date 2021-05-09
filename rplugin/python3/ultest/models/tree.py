@@ -77,6 +77,7 @@ class Tree(Generic[TreeData]):
     def data(self) -> TreeData:
         return self._data
 
+    @property
     def children(self) -> List["Tree"]:
         return self._children
 
@@ -149,3 +150,24 @@ class Tree(Generic[TreeData]):
             return None
 
         return self.node(r) if not strict and key(self[r]) < target else None
+
+    def search(
+        self,
+        target: SearchKey,
+        key: Callable[[TreeData], SearchKey],
+    ) -> Optional["Tree[TreeData]"]:
+        """
+        Search through the tree using depth first search
+
+        :param target: The target value to find
+        :param key: Function to return a value to sort nodes with
+        :return:  The matching node
+        """
+        if target == key(self.data):
+            return self
+        if not self.children:
+            return None
+        for child in self.children:
+            result = child.search(target, key)
+            if result:
+                return result

@@ -13,7 +13,11 @@ class TestOutputParser(TestCase):
         output = get_output("pytest")
         failed = list(self.parser.parse_failed("python#pytest", output))
         self.assertEqual(
-            failed, [ParseResult(name="test_d", namespaces=["TestMyClass"])]
+            failed,
+            [
+                ParseResult(name="test_d", namespaces=["TestMyClass"]),
+                ParseResult(name="test_a", namespaces=[]),
+            ],
         )
 
     def test_parse_pyunit(self):

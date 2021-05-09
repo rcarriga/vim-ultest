@@ -1,4 +1,5 @@
 function! ultest#signs#move(test) abort
+  if (a:test.type != "test") | return | endif
   let result = get(getbufvar(a:test.file, "ultest_results"), a:test.id, {})
   if result != {}
     call ultest#signs#process(result)
@@ -8,6 +9,7 @@ function! ultest#signs#move(test) abort
 endfunction
 
 function! ultest#signs#start(test) abort
+    if (a:test.type != "test") | return | endif
     call ultest#signs#unplace(a:test)
     if !a:test.running | return | endif
     if s:UseVirtual()
@@ -19,6 +21,7 @@ endfunction
 
 function! ultest#signs#process(result) abort
     let test = getbufvar(a:result.file, "ultest_tests")[a:result.id]
+    if (test.type != "test") | return | endif
     call ultest#signs#unplace(test)
     if s:UseVirtual()
         let text_highlight = a:result.code ? "UltestFail" : "UltestPass"
@@ -46,6 +49,7 @@ function! s:PlaceVirtualText(test, text, highlight) abort
 endfunction
 
 function! ultest#signs#unplace(test)
+    if (a:test.type != "test") | return | endif
     if s:UseVirtual()
         let namespace = s:GetNamespace(a:test)
         call nvim_buf_clear_namespace(0, namespace, 0, -1)

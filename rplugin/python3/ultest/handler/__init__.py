@@ -1,15 +1,14 @@
 import os
 from shlex import split
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import File, Namespace, Result, Test, Tree
+from ..models import Test, Tree
 from ..vim_client import VimClient
 from .parsers import FileParser, OutputParser, Position
-from .processes import ProcessManager
-from .results import ResultStore
+from .runner import PositionRunner, ProcessManager
 
 
 class HandlerFactory:
@@ -18,25 +17,23 @@ class HandlerFactory:
         client = VimClient(vim, logger)
         file_parser = FileParser(client)
         process_manager = ProcessManager(client)
-        results = ResultStore()
         output_parser = OutputParser(logger)
-        return Handler(client, process_manager, file_parser, results, output_parser)
+        runner = PositionRunner(
+            vim=client, process_manager=process_manager, output_parser=output_parser
+        )
+        return Handler(client, file_parser=file_parser, runner=runner)
 
 
 class Handler:
     def __init__(
         self,
         nvim: VimClient,
-        process_manager: ProcessManager,
         file_parser: FileParser,
-        results: ResultStore,
-        output_parser: OutputParser,
+        runner: PositionRunner,
     ):
         self._vim = nvim
-        self._process_manager = process_manager
+        self._runner = runner
         self._file_parser = file_parser
-        self._results = results
-        self._output_parser = output_parser
         self._stored_positions: Dict[str, Tree[Position]] = {}
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
@@ -62,121 +59,37 @@ class Handler:
         # Some runner position builders in vim-test don't split args properly (e.g. go test)
         return split(cmd if isinstance(cmd, str) else " ".join(cmd))
 
-    def external_start(self, test_dict: Dict, stdout: str = ""):
-        self._vim.log.fdebug(
-            "External test {test_dict} registered with stdout {stdout}"
-        )
-        test = Test(**test_dict)
-        self._register_started(test)
-        if stdout:
-            self._process_manager.register_external_output(test.id, stdout)
-
-    def external_result(self, test_dict: Dict, exit_code: int, stdout: str = ""):
-        test = Test(**test_dict)
-        result = Result(id=test.id, file=test.file, code=exit_code, output=stdout)
-        self._vim.log.fdebug("External test {test.id} result registered: {result}")
-        self._process_manager.clear_external_output(test.id)
-        self._register_result(test, result)
-
-    def _run_tests(self, tests: Iterable[Test]):
-        """
-        Run a list of tests. Each will be done in
-        a separate thread.
-        """
-        root = self._vim.sync_call("get", "g:", "test#project_root") or None
-        for test in tests:
-            self._vim.log.fdebug("Sending {test.id} to vim-test")
-            self._register_started(test)
-            cmd = self._vim.sync_call("ultest#adapter#build_cmd", test, "nearest")
-
-            async def run(cmd=cmd, test=test):
-                (code, output_path) = await self._process_manager.run(
-                    cmd, test.file, test.id, cwd=root
-                )
-                self._register_result(
-                    test,
-                    Result(id=test.id, file=test.file, code=code, output=output_path),
-                )
-
-            self._vim.launch(run(), test.id)
-
-    def _run_tree(self, tree: Tree[Position], file_name: str):
-        tests = []
-        namespaces = {}
-        for position in tree:
-            if isinstance(position, Test):
-                tests.append(position)
-            elif isinstance(position, Namespace):
-                namespaces[position.id] = position
-
-        runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
-        if not tests:
-            return
-
-        if not self._output_parser.can_parse(runner) or len(tests) == 1:
-            self._run_tests(tests)
-            return
-
-        scope = "file" if isinstance(tree.data, File) else "nearest"
-        cmd = self._vim.sync_call("ultest#adapter#build_cmd", tree[0], scope)
-        root = self._vim.sync_call("get", "g:", "test#project_root") or None
-        for test in tests:
-            self._register_started(test)
-
-        async def run(cmd=cmd):
-            (code, output_path) = await self._process_manager.run(
-                cmd, tree.data.file, tree.data.id, cwd=root
+    def external_start(self, pos_id: str, file_name: str, stdout: str):
+        tree = self._stored_positions.get(file_name)
+        if not tree:
+            self._vim.log.error(
+                "Attempted to register started test for unknown file {file_name}"
             )
-            output = []
-            if code:
-                with open(output_path, "r") as cmd_out:
-                    output = cmd_out.readlines()
-            failed = {
-                (failed.name, *failed.namespaces)
-                for failed in self._output_parser.parse_failed(runner, output)
-            }
+            raise ValueError(f"Unknown file {file_name}")
 
-            def get_code(test: Test) -> int:
-                if not code:
-                    return 0
-                # If none were parsed but the process failed then something else went wrong,
-                # and we treat it as all failed
-                if not failed:
-                    return code
-                if (
-                    test.name,
-                    *[
-                        namespaces[namespace_id].name
-                        for namespace_id in test.namespaces
-                    ],
-                ) in failed:
-                    return code
+        position = tree.search(pos_id, lambda pos: pos.id)
+        if not position:
+            self._vim.log.error(
+                f"Attempted to register unknown test as started {pos_id}"
+            )
+            return
 
-                return 0
+        self._runner.register_external_start(position, stdout)
 
-            for test in tests:
-                self._register_result(
-                    test,
-                    Result(
-                        id=test.id,
-                        file=test.file,
-                        code=get_code(test),
-                        output=output_path,
-                    ),
-                )
-
-        self._vim.launch(run(), file_name)
-
-    def _register_started(self, test: Test):
-        test.running = 1
-        self._process_manager.register_new_process(test.id)
-        self._vim.call("ultest#process#start", test)
-
-    def _register_result(self, test: Test, result: Result):
-        self._results.add(result.file, result)
-        self._vim.call("ultest#process#exit", test, result)
-        if self._show_on_run and result.output:
-            self._vim.schedule(self._present_output, result)
+    def external_result(self, pos_id: str, file_name: str, exit_code: int):
+        tree = self._stored_positions.get(file_name)
+        if not tree:
+            self._vim.log.error(
+                "Attempted to register started test for unknown file {file_name}"
+            )
+            raise ValueError(f"Unknown file {file_name}")
+        position = tree.search(pos_id, lambda pos: pos.id)
+        if not position:
+            self._vim.log.error(
+                f"Attempted to register unknown test as started {pos_id}"
+            )
+            return
+        self._runner.register_external_result(position, exit_code)
 
     def _present_output(self, result):
         if result.code and self._vim.sync_call("expand", "%") == result.file:
@@ -216,7 +129,7 @@ class Handler:
         if not position:
             return
 
-        self._run_tree(position, file_name)
+        self._runner.run(position, file_name)
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -237,7 +150,7 @@ class Handler:
         if not match:
             return
 
-        self._run_tree(match, file_name)
+        self._runner.run(match, file_name)
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
         """
@@ -292,14 +205,13 @@ class Handler:
                 if test.id in recorded_tests:
                     recorded = recorded_tests.pop(test.id)
                     if recorded.line != test.line:
-                        if isinstance(test, Test):
-                            test.running = self._process_manager.is_running(test.id)
+                        test.running = self._runner.is_running(test.id)
                         self._vim.log.fdebug(
                             "Moving test {test.id} from {recorded.line} to {test.line} in {file_name}"
                         )
                         self._vim.call("ultest#process#move", test)
                 else:
-                    existing_result = self._results.get(test.file, test.id)
+                    existing_result = self._runner.get_result(test.id, test.file)
                     if existing_result:
                         self._vim.log.fdebug(
                             "Replacing test {test.id} to {test.line} in {file_name}"
@@ -342,7 +254,7 @@ class Handler:
 
     def get_attach_script(self, process_id: str) -> Optional[Tuple[str, str]]:
         self._vim.log.finfo("Creating script to attach to process {process_id}")
-        return self._process_manager.create_attach_script(process_id)
+        return self._runner.get_attach_script(process_id)
 
     def stop_test(self, test_dict: Optional[Dict]):
         if not test_dict:
