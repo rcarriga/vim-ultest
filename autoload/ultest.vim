@@ -58,7 +58,7 @@ function! ultest#run_file(...) abort
   if type(pre_run) != v:t_number
     call call(pre_run, [file])
   endif
-  call ultest#handler#run_all(file)
+  call ultest#handler#run_nearest(0, file)
 endfunction
 
 function! ultest#run_nearest(...) abort

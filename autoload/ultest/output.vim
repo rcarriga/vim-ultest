@@ -33,7 +33,7 @@ function! ultest#output#attach(test) abort
   if type(a:test) != v:t_dict || empty(a:test) | return | endif
   let process_ids = [a:test.id, a:test.file] + a:test.namespaces
   for process_id in process_ids
-    let attach_res = ultest#handler#get_attach_script(a:test.id)
+    let attach_res = ultest#handler#get_attach_script(process_id)
     if type(attach_res) == v:t_list 
       break
     endif

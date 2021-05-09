@@ -2,7 +2,7 @@ import json
 from dataclasses import asdict, dataclass
 
 
-@dataclass(repr=False)
+@dataclass
 class Result:
 
     id: str
@@ -11,9 +11,6 @@ class Result:
     output: str
 
     def __str__(self):
-        return self.__repr__()
-
-    def __repr__(self):
         props = self.dict()
         return json.dumps(props)
 

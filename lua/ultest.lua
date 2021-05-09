@@ -99,6 +99,10 @@ function M.dap_run_nearest(config)
   if test == vim.NIL then
     return
   end
+  if test.type ~= "test" then
+    print("Can only debug individual tests")
+    return
+  end
 
   local builder = get_builder(test, config)
   if builder == nil then

@@ -214,7 +214,7 @@ function! s:RunCurrent() abort
   if cur_file == ""
     return
   elseif cur_test == ""
-    call ultest#handler#run_all(cur_file)
+    call ultest#handler#run_single(cur_file, cur_file)
   else
     call ultest#handler#run_single(cur_test, cur_file)
   endif
@@ -243,12 +243,14 @@ endfunction
 
 function! s:AttachToCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
-  if cur_file == "" || cur_test == ""
+  if cur_file == ""
     return
+  elseif cur_test == ""
+    let test = {"id": cur_file, "file": cur_file, "namespaces": []}
   else
     let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
-    call ultest#output#attach(test)
   endif
+  call ultest#output#attach(test)
 endfunction
 
 function! s:StopCurrent() abort

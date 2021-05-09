@@ -20,7 +20,7 @@ class OutputPatterns:
 
 _BASE_PATTERNS = {
     "python#pytest": OutputPatterns(
-        failed_test=r"^FAILED .+?::(?P<namespaces>.+::)?(?P<name>.*?) ",
+        failed_test=r"^(FAILED|ERROR) .+?::(?P<namespaces>.+::)?(?P<name>.*?)( |$)",
         namespace_separator="::",
     ),
     "python#pyunit": OutputPatterns(

@@ -186,34 +186,11 @@ class Handler:
             if nearest and nearest.data.id == result.id:
                 self._vim.sync_call("ultest#output#open", result.dict())
 
-    def run_all(self, file_name: str, update_empty: bool = True):
-        """
-        Run all tests in a file.
-
-        :param file_name: File to run in.
-        """
-
-        self._vim.log.finfo("Running all tests in {file_name}")
-        positions = self._stored_positions.get(file_name)
-
-        if not positions and update_empty:
-            self._vim.log.finfo(
-                "No tests found for {file_name}, rerunning after processing positions"
-            )
-
-            def run_after_update():
-                self._vim.schedule(self.run_all, file_name, update_empty=False)
-
-            self.update_positions(file_name, callback=run_after_update)
-
-        if not positions:
-            return
-
-        self._run_tree(positions, file_name)
-
     def run_nearest(self, line: int, file_name: str, update_empty: bool = True):
         """
         Run nearest test to cursor in file.
+
+        If the line is 0 it will run the entire file.
 
         :param line: Line to run test nearest to.
         :param file_name: File to run in.
@@ -234,9 +211,7 @@ class Handler:
 
             return self.update_positions(file_name, callback=run_after_update)
 
-        position = self.get_nearest_position(
-            line, file_name, strict=False, include_namespace=True
-        )
+        position = self.get_nearest_position(line, file_name, strict=False)
 
         if not position:
             return
@@ -349,24 +324,18 @@ class Handler:
         self._vim.launch(runner(), "update_positions")
 
     def get_nearest_position(
-        self, line: int, file_name: str, strict: bool, include_namespace: bool = False
+        self, line: int, file_name: str, strict: bool
     ) -> Optional[Tree[Position]]:
         positions = self._stored_positions.get(file_name)
         if not positions:
             return None
-        key = (
-            (lambda pos: pos.line)
-            if include_namespace
-            else lambda pos: pos.line
-            if isinstance(pos, Test)
-            else -1
-        )
+        key = lambda pos: pos.line
         return positions.sorted_search(line, key=key, strict=strict)
 
     def get_nearest_test_dict(
-        self, line: int, file_name: str, strict: bool, include_namespace: bool = False
+        self, line: int, file_name: str, strict: bool
     ) -> Optional[Dict]:
-        test = self.get_nearest_position(line, file_name, strict, include_namespace)
+        test = self.get_nearest_position(line, file_name, strict)
         if not test:
             return None
         return test.data.dict()

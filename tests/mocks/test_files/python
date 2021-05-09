@@ -1,14 +1,35 @@
-from time import sleep
+from unittest import TestCase
 
-def test_a30():
-    assert 2 == 3
 
-class TestMock:
-    def test_a10(self):
-      class InnerClass:
-          ...
-    assert 3 == 3
+def test_a():
 
-def test_a43():
-    sleep(1)
-    assert 3 == 3
+    x = 3
+
+
+class TestAgain(TestCase):
+    def test_d(self):  # type: ignore
+        class MyClass:
+            ...
+
+        assert 3 == 3
+
+    def test_a(self):  # type: ignore
+        class MyClass:
+            def test_a(self):  # type: ignore
+                class MyClass:
+                    ...
+
+        assert 33 == 3
+
+
+class TestMyClass(TestCase):
+    def test_d(self):
+        assert 33 == 3
+
+    def test_a(self):
+        assert 33 == 3
+
+
+def test_b(self):
+    assert 33 == 3
+
