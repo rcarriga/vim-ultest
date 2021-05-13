@@ -111,6 +111,68 @@ async def test_parse_python_tests():
     assert tests == expected
 
 
+@patch("builtins.open", mock_open(read_data=get_test_file("jest")))
+@patch("os.path.isfile", lambda _: True)
+@pytest.mark.asyncio
+async def test_parse_jest_tests():
+    patterns = {
+        "test": [r'\v^\s*%(it|test)\s*[( ]\s*%("|' '|`)(.*)%("|' "|`)"],
+        "namespace": [
+            r'\v^\s*%(describe|suite|context)\s*[( ]\s*%("|' '|`)(.*)%("|' "|`)"
+        ],
+    }
+
+    tests = list(await file_parser.parse_file_structure("", patterns))
+
+    expected = [
+        File(
+            id="",
+            name="",
+            file="",
+            line=0,
+            col=0,
+            running=0,
+            namespaces=[],
+            type="file",
+        ),
+        Namespace(
+            id=tests[1].id,
+            name='First namespace", () => {',
+            file="",
+            line=1,
+            col=1,
+            running=0,
+            namespaces=[],
+            type="namespace",
+        ),
+        Namespace(
+            id=tests[2].id,
+            name='Second namespace", () => {',
+            file="",
+            line=2,
+            col=1,
+            running=0,
+            namespaces=[tests[1].id],
+            type="namespace",
+        ),
+        Test(
+            id=tests[3].id,
+            name="it shouldn't pass\", () => {",
+            file="",
+            line=3,
+            col=1,
+            running=0,
+            namespaces=[
+                tests[1].id,
+                tests[2].id,
+            ],
+            type="test",
+        ),
+    ]
+
+    assert tests == expected
+
+
 @patch("builtins.open", mock_open(read_data=get_test_file("python")))
 @patch("os.path.isfile", lambda _: True)
 @pytest.mark.asyncio

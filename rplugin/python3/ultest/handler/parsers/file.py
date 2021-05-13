@@ -5,6 +5,7 @@ from ...models import File, Namespace, Test, Tree
 from ...vim_client import VimClient
 
 REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
+INDENT_PATTERN = re.compile(r"(^\s*)\S")
 
 Position = Union[File, Test, Namespace]
 PosList = Union[Position, List["PosList"]]
@@ -58,8 +59,14 @@ class FileParser:
         current_namespaces: Optional[List[str]] = None,
         last_test_indent=-1,
     ) -> Tuple[List[PosList], int]:
+        """
+        This function tries to emulate how vim-test will parse files based off
+        of indents. This means that if a namespace is on the same indent as a
+        test within it, the test will not detected correctly.  Since we fall
+        back to vim-test for running there's no solution we add here to avoid
+        this without vim-test working around it too.
+        """
         positions = []
-        indent_pattern = re.compile(r"(^\s*)\S")
         current_namespaces = current_namespaces or []
         line_no = init_line
         while line_no - init_line < len(lines):
@@ -78,9 +85,10 @@ class FileParser:
                 line_no += 1
                 continue
 
-            current_indent = indent_pattern.match(line)
+            current_indent = INDENT_PATTERN.match(line)
             if current_indent and len(current_indent[1]) <= init_indent:
-                return positions, line_no - 1 - init_line
+                consumed = max(line_no - 1 - init_line, 1)
+                return positions, consumed
 
             if cls is Test:
                 last_test_indent = len(current_indent[1])
@@ -107,6 +115,7 @@ class FileParser:
                     current_namespaces=[*current_namespaces, position.id],
                     last_test_indent=last_test_indent,
                 )
+                lines_consumed += 1
                 if last_test_indent == -1 or last_test_indent >= len(current_indent[1]):
                     positions.append([position, *children])
             else:

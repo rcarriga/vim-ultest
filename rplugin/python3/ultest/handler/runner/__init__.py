@@ -1,8 +1,9 @@
-from typing import Optional, Set
+from functools import partial
+from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from ...models import File, Namespace, Position, Result, Test, Tree
 from ...vim_client import VimClient
-from ..parsers import OutputParser, Position
+from ..parsers import OutputParser, ParseResult, Position
 from .processes import ProcessManager
 
 
@@ -108,6 +109,7 @@ class PositionRunner:
     def _process_results(
         self, tree: Tree[Position], code: int, output_path: str, runner: str
     ):
+
         namespaces = {
             position.id: position
             for position in tree
@@ -118,28 +120,10 @@ class PositionRunner:
             with open(output_path, "r") as cmd_out:
                 output = cmd_out.readlines()
 
-        failed = {
-            (failed.name, *failed.namespaces)
-            for failed in self._output_parser.parse_failed(runner, output)
-        }
-        is_single = len(tree) == 1
+        parsed_failures = self._output_parser.parse_failed(runner, output)
+        failed = self._get_failed_set(parsed_failures, tree)
 
-        def get_code(pos: Position) -> int:
-            if is_single:
-                return code
-            if not isinstance(pos, Test):
-                return code
-            # If none were parsed but the process failed then something else went wrong,
-            # and we treat it as all failed
-            if not failed:
-                return code
-            if (
-                pos.name,
-                *[namespaces[namespace_id].name for namespace_id in pos.namespaces],
-            ) in failed:
-                return code
-
-            return 0
+        get_code = partial(self._get_exit_code, tree.data, code, failed, namespaces)
 
         for pos in tree:
             self._register_result(
@@ -151,6 +135,63 @@ class PositionRunner:
                     output=output_path,
                 ),
             )
+
+    def _get_exit_code(
+        self,
+        root: Position,
+        group_code: int,
+        failed: Set[Tuple[str, ...]],
+        namespaces: Dict[str, Namespace],
+        pos: Position,
+    ):
+        if isinstance(root, Test):
+            return group_code
+        if not isinstance(pos, Test):
+            return group_code
+        # If none were parsed but the process failed then something else went wrong,
+        # and we treat it as all failed
+        if not failed:
+            return group_code
+        namespaces_from_root = []
+        if not isinstance(root, File):
+            for index, namespace in enumerate(pos.namespaces):
+                if namespace == root.id:
+                    namespaces_from_root = pos.namespaces[index:]
+        else:
+            namespaces_from_root = pos.namespaces
+
+        if (
+            pos.name,
+            *[namespaces[namespace_id].name for namespace_id in namespaces_from_root],
+        ) in failed:
+            return group_code
+
+        return 0
+
+    def _get_failed_set(
+        self, parsed_failures: Iterator[ParseResult], tree: Tree[Position]
+    ) -> Set[Tuple[str, ...]]:
+        def from_root(namespaces: List[str]):
+            for index, namespace in enumerate(namespaces):
+                if namespace == tree.data.name:
+                    return namespaces[index:]
+
+            self._vim.log.warn(
+                f"No namespaces found from root {tree.data.name} in parsed result {namespaces}"
+            )
+            return []
+
+        return {
+            (
+                failed.name,
+                *(
+                    from_root(failed.namespaces)
+                    if not isinstance(tree.data, File)
+                    else failed.namespaces
+                ),
+            )
+            for failed in parsed_failures
+        }
 
     def _register_started(self, position: Position):
         self._vim.log.fdebug("Registering {position.id} as started")

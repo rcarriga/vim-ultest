@@ -160,11 +160,11 @@ function! s:RenderGroupMember(prefix, member, group_state) abort
   let test = get(state.tests, a:member.id, {})
   if test != {}
     let result = get(state.results, a:member.id, {})
-    call s:RenderTest(a:prefix, test, result, state)
+    call s:RenderPosition(a:prefix, test, result, state)
   endif
 endfunction
 
-function! s:RenderTest(prefix, test, result, group_state) abort
+function! s:RenderPosition(prefix, test, result, group_state) abort
   let text = ""
   if has_key(a:result, "code")
     let highlight = a:result.code ? "UltestFail" : "UltestPass"
@@ -176,18 +176,6 @@ function! s:RenderTest(prefix, test, result, group_state) abort
   call add(a:group_state.lines, a:prefix..icon..a:test.name)
   call add(a:group_state.matches, [highlight, [len(a:group_state.lines), len(a:prefix) + 1, 1]])
   let s:test_line_map[len(a:group_state.lines)] = [a:test.file, a:test.id]
-endfunction
-
-function! s:RenderNamespace(prefix, namespace, group_state) abort
-  call add(a:group_state.lines, a:prefix.." ".a:namespace.name)
-  call add(a:group_state.matches, ["UltestNamespace", [len(a:group_state.lines), len(a:prefix) +1, 1]])
-  let s:test_line_map[len(a:group_state.lines)] = [a:namespace.file, a:namespace.id]
-endfunction
-
-function! s:RenderFile(prefix, file, group_state) abort
-  call add(a:group_state.lines, a:prefix.." ".a:file.id)
-  call add(a:group_state.matches, ["UltestFile", [len(a:group_state.lines), len(a:prefix) + 1, 1]])
-  let s:test_line_map[len(a:group_state.lines)] = [a:file.id, ""]
 endfunction
 
 function! s:Clear() abort

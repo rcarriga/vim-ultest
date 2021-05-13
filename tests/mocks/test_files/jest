@@ -1,0 +1,7 @@
+describe("First namespace", () => {
+  describe("Second namespace", () => {
+    test("it shouldn't pass", () => {
+      expect(true).toBeFalsy()
+    });
+  });
+});
