@@ -32,6 +32,23 @@ class PositionRunner:
             return
         self._run_group(tree, file_name)
 
+    def stop(self, pos: Position, tree: Tree[Position]):
+        root = None
+        if self._vim.stop(pos.id):
+            root = tree.search(pos.id, lambda data: data.id)
+        else:
+            for namespace in [*pos.namespaces, pos.file]:
+                if self._vim.stop(namespace):
+                    root = tree.search(namespace, lambda data: data.id)
+                    break
+        if not root:
+            self._vim.log.warn(f"No matching job found for position {pos}")
+            return
+
+        for node in root:
+            node.running = 0
+            self._vim.call("ultest#process#move", node)
+
     def register_external_start(self, tree: Tree[Position], output_path: str):
         self._vim.log.finfo(
             "Saving external stdout path '{output_path}' for test {process_id}"
@@ -104,7 +121,7 @@ class PositionRunner:
             )
             self._process_results(tree, code, output_path, runner)
 
-        self._vim.launch(run(), file_name)
+        self._vim.launch(run(), tree.data.id)
 
     def _process_results(
         self, tree: Tree[Position], code: int, output_path: str, runner: str

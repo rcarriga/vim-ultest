@@ -30,7 +30,6 @@ class ProcessManager:
         Constucts a result from the given test.
 
         :param cmd: Command arguments to run
-        :param test: Test to build result from.
         :return: Exit code and path to file containing stdout/stderr
         """
 

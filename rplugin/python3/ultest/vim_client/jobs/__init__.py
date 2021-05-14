@@ -40,10 +40,15 @@ class JobManager:
         asyncio.run_coroutine_threadsafe(wrapped_cor, loop=self._loop)
         self._jobs[job_group][job_id] = cancel_event
 
-    def stop_jobs(self, group: str):
-        self._logger.fdebug("Stopping jobs in group {group}")
-        for cancel_event in self._jobs[group].values():
+    def stop_jobs(self, group: str) -> bool:
+        self._logger.finfo("Stopping jobs in group {group}")
+        cancel_events = self._jobs[group]
+        if not cancel_events:
+            self._logger.finfo("No jobs found for group {group}")
+            return False
+        for cancel_event in cancel_events.values():
             self._loop.call_soon_threadsafe(cancel_event.set)
+        return True
 
     async def _handle_coroutine(
         self, cor: Coroutine, job_group: str, job_id: str, cancel_event: Event

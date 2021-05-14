@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import Test, Tree
+from ..models import File, Namespace, Test, Tree
 from ..vim_client import VimClient
 from .parsers import FileParser, OutputParser, Position
 from .runner import PositionRunner, ProcessManager
@@ -256,12 +256,24 @@ class Handler:
         self._vim.log.finfo("Creating script to attach to process {process_id}")
         return self._runner.get_attach_script(process_id)
 
-    def stop_test(self, test_dict: Optional[Dict]):
-        if not test_dict:
-            self._vim.log.fdebug("No test to cancel")
+    def stop_test(self, pos_dict: Optional[Dict]):
+        if not pos_dict:
+            self._vim.log.fdebug("No process to cancel")
             return
-        test = Test(**test_dict)
-        self._vim.log.finfo("Stopping all jobs for test {test.id}")
-        self._vim.stop(test.id)
-        test.running = 0
-        self._vim.call("ultest#process#move", test)
+
+        pos = self._parse_position(pos_dict)
+        if not pos:
+            self._vim.log.error(f"Invalid dict passed for position {pos_dict}")
+            return
+
+        self._runner.stop(pos, self._stored_positions[pos.file])
+
+    def _parse_position(self, pos_dict: Dict) -> Optional[Position]:
+        pos_type = pos_dict.get("type")
+        if pos_type == "test":
+            return Test(**pos_dict)
+        if pos_type == "namespace":
+            return Namespace(**pos_dict)
+        if pos_type == "file":
+            return File(**pos_dict)
+        return None
