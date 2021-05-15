@@ -63,8 +63,8 @@ class FileParser:
         This function tries to emulate how vim-test will parse files based off
         of indents. This means that if a namespace is on the same indent as a
         test within it, the test will not detected correctly.  Since we fall
-        back to vim-test for running there's no solution we add here to avoid
-        this without vim-test working around it too.
+        back to vim-test for running there's no solution we can add here to
+        avoid this without vim-test working around it too.
         """
         positions = []
         current_namespaces = current_namespaces or []
@@ -116,7 +116,9 @@ class FileParser:
                     last_test_indent=last_test_indent,
                 )
                 lines_consumed += 1
-                if last_test_indent == -1 or last_test_indent >= len(current_indent[1]):
+                if children and (
+                    last_test_indent == -1 or last_test_indent >= len(current_indent[1])
+                ):
                     positions.append([position, *children])
             else:
                 lines_consumed = 1
