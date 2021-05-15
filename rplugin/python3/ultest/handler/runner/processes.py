@@ -22,7 +22,12 @@ class ProcessManager:
         self._external_stdout: Dict[str, str] = {}
 
     async def run(
-            self, cmd: List[str], group_id: str, process_id: str, cwd: Optional[str] = None, env: Optional[Dict] = None
+        self,
+        cmd: List[str],
+        group_id: str,
+        process_id: str,
+        cwd: Optional[str] = None,
+        env: Optional[Dict] = None,
     ) -> Tuple[int, str]:
         """
         Run a test with the given command.
@@ -38,7 +43,9 @@ class ProcessManager:
         stdout_path = path.join(parent_dir, f"{self._safe_file_name(process_id)}_out")
         io_handle = ProcessIOHandle(in_path=stdin_path, out_path=stdout_path)
         self._processes[process_id] = io_handle
-        self._vim.log.fdebug("Starting test process {process_id} with command {cmd}, cwd = {cwd}, env = {env}")
+        self._vim.log.fdebug(
+            "Starting test process {process_id} with command {cmd}, cwd = {cwd}, env = {env}"
+        )
         try:
             async with self._vim.semaphore:
                 with io_handle.open() as (in_handle, out_handle):
@@ -49,7 +56,7 @@ class ProcessManager:
                             stderr=out_handle,
                             stdout=out_handle,
                             cwd=cwd,
-                            env=env and {**os.environ, **env}
+                            env=env and {**os.environ, **env},
                         )
                     except CancelledError:
                         raise

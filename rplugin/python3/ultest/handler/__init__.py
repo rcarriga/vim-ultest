@@ -143,7 +143,7 @@ class Handler:
             file_name,
             on_start=self._on_test_start,
             on_finish=self._on_test_finish,
-            env=self._user_env
+            env=self._user_env,
         )
 
     def run_single(self, test_id: str, file_name: str):
@@ -170,7 +170,7 @@ class Handler:
             file_name,
             on_start=self._on_test_start,
             on_finish=self._on_test_finish,
-            env=self._user_env
+            env=self._user_env,
         )
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
