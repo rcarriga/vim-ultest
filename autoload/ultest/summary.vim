@@ -59,12 +59,6 @@ function! ultest#summary#render(test) abort
   endif
 endfunction
 
-function! s:GetFoldLevel(lnum) abort
-  let l = getline(a:lnum)
-  if l == "" | return 0 | endif
-  return 1
-endfunction
-
 function! s:OpenNewWindow() abort
   exec "botright vnew ".s:buffer_name." | vertical resize ".g:ultest_summary_width
   let buf_settings = {
@@ -83,7 +77,7 @@ function! s:OpenNewWindow() abort
   endfor
   let win_settings = {
     \ "foldtext": 'substitute(getline(v:foldstart),"\s*{{{[0-9]\s*$","","")." ▶"',
-    \ "foldexpr": "len(getline(v:lnum))>1",
+    \ "foldexpr": "<SID>GetFoldLevel()",
     \ "winfixwidth": 1
     \ }
   let win = bufwinnr(s:buffer_name)
@@ -165,16 +159,21 @@ function! s:RenderGroupMember(prefix, member, group_state) abort
 endfunction
 
 function! s:RenderPosition(prefix, test, result, group_state) abort
-  let text = ""
   if has_key(a:result, "code")
     let highlight = a:result.code ? "UltestFail" : "UltestPass"
-    let icon = a:result.code ? " ": " "
+    let icon = a:result.code ? g:ultest_fail_sign : g:ultest_pass_sign
   else
-    let icon = a:test.running ? " ": " "
+    let icon = a:test.running ? g:ultest_running_sign : g:ultest_not_run_sign
     let highlight = a:test.running ? "UltestRunning" : "UltestDefault"
   endif
-  call add(a:group_state.lines, a:prefix..icon..a:test.name)
+  let line = a:prefix..icon.." "..a:test.name
+  call add(a:group_state.lines, line)
   call add(a:group_state.matches, [highlight, [len(a:group_state.lines), len(a:prefix) + 1, 1]])
+  if a:test.type == "file"
+    call add(a:group_state.matches, ["UltestSummaryFile", [len(a:group_state.lines), len(line) - len(a:test.name) + 1, len(a:test.name)]])
+  elseif a:test.type == "namespace"
+    call add(a:group_state.matches, ["UltestSummaryNamespace", [len(a:group_state.lines), len(line) - len(a:test.name) + 1, len(a:test.name)]])
+  endif
   let s:test_line_map[len(a:group_state.lines)] = [a:test.file, a:test.id]
 endfunction
 
@@ -186,6 +185,18 @@ function! s:Clear() abort
       call clearmatches()
     endif
   endif
+endfunction
+
+function! s:GetFoldLevel() abort
+  let [cur_file, cur_test] = s:GetAtLine(v:lnum)
+  if cur_file == ""
+    return 0
+  elseif cur_test == ""
+    return 1
+  endif
+  let position = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
+  if position.type == "test" | return len(position.namespaces) + 1 | endif
+  return ">"..string(len(position.namespaces) + 2)
 endfunction
 
 function! s:RunCurrent() abort
@@ -246,11 +257,10 @@ function! s:OpenCurrentOutput() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == "" || cur_test == ""
     return
-  else
-    let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
-    call ultest#output#open(test)
-    call ultest#output#jumpto()
   endif
+  let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
+  call ultest#output#open(test)
+  call ultest#output#jumpto()
 endfunction
 
 function! s:JumpToFail(direction) abort
