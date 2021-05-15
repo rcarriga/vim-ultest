@@ -1,17 +1,22 @@
 import json
 from dataclasses import asdict, dataclass
+from typing import List
 
 
 @dataclass
-class Result:
-
+class BasePosition:
     id: str
+    name: str
     file: str
-    code: int
-    output: str
+    line: int
+    col: int
+    running: int
+    namespaces: List[str]
+    type: str
 
     def __str__(self):
         props = self.dict()
+        props["name"] = [int(char) for char in self.name.encode()]
         return json.dumps(props)
 
     def dict(self):

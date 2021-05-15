@@ -28,5 +28,7 @@ function! ultest#positions#prev() abort
 endfunction
 
 function! s:GoToTest(test) abort
-  exec "normal ".string(a:test.line)."G"
+  if a:test.type != "file"
+    exec "normal ".string(a:test.line)."G"
+  endif
 endfunction

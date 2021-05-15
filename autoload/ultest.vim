@@ -21,6 +21,7 @@ function! ultest#status(...) abort
     let results = getbufvar(file, "ultest_results", {})
     let status = {"tests": len(ids), "passed": 0, "failed": 0, "running": 0}
     for test_id in ids
+      if get(get(tests, test_id, {}), "type", "") != "test" | continue | endif
       let result = get(results, test_id, {})
       if result != {}
         let key = result.code ? "failed" : "passed"
@@ -58,7 +59,12 @@ function! ultest#run_file(...) abort
   if type(pre_run) != v:t_number
     call call(pre_run, [file])
   endif
-  call ultest#handler#run_all(file)
+  let runner = get(args, "runner", "ultest")
+  if runner == "ultest"
+    call ultest#handler#run_nearest(0, file)
+  elseif runner == "nvim-dap"
+    lua require("ultest").dap_run_nearest({file = file, line = 0}) 
+  endif
 endfunction
 
 function! ultest#run_nearest(...) abort

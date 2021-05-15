@@ -6,10 +6,6 @@ for processor in g:ultest#processors
   endif
 endfor
 
-function ultest#process#store_sorted_ids(file, ids) abort
-  call setbufvar(a:file, "ultest_sorted_tests", a:ids)
-endfunction
-
 function ultest#process#new(test) abort
   call ultest#process#pre(a:test)
   if index(g:ultest_buffers, a:test.file) == -1

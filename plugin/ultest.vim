@@ -22,7 +22,7 @@ let g:ultest_buffers = []
 "
 " The goal behind vim-ultest is to make running tests as seamless as possible.
 "
-" * Tests are run individually so that any errors can be addressed individually.
+" * Tests are displayed individually so that any errors can be addressed individually.
 " * Tests are run in seperate threads (not just asynchronously on the same thread) so your Vim session will never be blocked.
 " * When tests are complete, results can be viewed immediately or on command.
 " * Utilise the existing power of vim-test by extending upon it.
@@ -43,13 +43,20 @@ let g:ultest_buffers = []
 "
 " hi UltestBorder ctermfg=Red guifg=#F70067
 "
-" hi UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
+" hi UltestSummaryInfo ctermfg=cyan guifg=#00F1F5 gui=bold cterm=bold
+"
+" hi link UltestSummaryFile UltestSummaryInfo
+"
+" hi link UltestSummaryNamespace UltestSummaryInfo
 
 hi default UltestPass ctermfg=Green guifg=#96F291
 hi default UltestFail ctermfg=Red guifg=#F70067
 hi default UltestRunning ctermfg=Yellow guifg=#FFEC63
+hi default UltestDefault ctermfg=Grey guifg=#8B8B8B
 hi default UltestBorder ctermfg=Red guifg=#F70067
-hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
+hi default UltestSummaryInfo ctermfg=cyan guifg=#00F1F5
+hi default link UltestSummaryFile UltestSummaryInfo
+hi default link UltestSummaryNamespace UltestSummaryInfo
 
 ""
 " Number of workers that are used for running tests.
@@ -57,12 +64,18 @@ hi default UltestInfo ctermfg=cyan guifg=#00F1F5 cterm=bold gui=bold
 let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 
 ""
+"
+" Custom environment variables for test processes in a dictionary.
+" (default: v:null)
+let g:ultest_env = get(g:, "ultest_env", v:null)
+
+""
 " Show failed outputs when completed run.
 " (default: 1)
 let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
 
 ""
-" Show failed outputs when cursor is on first line of test.
+" Show failed outputs when cursor is on first line of test/namespace.
 "
 " This relies on the 'updatetime' setting which by default is 4 seconds.
 " A longer 'updatetime' will mean the window takes longer to show
@@ -75,7 +88,7 @@ let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)
 let g:ultest_output_on_line =  get(g:, "ultest_output_on_line", has("nvim"))
 
 ""
-" Use unicode icons for results signs/virtual text.
+" Use unicode icons
 " (default: 1)
 let g:ultest_icons = get(g:, "ultest_icons", 1)
 
@@ -102,17 +115,22 @@ let g:ultest_virtual_text = get(g:, "ultest_virtual_text", 0)
 
 ""
 " Sign for passing tests.
-" (default: g:ultest_icons ? "●" : "O")
-let g:ultest_pass_sign = get(g:, "ultest_pass_sign", g:ultest_icons ? "●" : "O")
+" (default: g:ultest_icons ? "" : "O")
+let g:ultest_pass_sign = get(g:, "ultest_pass_sign", g:ultest_icons ? "" : "O")
 ""
 " Sign for failing tests.
-" (default: g:ultest_icons ? "●" : "X")
-let g:ultest_fail_sign = get(g:, "ultest_fail_sign", g:ultest_icons ? "●" : "X")
+" (default: g:ultest_icons ? "" : "X")
+let g:ultest_fail_sign = get(g:, "ultest_fail_sign", g:ultest_icons ? "" : "X")
 
 ""
 " Sign for running tests (string)
-" (default: g:ultest_icons ? "●" : "X")
-let g:ultest_running_sign = get(g:, "ultest_running_sign", g:ultest_icons ? "●" : "X")
+" (default: g:ultest_icons ? "" : ">")
+let g:ultest_running_sign = get(g:, "ultest_running_sign", g:ultest_icons ? "" : ">")
+
+""
+" Sign for tests not yet run (string)
+" (default: g:ultest_icons ? "" : "~")
+let g:ultest_not_run_sign = get(g:, "ultest_not_run_sign", g:ultest_icons ? "" : "~")
 
 ""
 " Virtual text for passing tests (string)
@@ -145,22 +163,25 @@ let g:ultest_pre_run = get(g:, "ultest_pre_run")
 let g:ultest_attach_width = get(g:, "ultest_attach_width", 0)
 
 ""
-" Custom list of receivers for test events.
+" Custom list of receivers for position events.
 " This is experimental and could change!
 " Receivers are dictionaries with any of the following keys:
 "
-" 'new': A function which takes a new test which has been discovered.
+" 'new': A function which takes a new position which has been discovered.
 "
-" 'move': A function which takes a test which has been moved.
+" 'move': A function which takes a position which has been moved.
 "
-" 'replace': A function which takes a test which has previously been cleared but has been replaced.
+" 'replace': A function which takes a position which has previously been cleared but has been replaced.
 "
-" 'start': A function which takes a test which has been run.
+" 'start': A function which takes a position which has been run.
 "
-" 'exit': A function which takes a test result once it has completed.
+" 'exit': A function which takes a position result once it has completed.
 "
-" 'clear': A function which takes a test which has been removed for some
+" 'clear': A function which takes a position which has been removed for some
 " reason.
+"
+" Positions can be either a file, namespace or test, distinguished with a
+" 'type' key.
 "
 let g:ultest_custom_processors = get(g:, "ultest_custom_processors", [])
 let g:ultest#processors = [
@@ -183,7 +204,7 @@ let g:ultest#processors = [
       \] + get(g:, "ultest_custom_processors", [])
 
 ""
-" Custom patterns for identifying tests. This dictionary should use the keys
+" Custom patterns for identifying positions. This dictionary should use the keys
 " in the form '<language>' or '<language>#<runner>'. The values should be a
 " dictionary with the following keys:
 "
@@ -198,8 +219,10 @@ let g:ultest#processors = [
 let g:ultest_custom_patterns = get(g:, "ultest_custom_patterns", {})
 
 let g:ultest_patterns = extend({
-      \ "elixir#exunit": {'test': ["^\\s*test\\s+['\"](.+)['\"]\\s+do"]}
-      \ }, g:ultest_custom_patterns)
+      \ "elixir#exunit": {
+        \ 'test': ["^\\s*test\\s+['\"](.+)['\"]\\s+do"],
+      \}
+    \ }, g:ultest_custom_patterns)
 
 ""
 " Key mappings for the summary window (dict)
@@ -219,8 +242,8 @@ let g:ultest_patterns = extend({
 "
 " 'prev_fail': (default "<S-k>") Jump up to the next fail.
 "
-" The summary window also defines folds for each test file so they can be
-" hidden as desired using the regular fold mappings.
+" The summary window also defines folds for each files and namespaces so they
+" can be hidden as desired using the regular fold mappings.
 let g:ultest_summary_mappings = get(g:, "ultest_summary_mappings", {
       \ "run": "r",
       \ "jumpto": "<CR>",
@@ -246,19 +269,24 @@ call sign_define("test_running", {"text":g:ultest_running_sign, "texthl": "Ultes
 command! Ultest call ultest#run_file({"pre_run": g:ultest_pre_run})
 
 ""
-" Run nearest test in the current file
+" Run nearest position in the current file
+" If no position is found it will attempt to run the entire file
 command! UltestNearest call ultest#run_nearest({"pre_run": g:ultest_pre_run})
 
 ""
-" Debug the nearest test with nvim-dap
+" Debug the current file with nvim-dap
+command! UltestDebug call ultest#run_file({"pre_run": g:ultest_pre_run, "runner": "nvim-dap"})
+
+""
+" Debug the nearest position with nvim-dap
 command! UltestDebugNearest call ultest#run_nearest({"pre_run": g:ultest_pre_run, "runner": "nvim-dap"})
 
 ""
-" Show the output of the nearest test in the current file
+" Show the output of the nearest position in the current file
 command! UltestOutput call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:false))
 
 ""
-" Attach to the running process of a test to be able to send input and read
+" Attach to the running process of a position to be able to send input and read
 " output as it runs. This is useful for debugging
 command! UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(line("."), expand("%:."), v:false))
 
@@ -267,7 +295,7 @@ command! UltestAttach call ultest#output#attach(ultest#handler#get_nearest_test(
 command! UltestStop call ultest#stop_file()
 
 ""
-" Stop any running jobs and results for the nearest test
+" Stop any running jobs and results for the nearest position
 command! UltestStopNearest call ultest#stop_nearest()
 
 ""
@@ -307,6 +335,8 @@ command! UltestSummaryClose call ultest#summary#close()
 "
 " <Plug>(ultest-stop-nearest) 	 Stop any running jobs for nearest test
 "
+" <Plug>(ultest-debug)	  Debug the current file with nvim-dap
+"
 " <Plug>(ultest-debug-nearest)	  Debug the nearest test with nvim-dap
 
 nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
@@ -320,6 +350,7 @@ nnoremap <silent><Plug>(ultest-output-jump) :call ultest#output#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-attach) :UltestAttach<CR>
 nnoremap <silent><Plug>(ultest-stop-file) :UltestStop<CR>
 nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
+nnoremap <silent><Plug>(ultest-debug) :UltestDebug<CR>
 nnoremap <silent><Plug>(ultest-debug-nearest) :UltestDebugNearest<CR>
 
 if g:ultest_output_on_line

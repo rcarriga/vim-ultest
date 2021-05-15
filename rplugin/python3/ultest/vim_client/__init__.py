@@ -53,13 +53,13 @@ class VimClient:
         """
         self._job_manager.run(func, job_group=job_group)
 
-    def stop(self, job_group: str):
+    def stop(self, job_group: str) -> bool:
         """
         Stop all jobs associated with the given job group
 
         :param job_group:  group for a group of jobs
         """
-        self._job_manager.stop_jobs(job_group)
+        return self._job_manager.stop_jobs(job_group)
 
     def command(
         self,

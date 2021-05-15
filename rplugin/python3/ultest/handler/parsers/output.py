@@ -20,7 +20,7 @@ class OutputPatterns:
 
 _BASE_PATTERNS = {
     "python#pytest": OutputPatterns(
-        failed_test=r"^FAILED .+?::(?P<namespaces>.+::)?(?P<name>.*?) ",
+        failed_test=r"^(FAILED|ERROR) .+?::(?P<namespaces>.+::)?(?P<name>.*?)( |$)",
         namespace_separator="::",
     ),
     "python#pyunit": OutputPatterns(
@@ -33,6 +33,7 @@ _BASE_PATTERNS = {
         ansi=True,
         namespace_separator=" › ",
     ),
+    "elixir#exunit": OutputPatterns(failed_test=r"\s*\d\) test (?P<name>.*) \(.*\)$"),
 }
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python

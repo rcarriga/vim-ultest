@@ -1,0 +1,28 @@
+.
+
+  1) test the world (BarTest)
+     test/foo_test.exs:16
+     Assertion with == failed
+     code:  assert Foo.hello() == :world
+     left:  :worlds
+     right: :world
+     stacktrace:
+       test/foo_test.exs:17: (test)
+
+.
+
+  2) test greets the world (FooTest)
+     test/foo_test.exs:4
+     Assertion with == failed
+     code:  assert Foo.hello() == :world
+     left:  :worlds
+     right: :world
+     stacktrace:
+       test/foo_test.exs:5: (test)
+
+
+
+Finished in 0.03 seconds
+4 tests, 2 failures
+
+Randomized with seed 515654

@@ -1,5 +1,5 @@
 let s:buffer_name = "Ultest Summary"
-let s:test_line_map = []
+let s:test_line_map = {}
 let s:mappings = {
       \ "run": "r",
       \ "jumpto": "<CR>",
@@ -55,14 +55,8 @@ endfunction
 
 function! ultest#summary#render(test) abort
   if s:IsOpen()
-    call s:FullRender()
+    call s:RenderSummary()
   endif
-endfunction
-
-function! s:GetFoldLevel(lnum) abort
-  let l = getline(a:lnum)
-  if l == "" | return 0 | endif
-  return 1
 endfunction
 
 function! s:OpenNewWindow() abort
@@ -83,7 +77,7 @@ function! s:OpenNewWindow() abort
   endfor
   let win_settings = {
     \ "foldtext": 'substitute(getline(v:foldstart),"\s*{{{[0-9]\s*$","","")." ▶"',
-    \ "foldexpr": "len(getline(v:lnum))>1",
+    \ "foldexpr": "<SID>GetFoldLevel()",
     \ "winfixwidth": 1
     \ }
   let win = bufwinnr(s:buffer_name)
@@ -92,66 +86,95 @@ function! s:OpenNewWindow() abort
   endfor
   augroup UltestSummary 
     au!
-    au CursorMoved <buffer> norm! 0
+    " au CursorMoved <buffer> norm! 0
   augroup END
-  call s:FullRender()
+  call s:RenderSummary()
   exec "norm \<C-w>p"
 endfunction
 
-function! s:FullRender() abort
+function! Render()
+  call s:RenderSummary()
+endfunction
+
+function! s:RenderSummary() abort
   call setbufvar(s:buffer_name, "&modifiable", 1)
   call s:Clear()
   let lines = []
+  let matches = []
   let win = bufwinnr(s:buffer_name)
-  let s:test_line_map = [["", ""]]
+  let s:test_line_map = {}
   for test_file in g:ultest_buffers
-    let sorted_ids = getbufvar(test_file, "ultest_sorted_tests")
+    let structure = getbufvar(test_file, "ultest_file_structure")
     let tests = getbufvar(test_file, "ultest_tests", {})
     let results = getbufvar(test_file, "ultest_results", {})
-    if len(tests) == 0 | continue | endif
-    call extend(s:test_line_map, [["", ""],[test_file, ""]])
-    let lines = lines + ["", " ".fnamemodify(test_file, ":t")]
-    call matchaddpos("UltestInfo", [len(lines) - 1], 10, -1, {"window": win})
-    let line_offset = len(lines)
-    for index in range(len(sorted_ids))
-      let test_id = sorted_ids[index]
-      let test = get(tests, test_id, {})
-      let result = get(results, test_id, {})
-      call add(s:test_line_map, has_key(test, "id") ? [test.file, test.id] : ["", ""])
-      if test == {} | continue | endif
-      call add(lines, s:RenderLine(test, result, index+line_offset, win, index == len(sorted_ids) - 1))
-    endfor
+    let state = {"lines": lines, "matches": matches, "tests": tests, "results": results }
+    call s:RenderGroup("", structure, 0, state)
+    if test_file != g:ultest_buffers[-1]
+      call add(lines, "")
+    endif
   endfor
-  if len(lines) > 0
-    call remove(s:test_line_map, 0)
-    call remove(lines, 0)
-  endif
   if has("nvim")
     call nvim_buf_set_lines(bufnr(s:buffer_name), 0, len(lines), v:false, lines)
   else
     call setbufline(s:buffer_name, 1, lines)
   endif
+  for mch in matches
+    call matchaddpos(mch[0], [mch[1]], 10, -1, {"window": win})
+  endfor
   silent call deletebufline(s:buffer_name, len(lines)+1, "$")
   call setbufvar(s:buffer_name, "&modifiable", 0)
 endfunction
 
-function! s:RenderLine(test, result, line, window, is_last) abort
-  let text = ""
-  if has_key(a:result, "code")
-    if a:result.code
-      let highlight = "UltestFail"
-    else
-      let highlight = "UltestPass"
-    endif
-  else
-    if a:test.running
-      let highlight = "UltestRunning"
-    else
-      let highlight = "Normal"
-    endif
+function! s:RenderGroup(root_prefix, group, indent, group_state) abort
+  let state = a:group_state
+  let root = a:group[0]
+  call s:RenderGroupMember(a:root_prefix, root, state)
+  if len(a:group) < 2
+    " Empty file
+    return
   endif
-  call matchaddpos(highlight, [[a:line, 3, len(a:test.name) + 4]], 10, -1, {"window": a:window})
-  return (a:is_last ? "└" : "│")." ".a:test.name
+  for index in range(1, len(a:group) - 2)
+    let member = a:group[index]
+    if type(member) == v:t_dict
+      call s:RenderGroupMember(repeat(" ", a:indent).."  ", member, state)
+    else
+      call s:RenderGroup(repeat(" ", a:indent).."  ", member, a:indent+2, state)
+    endif
+  endfor
+  let member = a:group[-1]
+  if type(member) == v:t_dict
+    call s:RenderGroupMember(repeat(" ", a:indent).."  ", member, state)
+  else
+    call s:RenderGroup(repeat(" ", a:indent).."  ", member, a:indent+2, state)
+  endif
+endfunction
+
+function! s:RenderGroupMember(prefix, member, group_state) abort
+  let state = a:group_state
+  let test = get(state.tests, a:member.id, {})
+  if test != {}
+    let result = get(state.results, a:member.id, {})
+    call s:RenderPosition(a:prefix, test, result, state)
+  endif
+endfunction
+
+function! s:RenderPosition(prefix, test, result, group_state) abort
+  if has_key(a:result, "code")
+    let highlight = a:result.code ? "UltestFail" : "UltestPass"
+    let icon = a:result.code ? g:ultest_fail_sign : g:ultest_pass_sign
+  else
+    let icon = a:test.running ? g:ultest_running_sign : g:ultest_not_run_sign
+    let highlight = a:test.running ? "UltestRunning" : "UltestDefault"
+  endif
+  let line = a:prefix..icon.." "..a:test.name
+  call add(a:group_state.lines, line)
+  call add(a:group_state.matches, [highlight, [len(a:group_state.lines), len(a:prefix) + 1, 1]])
+  if a:test.type == "file"
+    call add(a:group_state.matches, ["UltestSummaryFile", [len(a:group_state.lines), len(line) - len(a:test.name) + 1, len(a:test.name)]])
+  elseif a:test.type == "namespace"
+    call add(a:group_state.matches, ["UltestSummaryNamespace", [len(a:group_state.lines), len(line) - len(a:test.name) + 1, len(a:test.name)]])
+  endif
+  let s:test_line_map[len(a:group_state.lines)] = [a:test.file, a:test.id]
 endfunction
 
 function! s:Clear() abort
@@ -164,13 +187,24 @@ function! s:Clear() abort
   endif
 endfunction
 
+function! s:GetFoldLevel() abort
+  let [cur_file, cur_test] = s:GetAtLine(v:lnum)
+  if cur_file == ""
+    return 0
+  elseif cur_test == ""
+    return 1
+  endif
+  let position = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
+  if position.type == "test" | return len(position.namespaces) + 1 | endif
+  return ">"..string(len(position.namespaces) + 2)
+endfunction
 
 function! s:RunCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == ""
     return
   elseif cur_test == ""
-    call ultest#handler#run_all(cur_file)
+    call ultest#handler#run_single(cur_file, cur_file)
   else
     call ultest#handler#run_single(cur_test, cur_file)
   endif
@@ -199,12 +233,14 @@ endfunction
 
 function! s:AttachToCurrent() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
-  if cur_file == "" || cur_test == ""
+  if cur_file == ""
     return
+  elseif cur_test == ""
+    let test = {"id": cur_file, "file": cur_file, "namespaces": []}
   else
     let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
-    call ultest#output#attach(test)
   endif
+  call ultest#output#attach(test)
 endfunction
 
 function! s:StopCurrent() abort
@@ -221,11 +257,10 @@ function! s:OpenCurrentOutput() abort
   let [cur_file, cur_test] = s:GetAtLine(s:GetCurrentLine())
   if cur_file == "" || cur_test == ""
     return
-  else
-    let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
-    call ultest#output#open(test)
-    call ultest#output#jumpto()
   endif
+  let test = get(getbufvar(cur_file, "ultest_tests", {}), cur_test)
+  call ultest#output#open(test)
+  call ultest#output#jumpto()
 endfunction
 
 function! s:JumpToFail(direction) abort
@@ -250,6 +285,5 @@ function! s:GetCurrentLine() abort
 endfunction
 
 function! s:GetAtLine(line) abort
-  let lines_to_go = a:line
-  return s:test_line_map[a:line]
+  return get(s:test_line_map, a:line, ["", ""])
 endfunction

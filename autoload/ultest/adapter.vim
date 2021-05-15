@@ -1,6 +1,13 @@
 
 function! ultest#adapter#get_runner(file)
-  return test#determine_runner(a:file)
+  if exists('g:test#project_root')
+    execute 'cd' g:test#project_root
+  endif
+  let runner = test#determine_runner(a:file)
+  if exists('g:test#project_root')
+    cd -
+  endif
+  return runner
 endfunction
 
 function! ultest#adapter#build_cmd(test, scope) abort

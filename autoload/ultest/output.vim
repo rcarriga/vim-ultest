@@ -31,10 +31,13 @@ endfunction
 
 function! ultest#output#attach(test) abort
   if type(a:test) != v:t_dict || empty(a:test) | return | endif
-  let attach_res = ultest#handler#get_attach_script(a:test.id)
-  if type(attach_res) != v:t_list 
-    let attach_res = ultest#handler#get_attach_script(a:test.file)
-  endif
+  let process_ids = [a:test.id, a:test.file] + a:test.namespaces
+  for process_id in process_ids
+    let attach_res = ultest#handler#get_attach_script(process_id)
+    if type(attach_res) == v:t_list 
+      break
+    endif
+  endfor
   if type(attach_res) != v:t_list | return | endif
   let [stdout_path, py_script] = attach_res
   doautocmd User UltestOutputOpen

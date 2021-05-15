@@ -14,7 +14,7 @@ local function dap_run_test(test, build_config)
 
   local exit_handler = function(_, info)
     io.close()
-    vim.fn["ultest#handler#external_result"](test, info.exitCode, output_name)
+    vim.fn["ultest#handler#external_result"](test.id, test.file, info.exitCode)
   end
   local terminated_handler = function()
     if user_config.parse_result then
@@ -40,7 +40,7 @@ local function dap_run_test(test, build_config)
       before = function(config)
         local output_file = io.open(output_name, "w")
         io.output(output_file)
-        vim.fn["ultest#handler#external_start"](test, output_name)
+        vim.fn["ultest#handler#external_start"](test.id, test.file, output_name)
         dap.listeners.after.event_output[handler_id] = output_handler
         dap.listeners.before.event_terminated[handler_id] = terminated_handler
         dap.listeners.after.event_exited[handler_id] = exit_handler
@@ -99,7 +99,6 @@ function M.dap_run_nearest(config)
   if test == vim.NIL then
     return
   end
-
   local builder = get_builder(test, config)
   if builder == nil then
     return

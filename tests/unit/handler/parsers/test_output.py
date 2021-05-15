@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import Mock
 
-from rplugin.python3.ultest.handler.parser import OutputParser, ParseResult
+from rplugin.python3.ultest.handler.parsers import OutputParser, ParseResult
 from tests.mocks import get_output
 
 
@@ -13,7 +13,11 @@ class TestOutputParser(TestCase):
         output = get_output("pytest")
         failed = list(self.parser.parse_failed("python#pytest", output))
         self.assertEqual(
-            failed, [ParseResult(name="test_d", namespaces=["TestMyClass"])]
+            failed,
+            [
+                ParseResult(name="test_d", namespaces=["TestMyClass"]),
+                ParseResult(name="test_a", namespaces=[]),
+            ],
         )
 
     def test_parse_pyunit(self):
@@ -45,5 +49,16 @@ class TestOutputParser(TestCase):
                     namespaces=["First namespace", "Another namespace"],
                 ),
                 ParseResult(name="it shouldn't pass again", namespaces=[]),
+            ],
+        )
+
+    def test_parse_exunit(self):
+        output = get_output("exunit")
+        failed = list(self.parser.parse_failed("elixir#exunit", output))
+        self.assertEqual(
+            failed,
+            [
+                ParseResult(name="the world", namespaces=[]),
+                ParseResult(name="greets the world", namespaces=[]),
             ],
         )
