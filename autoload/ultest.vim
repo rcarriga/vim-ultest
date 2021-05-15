@@ -21,6 +21,7 @@ function! ultest#status(...) abort
     let results = getbufvar(file, "ultest_results", {})
     let status = {"tests": len(ids), "passed": 0, "failed": 0, "running": 0}
     for test_id in ids
+      if get(get(tests, test_id, {}), "type", "") != "test" | continue | endif
       let result = get(results, test_id, {})
       if result != {}
         let key = result.code ? "failed" : "passed"
