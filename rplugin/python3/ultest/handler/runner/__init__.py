@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, Iterator, List, Optional, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Set, Tuple, Callable
 
 from ...models import File, Namespace, Position, Result, Test, Tree
 from ...vim_client import VimClient
@@ -25,12 +25,19 @@ class PositionRunner:
         self._running: Set[str] = set()
         self._external_outputs = {}
 
-    def run(self, tree: Tree[Position], file_name: str):
+    def run(
+        self,
+        tree: Tree[Position],
+        file_name: str,
+        on_start: Callable[[Position], None],
+        on_finish: Callable[[Position, Result], None],
+    ):
+
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         if not self._output_parser.can_parse(runner) or len(tree) == 1:
-            self._run_separately(tree)
+            self._run_separately(tree, on_start, on_finish)
             return
-        self._run_group(tree, file_name)
+        self._run_group(tree, file_name, on_start, on_finish)
 
     def stop(self, pos: Position, tree: Tree[Position]):
         root = None
@@ -49,15 +56,25 @@ class PositionRunner:
             node.running = 0
             self._vim.call("ultest#process#move", node)
 
-    def register_external_start(self, tree: Tree[Position], output_path: str):
+    def register_external_start(
+        self,
+        tree: Tree[Position],
+        output_path: str,
+        on_start: Callable[[Position], None],
+    ):
         self._vim.log.finfo(
             "Saving external stdout path '{output_path}' for test {process_id}"
         )
         self._external_outputs[tree.data.id] = output_path
         for pos in tree:
-            self._register_started(pos)
+            self._register_started(pos, on_start)
 
-    def register_external_result(self, tree: Tree[Position], code: int):
+    def register_external_result(
+        self,
+        tree: Tree[Position],
+        code: int,
+        on_finish: Callable[[Position, Result], None],
+    ):
         file_name = tree.data.file
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         path = self._external_outputs.pop(tree.data.id)
@@ -69,7 +86,9 @@ class PositionRunner:
                 f"No output path registered for position {tree.data.id}"
             )
             return
-        self._process_results(tree=tree, code=code, output_path=path, runner=runner)
+        self._process_results(
+            tree=tree, code=code, output_path=path, runner=runner, on_finish=on_finish
+        )
 
     def is_running(self, position_id: str) -> int:
         return int(position_id in self._running)
@@ -80,7 +99,12 @@ class PositionRunner:
     def get_attach_script(self, process_id: str):
         return self._processes.create_attach_script(process_id)
 
-    def _run_separately(self, tree: Tree[Position]):
+    def _run_separately(
+        self,
+        tree: Tree[Position],
+        on_start: Callable[[Position], None],
+        on_finish: Callable[[Position, Result], None],
+    ):
         """
         Run a collection of tests. Each will be done in
         a separate thread.
@@ -92,7 +116,7 @@ class PositionRunner:
                 tests.append(pos)
 
         for test in tests:
-            self._register_started(test)
+            self._register_started(test, on_start)
             cmd = self._vim.sync_call("ultest#adapter#build_cmd", test, "nearest")
 
             async def run(cmd=cmd, test=test):
@@ -102,29 +126,41 @@ class PositionRunner:
                 self._register_result(
                     test,
                     Result(id=test.id, file=test.file, code=code, output=output_path),
+                    on_finish,
                 )
 
             self._vim.launch(run(), test.id)
 
-    def _run_group(self, tree: Tree[Position], file_name: str):
+    def _run_group(
+        self,
+        tree: Tree[Position],
+        file_name: str,
+        on_start: Callable[[Position], None],
+        on_finish: Callable[[Position, Result], None],
+    ):
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         scope = "file" if isinstance(tree.data, File) else "nearest"
         cmd = self._vim.sync_call("ultest#adapter#build_cmd", tree[0], scope)
         root = self._vim.sync_call("get", "g:", "test#project_root") or None
 
         for pos in tree:
-            self._register_started(pos)
+            self._register_started(pos, on_start)
 
         async def run(cmd=cmd):
             (code, output_path) = await self._processes.run(
                 cmd, tree.data.file, tree.data.id, cwd=root
             )
-            self._process_results(tree, code, output_path, runner)
+            self._process_results(tree, code, output_path, runner, on_finish)
 
         self._vim.launch(run(), tree.data.id)
 
     def _process_results(
-        self, tree: Tree[Position], code: int, output_path: str, runner: str
+        self,
+        tree: Tree[Position],
+        code: int,
+        output_path: str,
+        runner: str,
+        on_finish: Callable[[Position, Result], None],
     ):
 
         namespaces = {
@@ -151,6 +187,7 @@ class PositionRunner:
                     code=get_code(pos) if code else 0,
                     output=output_path,
                 ),
+                on_finish,
             )
 
     def _get_exit_code(
@@ -210,14 +247,21 @@ class PositionRunner:
             for failed in parsed_failures
         }
 
-    def _register_started(self, position: Position):
+    def _register_started(
+        self, position: Position, on_start: Callable[[Position], None]
+    ):
         self._vim.log.fdebug("Registering {position.id} as started")
         position.running = 1
         self._running.add(position.id)
-        self._vim.call("ultest#process#start", position)
+        on_start(position)
 
-    def _register_result(self, position: Position, result: Result):
+    def _register_result(
+        self,
+        position: Position,
+        result: Result,
+        on_finish: Callable[[Position, Result], None],
+    ):
         self._vim.log.fdebug("Registering {position.id} as exited with result {result}")
         self._results[position.file, position.id] = result
         self._running.remove(position.id)
-        self._vim.call("ultest#process#exit", position, result)
+        on_finish(position, result)

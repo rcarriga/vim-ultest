@@ -5,10 +5,11 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import File, Namespace, Test, Tree
+from ..models import File, Namespace, Test, Tree, Result, Position
 from ..vim_client import VimClient
 from .parsers import FileParser, OutputParser, Position
 from .runner import PositionRunner, ProcessManager
+from .tracker import PositionTracker
 
 
 class HandlerFactory:
@@ -21,20 +22,20 @@ class HandlerFactory:
         runner = PositionRunner(
             vim=client, process_manager=process_manager, output_parser=output_parser
         )
-        return Handler(client, file_parser=file_parser, runner=runner)
+        tracker = PositionTracker(file_parser=file_parser, runner=runner, vim=client)
+        return Handler(client, tracker=tracker, runner=runner)
 
 
 class Handler:
     def __init__(
         self,
         nvim: VimClient,
-        file_parser: FileParser,
+        tracker: PositionTracker,
         runner: PositionRunner,
     ):
         self._vim = nvim
         self._runner = runner
-        self._file_parser = file_parser
-        self._stored_positions: Dict[str, Tree[Position]] = {}
+        self._tracker = tracker
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
         self._vim.log.debug("Handler created")
@@ -60,7 +61,7 @@ class Handler:
         return split(cmd if isinstance(cmd, str) else " ".join(cmd))
 
     def external_start(self, pos_id: str, file_name: str, stdout: str):
-        tree = self._stored_positions.get(file_name)
+        tree = self._tracker.file_positions(file_name)
         if not tree:
             self._vim.log.error(
                 "Attempted to register started test for unknown file {file_name}"
@@ -74,22 +75,28 @@ class Handler:
             )
             return
 
-        self._runner.register_external_start(position, stdout)
+        self._runner.register_external_start(position, stdout, self._on_test_start)
 
     def external_result(self, pos_id: str, file_name: str, exit_code: int):
-        tree = self._stored_positions.get(file_name)
+        tree = self._tracker.file_positions(file_name)
         if not tree:
             self._vim.log.error(
-                "Attempted to register started test for unknown file {file_name}"
+                "Attempted to register test result for unknown file {file_name}"
             )
             raise ValueError(f"Unknown file {file_name}")
         position = tree.search(pos_id, lambda pos: pos.id)
         if not position:
-            self._vim.log.error(
-                f"Attempted to register unknown test as started {pos_id}"
-            )
+            self._vim.log.error(f"Attempted to register unknown test result {pos_id}")
             return
-        self._runner.register_external_result(position, exit_code)
+        self._runner.register_external_result(position, exit_code, self._on_test_finish)
+
+    def _on_test_start(self, position: Position):
+        self._vim.call("ultest#process#start", position)
+
+    def _on_test_finish(self, position: Position, result: Result):
+        self._vim.call("ultest#process#exit", position, result)
+        if self._show_on_run and result.output:
+            self._vim.schedule(self._present_output, result)
 
     def _present_output(self, result):
         if result.code and self._vim.sync_call("expand", "%") == result.file:
@@ -110,7 +117,7 @@ class Handler:
         """
 
         self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
-        positions = self._stored_positions.get(file_name)
+        positions = self._tracker.file_positions(file_name)
 
         if not positions and update_empty:
             self._vim.log.finfo(
@@ -129,7 +136,12 @@ class Handler:
         if not position:
             return
 
-        self._runner.run(position, file_name)
+        self._runner.run(
+            position,
+            file_name,
+            on_start=self._on_test_start,
+            on_finish=self._on_test_finish,
+        )
 
     def run_single(self, test_id: str, file_name: str):
         """
@@ -139,7 +151,7 @@ class Handler:
         :param file_name: File to run in.
         """
         self._vim.log.finfo("Running test {test_id} in {file_name}")
-        positions = self._stored_positions.get(file_name)
+        positions = self._tracker.file_positions(file_name)
         if not positions:
             return
         match = None
@@ -150,95 +162,20 @@ class Handler:
         if not match:
             return
 
-        self._runner.run(match, file_name)
+        self._runner.run(
+            match,
+            file_name,
+            on_start=self._on_test_start,
+            on_finish=self._on_test_finish,
+        )
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
-        """
-        Check for new, moved and removed tests and send appropriate events.
-
-        :param file_name: Name of file to clear results from.
-        """
-
-        if not os.path.isfile(file_name):
-            return
-        try:
-            vim_patterns = self._vim.sync_call("ultest#adapter#get_patterns", file_name)
-        except Exception:
-            self._vim.log.exception(
-                f"Error whilte evaluating patterns for file {file_name}"
-            )
-            return
-        if not vim_patterns:
-            self._vim.log.fdebug("No patterns found for {file_name}")
-            return
-
-        recorded_tests = {
-            test.id: test for test in self._stored_positions.get(file_name, [])
-        }
-        if not recorded_tests:
-            self._vim.call("setbufvar", file_name, "ultest_results", {})
-            self._vim.call("setbufvar", file_name, "ultest_tests", {})
-            self._vim.call("setbufvar", file_name, "ultest_sorted_tests", [])
-            self._vim.call("setbufvar", file_name, "ultest_file_structure", [])
-
-        async def runner():
-            self._vim.log.finfo("Updating positions in {file_name}")
-            positions = await self._file_parser.parse_file_structure(
-                file_name, vim_patterns
-            )
-            self._stored_positions[file_name] = positions
-            self._vim.call(
-                "setbufvar",
-                file_name,
-                "ultest_file_structure",
-                positions.map(lambda pos: {"type": pos.type, "id": pos.id}).to_list(),
-            )
-
-            tests = list(positions)
-            self._vim.call(
-                "setbufvar",
-                file_name,
-                "ultest_sorted_tests",
-                [test.id for test in tests],
-            )
-            for test in tests:
-                if test.id in recorded_tests:
-                    recorded = recorded_tests.pop(test.id)
-                    if recorded.line != test.line:
-                        test.running = self._runner.is_running(test.id)
-                        self._vim.log.fdebug(
-                            "Moving test {test.id} from {recorded.line} to {test.line} in {file_name}"
-                        )
-                        self._vim.call("ultest#process#move", test)
-                else:
-                    existing_result = self._runner.get_result(test.id, test.file)
-                    if existing_result:
-                        self._vim.log.fdebug(
-                            "Replacing test {test.id} to {test.line} in {file_name}"
-                        )
-                        self._vim.call("ultest#process#replace", test, existing_result)
-                    else:
-                        self._vim.log.fdebug("New test {test.id} found in {file_name}")
-                        self._vim.call("ultest#process#new", test)
-
-            if recorded_tests:
-                self._vim.log.fdebug(
-                    "Removing tests {[recorded for recorded in recorded_tests]} from {file_name}"
-                )
-                for removed in recorded_tests.values():
-                    self._vim.call("ultest#process#clear", removed)
-            else:
-                self._vim.log.fdebug("No tests removed")
-            self._vim.command("doau User UltestPositionsUpdate")
-            if callback:
-                callback()
-
-        self._vim.launch(runner(), "update_positions")
+        self._tracker.update(file_name, callback)
 
     def get_nearest_position(
         self, line: int, file_name: str, strict: bool
     ) -> Optional[Tree[Position]]:
-        positions = self._stored_positions.get(file_name)
+        positions = self._tracker.file_positions(file_name)
         if not positions:
             return None
         key = lambda pos: pos.line
@@ -266,7 +203,12 @@ class Handler:
             self._vim.log.error(f"Invalid dict passed for position {pos_dict}")
             return
 
-        self._runner.stop(pos, self._stored_positions[pos.file])
+        tree = self._tracker.file_positions(pos.file)
+        if not tree:
+            self._vim.log.error(f"Positions not found for file {pos.file}")
+            return
+
+        self._runner.stop(pos, tree)
 
     def _parse_position(self, pos_dict: Dict) -> Optional[Position]:
         pos_type = pos_dict.get("type")
