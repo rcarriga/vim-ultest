@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, Iterator, List, Optional, Set, Tuple, Callable
+from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
 
 from ...models import File, Namespace, Position, Result, Test, Tree
 from ...vim_client import VimClient

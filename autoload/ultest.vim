@@ -58,7 +58,12 @@ function! ultest#run_file(...) abort
   if type(pre_run) != v:t_number
     call call(pre_run, [file])
   endif
-  call ultest#handler#run_nearest(0, file)
+  let runner = get(args, "runner", "ultest")
+  if runner == "ultest"
+    call ultest#handler#run_nearest(0, file)
+  elseif runner == "nvim-dap"
+    lua require("ultest").dap_run_nearest({file = file, line = 0}) 
+  endif
 endfunction
 
 function! ultest#run_nearest(...) abort

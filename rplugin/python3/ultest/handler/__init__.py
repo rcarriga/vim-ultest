@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from pynvim import Nvim
 
 from ..logging import UltestLogger
-from ..models import File, Namespace, Test, Tree, Result, Position
+from ..models import File, Namespace, Position, Result, Test, Tree
 from ..vim_client import VimClient
 from .parsers import FileParser, OutputParser, Position
 from .runner import PositionRunner, ProcessManager
