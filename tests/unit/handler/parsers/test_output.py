@@ -51,3 +51,14 @@ class TestOutputParser(TestCase):
                 ParseResult(name="it shouldn't pass again", namespaces=[]),
             ],
         )
+
+    def test_parse_exunit(self):
+        output = get_output("exunit")
+        failed = list(self.parser.parse_failed("elixir#exunit", output))
+        self.assertEqual(
+            failed,
+            [
+                ParseResult(name="the world", namespaces=[]),
+                ParseResult(name="greets the world", namespaces=[]),
+            ],
+        )

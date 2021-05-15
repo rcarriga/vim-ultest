@@ -33,6 +33,7 @@ _BASE_PATTERNS = {
         ansi=True,
         namespace_separator=" › ",
     ),
+    "elixir#exunit": OutputPatterns(failed_test=r"\s*\d\) test (?P<name>.*) \(.*\)$"),
 }
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
