@@ -31,13 +31,14 @@ class PositionRunner:
         file_name: str,
         on_start: Callable[[Position], None],
         on_finish: Callable[[Position, Result], None],
+        env: Optional[Dict] = None,
     ):
 
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         if not self._output_parser.can_parse(runner) or len(tree) == 1:
-            self._run_separately(tree, on_start, on_finish)
+            self._run_separately(tree, on_start, on_finish, env)
             return
-        self._run_group(tree, file_name, on_start, on_finish)
+        self._run_group(tree, file_name, on_start, on_finish, env)
 
     def stop(self, pos: Position, tree: Tree[Position]):
         root = None
@@ -104,6 +105,7 @@ class PositionRunner:
         tree: Tree[Position],
         on_start: Callable[[Position], None],
         on_finish: Callable[[Position, Result], None],
+        env: Optional[Dict] = None,
     ):
         """
         Run a collection of tests. Each will be done in
@@ -121,7 +123,7 @@ class PositionRunner:
 
             async def run(cmd=cmd, test=test):
                 (code, output_path) = await self._processes.run(
-                    cmd, test.file, test.id, cwd=root
+                    cmd, test.file, test.id, cwd=root, env=env
                 )
                 self._register_result(
                     test,
@@ -137,6 +139,7 @@ class PositionRunner:
         file_name: str,
         on_start: Callable[[Position], None],
         on_finish: Callable[[Position, Result], None],
+        env: Optional[Dict] = None,
     ):
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         scope = "file" if isinstance(tree.data, File) else "nearest"
@@ -148,7 +151,7 @@ class PositionRunner:
 
         async def run(cmd=cmd):
             (code, output_path) = await self._processes.run(
-                cmd, tree.data.file, tree.data.id, cwd=root
+                cmd, tree.data.file, tree.data.id, cwd=root, env=env
             )
             self._process_results(tree, code, output_path, runner, on_finish)
 

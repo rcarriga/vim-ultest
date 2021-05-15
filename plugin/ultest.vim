@@ -64,6 +64,12 @@ hi default link UltestSummaryNamespace UltestSummaryInfo
 let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 
 ""
+"
+" Custom environment variables for test processes in a dictionary.
+" (default: v:null)
+let g:ultest_env = get(g:, "ultest_env", v:null)
+
+""
 " Show failed outputs when completed run.
 " (default: 1)
 let g:ultest_output_on_run = get(g:, "ultest_output_on_run", 1)

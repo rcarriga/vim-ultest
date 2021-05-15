@@ -56,6 +56,8 @@ class Handler:
             self._vim.log.debug("Clearing COLUMNS value")
             os.environ.pop("COLUMNS")
 
+        self._user_env = self._vim.sync_call("get", "g:", "ultest_env") or None
+
     def safe_split(self, cmd: Union[str, List[str]]) -> List[str]:
         # Some runner position builders in vim-test don't split args properly (e.g. go test)
         return split(cmd if isinstance(cmd, str) else " ".join(cmd))
@@ -141,6 +143,7 @@ class Handler:
             file_name,
             on_start=self._on_test_start,
             on_finish=self._on_test_finish,
+            env=self._user_env
         )
 
     def run_single(self, test_id: str, file_name: str):
@@ -167,6 +170,7 @@ class Handler:
             file_name,
             on_start=self._on_test_start,
             on_finish=self._on_test_finish,
+            env=self._user_env
         )
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
