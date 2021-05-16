@@ -28,6 +28,7 @@ class PositionRunner:
     def run(
         self,
         tree: Tree[Position],
+        file_tree: Tree[Position],
         file_name: str,
         on_start: Callable[[Position], None],
         on_finish: Callable[[Position, Result], None],
@@ -38,7 +39,7 @@ class PositionRunner:
         if not self._output_parser.can_parse(runner) or len(tree) == 1:
             self._run_separately(tree, on_start, on_finish, env)
             return
-        self._run_group(tree, file_name, on_start, on_finish, env)
+        self._run_group(tree, file_tree, file_name, on_start, on_finish, env)
 
     def stop(self, pos: Position, tree: Tree[Position]):
         root = None
@@ -60,6 +61,7 @@ class PositionRunner:
     def register_external_start(
         self,
         tree: Tree[Position],
+        file_tree: Tree[Position],
         output_path: str,
         on_start: Callable[[Position], None],
     ):
@@ -73,6 +75,7 @@ class PositionRunner:
     def register_external_result(
         self,
         tree: Tree[Position],
+        file_tree: Tree[Position],
         code: int,
         on_finish: Callable[[Position, Result], None],
     ):
@@ -88,7 +91,12 @@ class PositionRunner:
             )
             return
         self._process_results(
-            tree=tree, code=code, output_path=path, runner=runner, on_finish=on_finish
+            tree=tree,
+            file_tree=file_tree,
+            code=code,
+            output_path=path,
+            runner=runner,
+            on_finish=on_finish,
         )
 
     def is_running(self, position_id: str) -> int:
@@ -136,6 +144,7 @@ class PositionRunner:
     def _run_group(
         self,
         tree: Tree[Position],
+        file_tree: Tree[Position],
         file_name: str,
         on_start: Callable[[Position], None],
         on_finish: Callable[[Position, Result], None],
@@ -153,13 +162,14 @@ class PositionRunner:
             (code, output_path) = await self._processes.run(
                 cmd, tree.data.file, tree.data.id, cwd=root, env=env
             )
-            self._process_results(tree, code, output_path, runner, on_finish)
+            self._process_results(tree, file_tree, code, output_path, runner, on_finish)
 
         self._vim.launch(run(), tree.data.id)
 
     def _process_results(
         self,
         tree: Tree[Position],
+        file_tree: Tree[Position],
         code: int,
         output_path: str,
         runner: str,
@@ -168,7 +178,7 @@ class PositionRunner:
 
         namespaces = {
             position.id: position
-            for position in tree
+            for position in file_tree
             if isinstance(position, Namespace)
         }
         output = []
@@ -201,25 +211,27 @@ class PositionRunner:
         namespaces: Dict[str, Namespace],
         pos: Position,
     ):
-        if isinstance(root, Test):
-            return group_code
-        if not isinstance(pos, Test):
-            return group_code
         # If none were parsed but the process failed then something else went wrong,
         # and we treat it as all failed
         if not failed:
             return group_code
-        namespaces_from_root = []
-        if not isinstance(root, File):
-            for index, namespace in enumerate(pos.namespaces):
-                if namespace == root.id:
-                    namespaces_from_root = pos.namespaces[index:]
-        else:
-            namespaces_from_root = pos.namespaces
+        if isinstance(root, Test):
+            return group_code
+        if isinstance(pos, File):
+            return group_code
+        if isinstance(pos, Namespace):
+            namespace_names = tuple(
+                namespaces[namespace_id].name
+                for namespace_id in [*pos.namespaces, pos.id]
+            )
+            for failed_names in failed:
+                if namespace_names == failed_names[1 : len(namespace_names) + 1]:
+                    return group_code
+            return 0
 
         if (
             pos.name,
-            *[namespaces[namespace_id].name for namespace_id in namespaces_from_root],
+            *[namespaces[namespace_id].name for namespace_id in pos.namespaces],
         ) in failed:
             return group_code
 

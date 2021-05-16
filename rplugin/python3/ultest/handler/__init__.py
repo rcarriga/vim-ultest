@@ -77,7 +77,9 @@ class Handler:
             )
             return
 
-        self._runner.register_external_start(position, stdout, self._on_test_start)
+        self._runner.register_external_start(
+            position, tree, stdout, self._on_test_start
+        )
 
     def external_result(self, pos_id: str, file_name: str, exit_code: int):
         tree = self._tracker.file_positions(file_name)
@@ -90,7 +92,9 @@ class Handler:
         if not position:
             self._vim.log.error(f"Attempted to register unknown test result {pos_id}")
             return
-        self._runner.register_external_result(position, exit_code, self._on_test_finish)
+        self._runner.register_external_result(
+            position, tree, exit_code, self._on_test_finish
+        )
 
     def _on_test_start(self, position: Position):
         self._vim.call("ultest#process#start", position)
@@ -133,6 +137,9 @@ class Handler:
 
             return self.update_positions(file_name, callback=run_after_update)
 
+        if not positions:
+            return
+
         position = self.get_nearest_position(line, file_name, strict=False)
 
         if not position:
@@ -140,6 +147,7 @@ class Handler:
 
         self._runner.run(
             position,
+            positions,
             file_name,
             on_start=self._on_test_start,
             on_finish=self._on_test_finish,
@@ -167,6 +175,7 @@ class Handler:
 
         self._runner.run(
             match,
+            positions,
             file_name,
             on_start=self._on_test_start,
             on_finish=self._on_test_finish,
