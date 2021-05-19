@@ -1,5 +1,6 @@
+from collections import defaultdict
 from functools import partial
-from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set, Tuple
 
 from ...models import File, Namespace, Position, Result, Test, Tree
 from ...vim_client import VimClient
@@ -19,7 +20,7 @@ class PositionRunner:
         output_parser: OutputParser,
     ):
         self._vim = vim
-        self._results = {}
+        self._results = defaultdict(dict)
         self._processes = process_manager
         self._output_parser = output_parser
         self._running: Set[str] = set()
@@ -57,6 +58,9 @@ class PositionRunner:
         for node in root:
             node.running = 0
             self._vim.call("ultest#process#move", node)
+
+    def clear_results(self, file_name: str) -> Iterable[str]:
+        return self._results.pop(file_name, {}).keys()
 
     def register_external_start(
         self,
@@ -103,7 +107,7 @@ class PositionRunner:
         return int(position_id in self._running)
 
     def get_result(self, pos_id: str, file_name: str) -> Optional[Result]:
-        return self._results.get((pos_id, file_name))
+        return self._results[file_name].get(pos_id)
 
     def get_attach_script(self, process_id: str):
         return self._processes.create_attach_script(process_id)
@@ -277,6 +281,6 @@ class PositionRunner:
         on_finish: Callable[[Position, Result], None],
     ):
         self._vim.log.fdebug("Registering {position.id} as exited with result {result}")
-        self._results[position.file, position.id] = result
+        self._results[position.file][position.id] = result
         self._running.remove(position.id)
         on_finish(position, result)

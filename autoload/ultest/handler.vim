@@ -68,3 +68,7 @@ endfunction
 function! ultest#handler#safe_split(...) abort
   return s:Call('_ultest_safe_split', a:000)
 endfunction
+
+function! ultest#handler#clear_results(...) abort
+  return s:Call('_ultest_clear_results', a:000)
+endfunction

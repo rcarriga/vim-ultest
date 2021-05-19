@@ -223,6 +223,22 @@ class Handler:
 
         self._runner.stop(pos, tree)
 
+    def clear_results(self, file_name: str):
+        self._vim.log.fdebug("Clearing results for file {file_name}")
+        cleared = set(self._runner.clear_results(file_name))
+        if not cleared:
+            return
+
+        positions = self._tracker.file_positions(file_name)
+        if not positions:
+            self._vim.log.error("Successfully cleared results for unknown file")
+
+        for position in positions:
+            if position.id in cleared:
+                position.running = 0
+                self._vim.sync_call("ultest#process#clear", position)
+                self._vim.sync_call("ultest#process#new", position)
+
     def _parse_position(self, pos_dict: Dict) -> Optional[Position]:
         pos_type = pos_dict.get("type")
         if pos_type == "test":

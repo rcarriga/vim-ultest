@@ -311,6 +311,10 @@ command! UltestSummaryOpen call ultest#summary#open()
 command! UltestSummaryClose call ultest#summary#close()
 
 ""
+" Clear results from the current file
+command! UltestClear call ultest#handler#clear_results(expand("%:."))
+
+""
 " @section Mappings
 "
 " <Plug>(ultest-next-fail)	 Jump to next failed test.

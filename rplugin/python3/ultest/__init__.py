@@ -58,6 +58,10 @@ try:
         _check_started()
         return HANDLER.safe_split(*args)
 
+    def _ultest_clear_results(*args):
+        _check_started()
+        return HANDLER.clear_results(*args)
+
 
 except ImportError:
     from pynvim import Nvim, function, plugin
@@ -112,3 +116,7 @@ except ImportError:
         @function("_ultest_safe_split", sync=True)
         def _safe_split(self, args):
             return self.handler.safe_split(*args)
+
+        @function("_ultest_clear_results", sync=True)
+        def _clear_results(self, args):
+            return self.handler.clear_results(*args)

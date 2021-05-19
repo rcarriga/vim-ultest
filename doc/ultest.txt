@@ -217,6 +217,9 @@ COMMANDS                                                     *ultest-commands*
 :UltestSummaryClose                                      *:UltestSummaryClose*
   Close the summary window
 
+:UltestClear                                                    *:UltestClear*
+  Clear results from the current file
+
 ==============================================================================
 FUNCTIONS                                                   *ultest-functions*
 
