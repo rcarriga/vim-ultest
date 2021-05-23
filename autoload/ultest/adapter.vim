@@ -16,7 +16,7 @@ function! ultest#adapter#build_cmd(test, scope) abort
   endif
   let a:test.file = fnamemodify(a:test.file, get(g:, "test#filename_modifier", ":."))
   call ultest#process#pre(a:test)
-  let runner = ultest#adapter#get_runner(a:test.file)
+  let runner = test#determine_runner(a:test.file)
   let executable = test#base#executable(runner)
 
   let base_args = test#base#build_position(runner, a:scope, a:test)
