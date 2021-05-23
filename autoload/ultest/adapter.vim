@@ -1,17 +1,19 @@
 
 function! ultest#adapter#get_runner(file)
   if exists('g:test#project_root')
+    let cwd = getcwd()
     execute 'cd' g:test#project_root
   endif
   let runner = test#determine_runner(a:file)
   if exists('g:test#project_root')
-    cd -
+    exec 'cd'.cwd
   endif
   return runner
 endfunction
 
 function! ultest#adapter#build_cmd(test, scope) abort
   if exists('g:test#project_root')
+    let cwd = getcwd()
     execute 'cd' g:test#project_root
   endif
   let a:test.file = fnamemodify(a:test.file, get(g:, "test#filename_modifier", ":."))
@@ -31,7 +33,7 @@ function! ultest#adapter#build_cmd(test, scope) abort
   endif
   let cmd = ultest#handler#safe_split(cmd)
   if exists('g:test#project_root')
-    cd -
+    exec 'cd'.cwd
   endif
   return cmd
 endfunction
