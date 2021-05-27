@@ -386,9 +386,9 @@ endfunction
 
 augroup UltestPositionUpdater
   au!
-  au BufEnter * call <SID>MonitorFile(expand("<afile>"))
+  au BufEnter * call <SID>MonitorFile(expand("<afile>:."))
   if !has("nvim")
-    au VimEnter * call <SID>MonitorFile(expand("<afile>"))
+    au VimEnter * call <SID>MonitorFile(expand("<afile>:."))
   endif
 augroup END
 
@@ -398,7 +398,7 @@ if !has("vim_starting")
   for open_file in split(execute("buffers"), "\n")
     let file_name = matchstr(open_file, '".\+"')
     if file_name != ""
-      call s:MonitorFile(file_name[1:-2])
+      call s:MonitorFile(fnamemodify(file_name[1:-2], "."))
     endif
   endfor
 end
