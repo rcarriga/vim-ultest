@@ -23,7 +23,7 @@ local function dap_run_test(test, build_config)
         lines[#lines + 1] = line
       end
       local exit_code = user_config.parse_result(lines)
-      vim.fn["ultest#handler#external_result"](test, exit_code, output_name)
+      vim.fn["ultest#handler#external_result"](test.id, test.file, exit_code)
     end
   end
 
