@@ -1,0 +1,7 @@
+[31m[1mFAIL | A (0.00s)[0m
+[31m[1m     |     main_test.go:10: 2 != 2[0m
+[31m[1mFAIL | AAAB (0.00s)[0m
+[31m[1m     |     main_test.go:19: 2 != 2[0m
+FAIL
+[31m[1m     | exit status 1[0m
+[31m[1mFAIL | 	test	0.001s[0m

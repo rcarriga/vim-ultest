@@ -16,6 +16,7 @@ class OutputPatterns:
     failed_test: str
     namespace_separator: Optional[str] = None
     ansi: bool = False
+    failed_name_prefix: Optional[str] = None
 
 
 _BASE_PATTERNS = {
@@ -28,6 +29,11 @@ _BASE_PATTERNS = {
         namespace_separator=r"\.",
     ),
     "go#gotest": OutputPatterns(failed_test=r"^--- FAIL: (?P<name>.+?) "),
+    "go#richgo": OutputPatterns(
+        failed_test=r"^FAIL\s\|\s(?P<name>.+?) \(.*\)",
+        ansi=True,
+        failed_name_prefix="Test",
+    ),
     "javascript#jest": OutputPatterns(
         failed_test=r"^\s*● (?P<namespaces>.* › )?(?P<name>.*)$",
         ansi=True,
@@ -70,4 +76,9 @@ class OutputParser:
                     if pattern.namespace_separator and match["namespaces"]
                     else []
                 )
-                yield ParseResult(name=match["name"], namespaces=namespaces)
+                name = (
+                    f"{pattern.failed_name_prefix}{match['name']}"
+                    if pattern.failed_name_prefix
+                    else match["name"]
+                )
+                yield ParseResult(name=name, namespaces=namespaces)

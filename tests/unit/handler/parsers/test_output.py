@@ -62,3 +62,14 @@ class TestOutputParser(TestCase):
                 ParseResult(name="greets the world", namespaces=[]),
             ],
         )
+
+    def test_parse_richgo(self):
+        output = get_output("richgo")
+        failed = list(self.parser.parse_failed("go#richgo", output))
+        self.assertEqual(
+            failed,
+            [
+                ParseResult(name="TestA", namespaces=[]),
+                ParseResult(name="TestAAAB", namespaces=[]),
+            ],
+        )
