@@ -94,6 +94,14 @@ class PositionRunner:
                 f"No output path registered for position {tree.data.id}"
             )
             return
+        if not self._output_parser.can_parse(runner):
+            for pos in tree:
+                self._register_result(
+                    pos,
+                    result=Result(id=pos.id, file=pos.file, code=code, output=path),
+                    on_finish=on_finish,
+                )
+            return
         self._process_results(
             tree=tree,
             file_tree=file_tree,
