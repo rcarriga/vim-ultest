@@ -8,12 +8,13 @@ from threading import Thread
 from typing import Coroutine, Dict
 from uuid import uuid4
 
-from ...logging import UltestLogger
+from ...logging import get_logger
+
+logger = get_logger()
 
 
 class JobManager:
-    def __init__(self, logger: UltestLogger, num_threads: int = 2):
-        self._logger = logger
+    def __init__(self, num_threads: int = 2):
         self._jobs: defaultdict[str, Dict[str, Event]] = defaultdict(dict)
         self._loop = asyncio.new_event_loop()
         self._thread = Thread(target=self._loop.run_forever, daemon=True)
@@ -24,7 +25,7 @@ class JobManager:
             # https://bugs.python.org/issue35621
             from .watcher import ThreadedChildWatcher
 
-            self._logger.info("Using local threaded child watcher")
+            logger.info("Using local threaded child watcher")
             asyncio.set_child_watcher(ThreadedChildWatcher())
 
     @property
@@ -41,10 +42,10 @@ class JobManager:
         self._jobs[job_group][job_id] = cancel_event
 
     def stop_jobs(self, group: str) -> bool:
-        self._logger.finfo("Stopping jobs in group {group}")
+        logger.finfo("Stopping jobs in group {group}")
         cancel_events = self._jobs[group]
         if not cancel_events:
-            self._logger.finfo("No jobs found for group {group}")
+            logger.finfo("No jobs found for group {group}")
             return False
         for cancel_event in cancel_events.values():
             self._loop.call_soon_threadsafe(cancel_event.set)
@@ -54,7 +55,7 @@ class JobManager:
         self, cor: Coroutine, job_group: str, job_id: str, cancel_event: Event
     ):
         try:
-            self._logger.fdebug("Starting job with group {job_group}")
+            logger.fdebug("Starting job with group {job_group}")
             run_task = asyncio.create_task(cor)
             cancel_task = asyncio.create_task(cancel_event.wait())
             try:
@@ -63,25 +64,25 @@ class JobManager:
                     return_when=asyncio.FIRST_COMPLETED,
                 )
             except CancelledError:
-                self._logger.exception(f"Task was cancelled prematurely {run_task}")
+                logger.exception(f"Task was cancelled prematurely {run_task}")
             else:
                 if run_task in done:
                     e = run_task.exception()
                     if e:
-                        self._logger.warn(f"Exception throw in job: {e}")
-                        self._logger.warn(
+                        logger.warn(f"Exception throw in job: {e}")
+                        logger.warn(
                             "\n".join(
                                 traceback.format_exception(type(e), e, e.__traceback__)
                             )
                         )
-                    self._logger.fdebug("Finished job with group {job_group}")
+                    logger.fdebug("Finished job with group {job_group}")
                 else:
                     run_task.cancel()
-                    self._logger.fdebug("Cancelled running job with group {job_group}")
+                    logger.fdebug("Cancelled running job with group {job_group}")
         except CancelledError:
-            self._logger.exception("Job runner cancelled")
+            logger.exception("Job runner cancelled")
             raise
         except Exception:
-            self._logger.exception("Error running job")
+            logger.exception("Error running job")
         finally:
             self._jobs[job_group].pop(job_id)

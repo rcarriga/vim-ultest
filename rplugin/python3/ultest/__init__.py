@@ -17,10 +17,8 @@ try:
         global HANDLER  # pylint: disable=W0603
         if not HANDLER:
             from .handler import HandlerFactory
-            from .logging import create_logger
 
-            logger = create_logger()
-            HANDLER = HandlerFactory.create(vim, logger)
+            HANDLER = HandlerFactory.create(vim)
 
     def _ultest_run_nearest(*args):
         _check_started()
@@ -76,9 +74,8 @@ except ImportError:
         def handler(self):
             if not self._handler:
                 from .handler import HandlerFactory
-                from .logging import create_logger
 
-                self._handler = HandlerFactory.create(self._vim, create_logger())
+                self._handler = HandlerFactory.create(self._vim)
             return self._handler
 
         @function("_ultest_run_nearest", allow_nested=True)

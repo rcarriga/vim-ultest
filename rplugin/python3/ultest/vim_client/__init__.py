@@ -2,20 +2,14 @@ from typing import Any, Callable, Coroutine, List
 
 from pynvim import Nvim
 
-from ..logging import UltestLogger
 from .jobs import JobManager
 
 
 class VimClient:
-    def __init__(self, vim_: Nvim, logger: UltestLogger):
+    def __init__(self, vim_: Nvim):
         self._vim = vim_
-        self._logger = logger
         num_threads = int(self.sync_eval("g:ultest_max_threads"))  # type: ignore
-        self._job_manager = JobManager(logger, num_threads)
-
-    @property
-    def log(self) -> UltestLogger:
-        return self._logger
+        self._job_manager = JobManager(num_threads)
 
     @property
     def semaphore(self):

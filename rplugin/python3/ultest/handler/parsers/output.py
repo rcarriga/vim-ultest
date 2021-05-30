@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
 
-from ...logging import UltestLogger
+from ...logging import get_logger
 
 
 @dataclass(frozen=True)
@@ -45,10 +45,11 @@ _BASE_PATTERNS = {
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
 _ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
+logger = get_logger()
+
 
 class OutputParser:
-    def __init__(self, logger: UltestLogger) -> None:
-        self._log = logger
+    def __init__(self) -> None:
         self._patterns = _BASE_PATTERNS
 
     def can_parse(self, runner: str) -> bool:
@@ -62,7 +63,7 @@ class OutputParser:
                 _ANSI_ESCAPE.sub("", line) if pattern.ansi else line
             )
             if match:
-                self._log.finfo(
+                logger.finfo(
                     "Found failed test in output {match['name']} in namespaces {match['namespaces']} of runner {runner}"
                 )
                 namespaces = (

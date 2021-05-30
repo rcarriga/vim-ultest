@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Optional, Pattern, Tuple, Union
 
+from ...logging import get_logger
 from ...models import File, Namespace, Test, Tree
 from ...vim_client import VimClient
 
@@ -9,6 +10,8 @@ INDENT_PATTERN = re.compile(r"(^\s*)\S")
 
 Position = Union[File, Test, Namespace]
 PosList = Union[Position, List["PosList"]]
+
+logger = get_logger()
 
 
 class FileParser:
@@ -19,7 +22,7 @@ class FileParser:
         self, file_name: str, vim_patterns: Dict
     ) -> Tree[Position]:
         patterns = self._convert_patterns(vim_patterns)
-        self._vim.log.fdebug("Converted pattern {vim_patterns} to {patterns}")
+        logger.fdebug("Converted pattern {vim_patterns} to {patterns}")
         with open(file_name, "r") as test_file:
             lines = test_file.readlines()
         res, _ = self._parse_position_tree(

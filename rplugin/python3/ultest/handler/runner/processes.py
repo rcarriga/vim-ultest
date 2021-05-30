@@ -6,8 +6,11 @@ from asyncio import CancelledError, subprocess
 from os import path
 from typing import Dict, List, Optional, Tuple
 
+from ...logging import get_logger
 from ...vim_client import VimClient
 from .handle import ProcessIOHandle
+
+logger = get_logger()
 
 
 class ProcessManager:
@@ -43,32 +46,33 @@ class ProcessManager:
         stdout_path = path.join(parent_dir, f"{self._safe_file_name(process_id)}_out")
         io_handle = ProcessIOHandle(in_path=stdin_path, out_path=stdout_path)
         self._processes[process_id] = io_handle
-        self._vim.log.fdebug(
+        logger.fdebug(
             "Starting test process {process_id} with command {cmd}, cwd = {cwd}, env = {env}"
         )
         try:
             async with self._vim.semaphore:
-                with io_handle.open() as (in_handle, out_handle):
+                with io_handle.open() as (in_, out_):
                     try:
                         process = await subprocess.create_subprocess_exec(
                             *cmd,
-                            stdin=in_handle,
-                            stderr=out_handle,
-                            stdout=out_handle,
+                            stdin=in_,
+                            stdout=out_,
+                            stderr=out_,
                             cwd=cwd,
                             env=env and {**os.environ, **env},
+                            close_fds=True,
                         )
                     except CancelledError:
                         raise
                     except Exception:
-                        self._vim.log.warn(
+                        logger.warn(
                             f"An exception was thrown when starting process {process_id} with command: {cmd}",
                             exc_info=True,
                         )
                         code = 1
                     else:
                         code = await process.wait()
-                    self._vim.log.fdebug(
+                    logger.fdebug(
                         "Process {process_id} complete with exit code: {code}"
                     )
                     return (code, stdout_path)

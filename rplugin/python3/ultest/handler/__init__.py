@@ -4,21 +4,23 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from pynvim import Nvim
 
-from ..logging import UltestLogger
+from ..logging import get_logger
 from ..models import File, Namespace, Position, Result, Test, Tree
 from ..vim_client import VimClient
 from .parsers import FileParser, OutputParser, Position
 from .runner import PositionRunner, ProcessManager
 from .tracker import PositionTracker
 
+logger = get_logger()
+
 
 class HandlerFactory:
     @staticmethod
-    def create(vim: Nvim, logger: UltestLogger) -> "Handler":
-        client = VimClient(vim, logger)
+    def create(vim: Nvim) -> "Handler":
+        client = VimClient(vim)
         file_parser = FileParser(client)
         process_manager = ProcessManager(client)
-        output_parser = OutputParser(logger)
+        output_parser = OutputParser()
         runner = PositionRunner(
             vim=client, process_manager=process_manager, output_parser=output_parser
         )
@@ -38,22 +40,22 @@ class Handler:
         self._tracker = tracker
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
-        self._vim.log.debug("Handler created")
+        logger.debug("Handler created")
 
     def _prepare_env(self):
         rows = self._vim.sync_eval("g:ultest_output_rows")
         if rows:
-            self._vim.log.debug(f"Setting ROWS to {rows}")
+            logger.debug(f"Setting ROWS to {rows}")
             os.environ["ROWS"] = str(rows)
         elif "ROWS" in os.environ:
-            self._vim.log.debug("Clearing ROWS value")
+            logger.debug("Clearing ROWS value")
             os.environ.pop("ROWS")
         cols = self._vim.sync_eval("g:ultest_output_cols")
         if cols:
-            self._vim.log.debug(f"Setting COLUMNS to {cols}")
+            logger.debug(f"Setting COLUMNS to {cols}")
             os.environ["COLUMNS"] = str(cols)
         elif "COLUMNS" in os.environ:
-            self._vim.log.debug("Clearing COLUMNS value")
+            logger.debug("Clearing COLUMNS value")
             os.environ.pop("COLUMNS")
 
         self._user_env = self._vim.sync_call("get", "g:", "ultest_env") or None
@@ -65,16 +67,14 @@ class Handler:
     def external_start(self, pos_id: str, file_name: str, stdout: str):
         tree = self._tracker.file_positions(file_name)
         if not tree:
-            self._vim.log.error(
+            logger.error(
                 "Attempted to register started test for unknown file {file_name}"
             )
             raise ValueError(f"Unknown file {file_name}")
 
         position = tree.search(pos_id, lambda pos: pos.id)
         if not position:
-            self._vim.log.error(
-                f"Attempted to register unknown test as started {pos_id}"
-            )
+            logger.error(f"Attempted to register unknown test as started {pos_id}")
             return
 
         self._runner.register_external_start(
@@ -84,13 +84,13 @@ class Handler:
     def external_result(self, pos_id: str, file_name: str, exit_code: int):
         tree = self._tracker.file_positions(file_name)
         if not tree:
-            self._vim.log.error(
+            logger.error(
                 "Attempted to register test result for unknown file {file_name}"
             )
             raise ValueError(f"Unknown file {file_name}")
         position = tree.search(pos_id, lambda pos: pos.id)
         if not position:
-            self._vim.log.error(f"Attempted to register unknown test result {pos_id}")
+            logger.error(f"Attempted to register unknown test result {pos_id}")
             return
         self._runner.register_external_result(
             position, tree, exit_code, self._on_test_finish
@@ -106,7 +106,7 @@ class Handler:
 
     def _present_output(self, result):
         if result.code and self._vim.sync_call("expand", "%") == result.file:
-            self._vim.log.fdebug("Showing {result.id} output")
+            logger.fdebug("Showing {result.id} output")
             line = self._vim.sync_call("getbufinfo", result.file)[0].get("lnum")
             nearest = self.get_nearest_position(line, result.file, strict=False)
             if nearest and nearest.data.id == result.id:
@@ -122,11 +122,11 @@ class Handler:
         :param file_name: File to run in.
         """
 
-        self._vim.log.finfo("Running nearest test in {file_name} at line {line}")
+        logger.finfo("Running nearest test in {file_name} at line {line}")
         positions = self._tracker.file_positions(file_name)
 
         if not positions and update_empty:
-            self._vim.log.finfo(
+            logger.finfo(
                 "No tests found for {file_name}, rerunning after processing positions"
             )
 
@@ -161,7 +161,7 @@ class Handler:
         :param test_id: Test to run
         :param file_name: File to run in.
         """
-        self._vim.log.finfo("Running test {test_id} in {file_name}")
+        logger.finfo("Running test {test_id} in {file_name}")
         positions = self._tracker.file_positions(file_name)
         if not positions:
             return
@@ -203,35 +203,35 @@ class Handler:
         return test.data.dict()
 
     def get_attach_script(self, process_id: str) -> Optional[Tuple[str, str]]:
-        self._vim.log.finfo("Creating script to attach to process {process_id}")
+        logger.finfo("Creating script to attach to process {process_id}")
         return self._runner.get_attach_script(process_id)
 
     def stop_test(self, pos_dict: Optional[Dict]):
         if not pos_dict:
-            self._vim.log.fdebug("No process to cancel")
+            logger.fdebug("No process to cancel")
             return
 
         pos = self._parse_position(pos_dict)
         if not pos:
-            self._vim.log.error(f"Invalid dict passed for position {pos_dict}")
+            logger.error(f"Invalid dict passed for position {pos_dict}")
             return
 
         tree = self._tracker.file_positions(pos.file)
         if not tree:
-            self._vim.log.error(f"Positions not found for file {pos.file}")
+            logger.error(f"Positions not found for file {pos.file}")
             return
 
         self._runner.stop(pos, tree)
 
     def clear_results(self, file_name: str):
-        self._vim.log.fdebug("Clearing results for file {file_name}")
+        logger.fdebug("Clearing results for file {file_name}")
         cleared = set(self._runner.clear_results(file_name))
         if not cleared:
             return
 
         positions = self._tracker.file_positions(file_name)
         if not positions:
-            self._vim.log.error("Successfully cleared results for unknown file")
+            logger.error("Successfully cleared results for unknown file")
 
         for position in positions:
             if position.id in cleared:

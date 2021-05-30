@@ -97,3 +97,13 @@ def create_logger() -> UltestLogger:
         logger.setLevel(level)
     logger.info("Logger created")
     return logger
+
+
+_logger = None
+
+
+def get_logger() -> UltestLogger:
+    global _logger
+    if not _logger:
+        _logger = create_logger()
+    return _logger

@@ -1,10 +1,13 @@
 import os
 from typing import Callable, Dict, Optional
 
+from ..logging import get_logger
 from ..models import Tree
 from ..vim_client import VimClient
 from .parsers import FileParser, Position
 from .runner import PositionRunner
+
+logger = get_logger()
 
 
 class PositionTracker:
@@ -28,7 +31,7 @@ class PositionTracker:
 
         vim_patterns = self._get_file_patterns(file_name)
         if not vim_patterns:
-            self._vim.log.fdebug("No patterns found for {file_name}")
+            logger.fdebug("No patterns found for {file_name}")
             return
 
         recorded_tests: Dict[str, Position] = {
@@ -49,7 +52,7 @@ class PositionTracker:
         recorded_tests: Dict[str, Position],
         callback: Optional[Callable],
     ):
-        self._vim.log.finfo("Updating positions in {file_name}")
+        logger.finfo("Updating positions in {file_name}")
 
         positions = await self._parse_positions(file_name, vim_patterns)
         tests = list(positions)
@@ -64,19 +67,19 @@ class PositionTracker:
                 recorded = recorded_tests.pop(test.id)
                 if recorded.line != test.line:
                     test.running = self._runner.is_running(test.id)
-                    self._vim.log.fdebug(
+                    logger.fdebug(
                         "Moving test {test.id} from {recorded.line} to {test.line} in {file_name}"
                     )
                     self._vim.call("ultest#process#move", test)
             else:
                 existing_result = self._runner.get_result(test.id, test.file)
                 if existing_result:
-                    self._vim.log.fdebug(
+                    logger.fdebug(
                         "Replacing test {test.id} to {test.line} in {file_name}"
                     )
                     self._vim.call("ultest#process#replace", test, existing_result)
                 else:
-                    self._vim.log.fdebug("New test {test.id} found in {file_name}")
+                    logger.fdebug("New test {test.id} found in {file_name}")
                     self._vim.call("ultest#process#new", test)
 
         self._remove_old_positions(recorded_tests)
@@ -97,7 +100,7 @@ class PositionTracker:
         try:
             return self._vim.sync_call("ultest#adapter#get_patterns", file)
         except Exception:
-            self._vim.log.exception(f"Error while evaluating patterns for file {file}")
+            logger.exception(f"Error while evaluating patterns for file {file}")
             return {}
 
     async def _parse_positions(self, file: str, vim_patterns: Dict) -> Tree[Position]:
@@ -113,10 +116,10 @@ class PositionTracker:
 
     def _remove_old_positions(self, positions: Dict[str, Position]):
         if positions:
-            self._vim.log.fdebug(
+            logger.fdebug(
                 "Removing tests {[recorded for recorded in recorded_tests]} from {file_name}"
             )
             for removed in positions.values():
                 self._vim.call("ultest#process#clear", removed)
         else:
-            self._vim.log.fdebug("No tests removed")
+            logger.fdebug("No tests removed")

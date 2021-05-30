@@ -2,10 +2,13 @@ from collections import defaultdict
 from functools import partial
 from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set, Tuple
 
+from ...logging import get_logger
 from ...models import File, Namespace, Position, Result, Test, Tree
 from ...vim_client import VimClient
 from ..parsers import OutputParser, ParseResult, Position
 from .processes import ProcessManager
+
+logger = get_logger()
 
 
 class PositionRunner:
@@ -52,7 +55,7 @@ class PositionRunner:
                     root = tree.search(namespace, lambda data: data.id)
                     break
         if not root:
-            self._vim.log.warn(f"No matching job found for position {pos}")
+            logger.warn(f"No matching job found for position {pos}")
             return
 
         for node in root:
@@ -69,7 +72,7 @@ class PositionRunner:
         output_path: str,
         on_start: Callable[[Position], None],
     ):
-        self._vim.log.finfo(
+        logger.finfo(
             "Saving external stdout path '{output_path}' for test {process_id}"
         )
         self._external_outputs[tree.data.id] = output_path
@@ -86,13 +89,11 @@ class PositionRunner:
         file_name = tree.data.file
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         path = self._external_outputs.pop(tree.data.id)
-        self._vim.log.finfo(
+        logger.finfo(
             "Saving external result for process '{process_id}' with exit code {code}"
         )
         if not path:
-            self._vim.log.error(
-                f"No output path registered for position {tree.data.id}"
-            )
+            logger.error(f"No output path registered for position {tree.data.id}")
             return
         if not self._output_parser.can_parse(runner):
             for pos in tree:
@@ -257,7 +258,7 @@ class PositionRunner:
                 if namespace == tree.data.name:
                     return namespaces[index:]
 
-            self._vim.log.warn(
+            logger.warn(
                 f"No namespaces found from root {tree.data.name} in parsed result {namespaces}"
             )
             return []
@@ -277,7 +278,7 @@ class PositionRunner:
     def _register_started(
         self, position: Position, on_start: Callable[[Position], None]
     ):
-        self._vim.log.fdebug("Registering {position.id} as started")
+        logger.fdebug("Registering {position.id} as started")
         position.running = 1
         self._running.add(position.id)
         on_start(position)
@@ -288,7 +289,7 @@ class PositionRunner:
         result: Result,
         on_finish: Callable[[Position, Result], None],
     ):
-        self._vim.log.fdebug("Registering {position.id} as exited with result {result}")
+        logger.fdebug("Registering {position.id} as exited with result {result}")
         self._results[position.file][position.id] = result
         self._running.remove(position.id)
         on_finish(position, result)
