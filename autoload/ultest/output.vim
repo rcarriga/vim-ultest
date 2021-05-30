@@ -20,7 +20,11 @@ function! ultest#output#open(test) abort
   let output = get(result, "output", "")
   let [width, height] = s:CalculateBounds(output)
   if has("nvim")
-    let cmd = ['less', "-R", "-Ps", shellescape(output)]
+    if exists("*nvim_open_term")
+      let cmd = output
+    else
+      let cmd = ['less', "-R", "-Ps", shellescape(output)]
+    endif
     call s:NvimOpenFloat(cmd, width, height, "UltestOutput")
     autocmd InsertEnter,CursorMoved * ++once  call ultest#output#close(v:false)
   else
@@ -34,7 +38,7 @@ function! ultest#output#attach(test) abort
   let process_ids = [a:test.id, a:test.file] + a:test.namespaces
   for process_id in process_ids
     let attach_res = ultest#handler#get_attach_script(process_id)
-    if type(attach_res) == v:t_list 
+    if type(attach_res) == v:t_list
       break
     endif
   endfor
@@ -144,7 +148,11 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
   let out_buffer = nvim_create_buf(v:false, v:true)
   let user_window = nvim_get_current_win()
   let output_window = nvim_open_win(out_buffer, v:true, content_opts)
-  call termopen(join(a:cmd, " "))
+  if type(a:cmd) == v:t_list
+   call termopen(join(a:cmd, " "))
+  else
+    exec 'lua vim.api.nvim_chan_send(vim.api.nvim_open_term(0, {}),(io.open("'.a:cmd.'", "r"):read("*a"):gsub("\n", "\r\n")))'
+  endif
   exec "setfiletype ".a:filetype
   call nvim_set_current_win(user_window)
   let output_win_id = nvim_win_get_number(output_window)
