@@ -64,6 +64,17 @@ hi default link UltestSummaryNamespace UltestSummaryInfo
 let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 
 ""
+" Connect jobs to a pty. This will trick the process into thinking it is
+" running an interactive session which generally enables colour escape codes.
+" Currently experimental!
+"
+" This should only be enabled if you are using a nightly version of neovim
+" with the `nvim_open_term` function because it is needed to parse terminal
+" escape codes properly in order to show output.
+" (default: 0)
+let g:ultest_use_pty = get(g:, "ultest_use_pty", 0)
+
+""
 "
 " Custom environment variables for test processes in a dictionary.
 " (default: v:null)

@@ -23,6 +23,7 @@ class ProcessManager:
         self._dir = tempfile.TemporaryDirectory(prefix="ultest")
         self._processes: Dict[str, Optional[ProcessIOHandle]] = {}
         self._external_stdout: Dict[str, str] = {}
+        self._use_pty = self._vim.sync_call("get", "g:", "ultest_use_pty")
 
     async def run(
         self,
@@ -51,7 +52,7 @@ class ProcessManager:
         )
         try:
             async with self._vim.semaphore:
-                with io_handle.open() as (in_, out_):
+                with io_handle.open(use_pty=self._use_pty) as (in_, out_):
                     try:
                         process = await subprocess.create_subprocess_exec(
                             *cmd,

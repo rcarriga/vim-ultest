@@ -129,6 +129,12 @@ let test#python#pytest#options = "--color=yes"
 let test#javascript#jest#options = "--color=always"
 ```
 
+Alternatively if you are using a nightly version of neovim you can enable PTY
+usage which makes the process think it is in an interactive session
+```vim
+let g:ultest_use_pty = 1
+```
+
 **Note**: The window to show results relies on the 'updatetime' setting which by default is 4 seconds.
 A longer 'updatetime' will mean the window takes longer to show automatically but a shorter time means (Neo)Vim will write to disk much more often which can degrade SSDs over time and cause slowdowns on HDDs.
 
