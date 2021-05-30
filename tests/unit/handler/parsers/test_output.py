@@ -1,5 +1,4 @@
 from unittest import TestCase
-from unittest.mock import Mock
 
 from rplugin.python3.ultest.handler.parsers import OutputParser, ParseResult
 from tests.mocks import get_output
@@ -7,7 +6,7 @@ from tests.mocks import get_output
 
 class TestOutputParser(TestCase):
     def setUp(self) -> None:
-        self.parser = OutputParser(logger=Mock())
+        self.parser = OutputParser()
 
     def test_parse_pytest(self):
         output = get_output("pytest")
