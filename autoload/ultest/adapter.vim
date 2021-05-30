@@ -31,6 +31,11 @@ function! ultest#adapter#build_cmd(test, scope) abort
   if has_key(g:, 'test#transformation')
     let cmd = g:test#custom_transformations[g:test#transformation](cmd)
   endif
+  for index in range(len(cmd))
+    if cmd[index] == a:test.file
+      let cmd[index] = shellescape(a:test.file)
+    end
+  endfor
   let cmd = ultest#handler#safe_split(cmd)
   if exists('g:test#project_root')
     exec 'cd'.cwd
