@@ -15,7 +15,7 @@
 _The ultimate testing plugin for NeoVim_
 
 Running tests should be as quick and painless as possible.
-[vim-test](https://github.com/janko/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
+[vim-test](https://github.com/vim-test/vim-test) is a very powerful and extensive testing plugin, but it can be cumbersome to configure and lacks some features to make it feel like an integrated piece of your editor.
 
 Rather than replacing vim-test altogether, vim-ultest (in name and practice) builds upon vim-test to make it even better while maintaining the ability to use your existing configuration.
 If you're already using vim-test then switching to vim-ultest is as easy as installing and... well, that's pretty much it.
@@ -63,7 +63,7 @@ All users:
 
 - Python >= 3.7
 - [Pynvim library](https://pynvim.readthedocs.io/en/latest/installation.html)
-- [vim-test](https://github.com/janko/vim-test)
+- [vim-test](https://github.com/vim-test/vim-test)
 
 Vim only:
 
@@ -87,7 +87,7 @@ vim-ultest can be installed as usual with your favourite plugin manager.
 call dein#add("roxma/nvim-yarp")
 call dein#add("roxma/vim-hug-neovim-rpc")
 
-call dein#add("janko/vim-test")
+call dein#add("vim-test/vim-test")
 call dein#add("rcarriga/vim-ultest")
 ```
 
@@ -98,14 +98,14 @@ call dein#add("rcarriga/vim-ultest")
 Plug "roxma/nvim-yarp"
 Plug "roxma/vim-hug-neovim-rpc"
 
-Plug "janko/vim-test"
+Plug "vim-test/vim-test"
 Plug "rcarriga/vim-ultest", { "do": ":UpdateRemotePlugins" }
 ```
 
 [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
-use { "rcarriga/vim-ultest", requires = {"janko/vim-test"}, run = ":UpdateRemotePlugins" }
+use { "rcarriga/vim-ultest", requires = {"vim-test/vim-test"}, run = ":UpdateRemotePlugins" }
 ```
 
 ## Usage
