@@ -5,7 +5,7 @@ from ...logging import get_logger
 from ...models import File, Namespace, Test, Tree
 from ...vim_client import VimClient
 
-REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)"}
+REGEX_CONVERSIONS = {r"\\v": "", r"%\((.*?)\)": r"(?:\1)", r"\\zs": "", r"\\ze": ""}
 INDENT_PATTERN = re.compile(r"(^\s*)\S")
 
 Position = Union[File, Test, Namespace]

@@ -111,6 +111,53 @@ async def test_parse_python_tests():
     assert tests == expected
 
 
+@patch("builtins.open", mock_open(read_data=get_test_file("java")))
+@patch("os.path.isfile", lambda _: True)
+@pytest.mark.asyncio
+async def test_parse_java_tests():
+    patterns = {
+        "test": [r"\v^\s*%(\zs\@Test\s+\ze)?%(\zspublic\s+\ze)?void\s+(\w+)"],
+        "namespace": [r"\v^\s*%(\zspublic\s+\ze)?class\s+(\w+)"],
+    }
+
+    tests = list(await file_parser.parse_file_structure("", patterns))
+
+    expected = [
+        File(
+            id="",
+            name="",
+            file="",
+            line=0,
+            col=0,
+            running=0,
+            namespaces=[],
+            type="file",
+        ),
+        Namespace(
+            id=tests[1].id,
+            name="TestJunit1",
+            file="",
+            line=5,
+            col=1,
+            running=0,
+            namespaces=[],
+            type="namespace",
+        ),
+        Test(
+            id=tests[2].id,
+            name="testPrintMessage",
+            file="",
+            line=11,
+            col=1,
+            running=0,
+            namespaces=[tests[1].id],
+            type="test",
+        ),
+    ]
+
+    assert tests == expected
+
+
 @patch("builtins.open", mock_open(read_data=get_test_file("jest")))
 @patch("os.path.isfile", lambda _: True)
 @pytest.mark.asyncio
