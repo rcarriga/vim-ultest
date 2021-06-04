@@ -53,6 +53,7 @@ function! ultest#output#attach(test) abort
     call s:NvimOpenFloat(cmd, width, height, "UltestAttach")
     call nvim_set_current_win(g:ultest#output_windows[0])
     au TermClose * ++once call ultest#output#close(v:true)
+    au InsertEnter,CursorMoved * ++once  call ultest#output#close(v:false)
   else
     call s:VimOpenFloat(cmd, width, height)
   endif
