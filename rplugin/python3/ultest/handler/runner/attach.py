@@ -3,6 +3,7 @@ import os
 import readline  # type: ignore
 import select
 import sys
+import time
 from threading import Thread
 
 IN_FILE = "{IN_FILE}"
@@ -13,11 +14,12 @@ def forward_fd(from_fd: int, to_fd: int) -> Thread:
     def forward():
         try:
             while True:
-                ready, _, _ = select.select([from_fd], [], [], 5)
+                ready, _, _ = select.select([from_fd], [], [])
                 for fd in ready:
                     try:
                         data = os.read(fd, 512)
                         if not data:  # EOF
+                            time.sleep(0.1)
                             break
                         os.write(to_fd, data)
                     except OSError as e:
