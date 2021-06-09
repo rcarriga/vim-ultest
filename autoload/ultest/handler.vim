@@ -17,6 +17,13 @@ function! s:Call(func, args) abort
         echom "Error: vim-ultest remote function not detected, try running :UpdateRemotePlugins on install/update"
         let s:update_warn_sent += 1
       endif
+    catch
+      " Send twice because first one isn't shown if triggered during startup
+      if s:update_warn_sent < 2 
+        echom "Error: vim-ultest encountered an unknown error on startup, check v:exception"
+        let s:update_warn_sent += 1
+      endif
+    endtry
     endtry
   else
     let args = copy(a:args)
