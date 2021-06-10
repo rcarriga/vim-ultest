@@ -24,7 +24,6 @@ function! s:Call(func, args) abort
         let s:update_warn_sent += 1
       endif
     endtry
-    endtry
   else
     let args = copy(a:args)
     call insert(args, a:func)
