@@ -1,4 +1,4 @@
---- FAIL: TestA (0.00s)
+user_output--- FAIL: TestA (0.00s)
     main_test.go:10: 2 != 2
 --- FAIL: TestB (0.00s)
     main_test.go:19: 2 != 2

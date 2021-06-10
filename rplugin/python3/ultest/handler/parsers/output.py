@@ -28,7 +28,7 @@ _BASE_PATTERNS = {
         failed_test=r"^FAIL: (?P<name>.*) \(.*?(?P<namespaces>\..+)\)",
         namespace_separator=r"\.",
     ),
-    "go#gotest": OutputPatterns(failed_test=r"^--- FAIL: (?P<name>.+?) "),
+    "go#gotest": OutputPatterns(failed_test=r"^.*--- FAIL: (?P<name>.+?) "),
     "go#richgo": OutputPatterns(
         failed_test=r"^FAIL\s\|\s(?P<name>.+?) \(.*\)",
         ansi=True,
