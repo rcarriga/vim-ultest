@@ -90,16 +90,16 @@ Use virtual text (if available) instead of signs to show test results in file.
 (default: 0)
 
                                                           *g:ultest_pass_sign*
-Sign for passing tests. (default: g:ultest_icons ? "" : "O")
+Sign for passing tests. (default: g:ultest_icons ? "✔" : "O")
 
                                                           *g:ultest_fail_sign*
-Sign for failing tests. (default: g:ultest_icons ? "" : "X")
+Sign for failing tests. (default: g:ultest_icons ? "✖" : "X")
 
                                                        *g:ultest_running_sign*
-Sign for running tests (string) (default: g:ultest_icons ? "" : ">")
+Sign for running tests (string) (default: g:ultest_icons ? "🗘" : ">")
 
                                                        *g:ultest_not_run_sign*
-Sign for tests not yet run (string) (default: g:ultest_icons ? "" : "~")
+Sign for tests not yet run (string) (default: g:ultest_icons ? "?" : "~")
 
                                                           *g:ultest_pass_text*
 Virtual text for passing tests (string) (default: g:ultest_icons?

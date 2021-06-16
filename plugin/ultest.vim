@@ -126,22 +126,22 @@ let g:ultest_virtual_text = get(g:, "ultest_virtual_text", 0)
 
 ""
 " Sign for passing tests.
-" (default: g:ultest_icons ? "" : "O")
-let g:ultest_pass_sign = get(g:, "ultest_pass_sign", g:ultest_icons ? "" : "O")
+" (default: g:ultest_icons ? "✔" : "O")
+let g:ultest_pass_sign = get(g:, "ultest_pass_sign", g:ultest_icons ? "✔" : "O")
 ""
 " Sign for failing tests.
-" (default: g:ultest_icons ? "" : "X")
-let g:ultest_fail_sign = get(g:, "ultest_fail_sign", g:ultest_icons ? "" : "X")
+" (default: g:ultest_icons ? "✖" : "X")
+let g:ultest_fail_sign = get(g:, "ultest_fail_sign", g:ultest_icons ? "✖" : "X")
 
 ""
 " Sign for running tests (string)
-" (default: g:ultest_icons ? "" : ">")
-let g:ultest_running_sign = get(g:, "ultest_running_sign", g:ultest_icons ? "" : ">")
+" (default: g:ultest_icons ? "🗘" : ">")
+let g:ultest_running_sign = get(g:, "ultest_running_sign", g:ultest_icons ? "🗘" : ">")
 
 ""
 " Sign for tests not yet run (string)
-" (default: g:ultest_icons ? "" : "~")
-let g:ultest_not_run_sign = get(g:, "ultest_not_run_sign", g:ultest_icons ? "" : "~")
+" (default: g:ultest_icons ? "?" : "~")
+let g:ultest_not_run_sign = get(g:, "ultest_not_run_sign", g:ultest_icons ? "?" : "~")
 
 ""
 " Virtual text for passing tests (string)
