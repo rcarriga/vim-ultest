@@ -101,7 +101,7 @@ class Handler:
 
     def _on_test_finish(self, position: Position, result: Result):
         self._vim.call("ultest#process#exit", position, result)
-        if self._show_on_run and result.output:
+        if self._show_on_run and result.code and result.output:
             self._vim.schedule(self._present_output, result)
 
     def _present_output(self, result):
