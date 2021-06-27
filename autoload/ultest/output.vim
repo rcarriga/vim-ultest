@@ -17,6 +17,7 @@ function! ultest#output#open(test) abort
   doautocmd User UltestOutputOpen
   let result = get(getbufvar(a:test.file, "ultest_results", {}), a:test.id, {})
   let output = get(result, "output", "")
+  if output == "" | return | endif
   let [width, height] = s:CalculateBounds(output)
   if has("nvim")
     if exists("*nvim_open_term")
