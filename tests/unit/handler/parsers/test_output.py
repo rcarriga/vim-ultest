@@ -6,7 +6,7 @@ from tests.mocks import get_output
 
 class TestOutputParser(TestCase):
     def setUp(self) -> None:
-        self.parser = OutputParser()
+        self.parser = OutputParser([])
 
     def test_parse_pytest(self):
         output = get_output("pytest")
