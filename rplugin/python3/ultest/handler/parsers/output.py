@@ -49,8 +49,12 @@ logger = get_logger()
 
 
 class OutputParser:
-    def __init__(self) -> None:
-        self._patterns = _BASE_PATTERNS
+    def __init__(self, disable_patterns: List[str]) -> None:
+        self._patterns = {
+            runner: patterns
+            for runner, patterns in _BASE_PATTERNS.items()
+            if runner not in disable_patterns
+        }
 
     def can_parse(self, runner: str) -> bool:
         return runner in self._patterns

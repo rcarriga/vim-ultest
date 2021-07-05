@@ -74,6 +74,19 @@ let g:ultest_max_threads = get(g:, "ultest_max_threads", 2)
 " (default: 0)
 let g:ultest_use_pty = get(g:, "ultest_use_pty", 0)
 
+
+""
+" Ultest allows running a group of tests (files/namespaces) as a single
+" process. This allows for better performance as there are fewer processes
+" spawned. Only for supported runners, check the repo wiki for details.  If
+" for some reason you wish to disable grouped running for a runner, add the
+" runner to this list.  For example for jest:
+" >
+"   let g:ultest_disable_grouping = ["javascript#jest"]
+" <
+" (default: [])
+let g:ultest_disable_grouping = get(g:, "ultest_disable_grouping", [])
+
 ""
 "
 " Custom environment variables for test processes in a dictionary.

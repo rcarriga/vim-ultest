@@ -20,7 +20,7 @@ class HandlerFactory:
         client = VimClient(vim)
         file_parser = FileParser(client)
         process_manager = ProcessManager(client)
-        output_parser = OutputParser()
+        output_parser = OutputParser(client.sync_eval("g:ultest_disable_grouping"))
         runner = PositionRunner(
             vim=client, process_manager=process_manager, output_parser=output_parser
         )
