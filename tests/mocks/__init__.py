@@ -11,6 +11,4 @@ def get_output(runner: str) -> List[str]:
 
 def get_test_file(name: str) -> str:
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "test_files", name)
-    with open(filename) as output:
-        return output.read()
+    return os.path.join(dirname, "test_files", name)

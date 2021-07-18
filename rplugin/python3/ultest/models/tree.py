@@ -1,4 +1,6 @@
-from typing import Callable, Generic, Iterator, List, Optional, Protocol, TypeVar
+from typing import Callable, Generic, Iterator, List, Optional, TypeVar
+
+from .types import Protocol
 
 TreeData = TypeVar("TreeData")
 
