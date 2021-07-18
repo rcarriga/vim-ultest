@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import List, Literal
+from typing import List
 
 from .base import BasePosition
+from .types import Literal
 
 
 @dataclass
