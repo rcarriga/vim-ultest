@@ -244,7 +244,7 @@ let g:ultest_custom_patterns = get(g:, "ultest_custom_patterns", {})
 
 let g:ultest_patterns = extend({
       \ "elixir#exunit": {
-        \ 'test': ["^\\s*test\\s+['\"](.+)['\"](,\\s%{.+})*\\s+do"],
+        \ 'test': ["^\\s*test\\s+['\"](.+)['\"](,\\s+%{.+})*\\s+do"],
       \}
     \ }, g:ultest_custom_patterns)
 
