@@ -4,7 +4,7 @@ endif
 let g:ultest_loaded = 1
 
 let s:strategy = "ultest"
-let g:test#custom_strategies = get(g:, "test#custom#strategies", {})
+let g:test#custom_strategies = get(g:, "test#custom_strategies", {})
 let g:test#custom_strategies[s:strategy] = function('ultest#handler#strategy')
 let g:ultest_buffers = []
 
