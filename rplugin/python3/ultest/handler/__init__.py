@@ -183,6 +183,15 @@ class Handler:
         )
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
+        try:
+            self._vim.sync_call(
+                "setbufvar", file_name, "_ultest_is_unique_file", "is_unique_file"
+            )
+        except Exception:
+            logger.warn(
+                f"Multiple buffers matched file name {file_name}, can't check for tests"
+            )
+            return
         self._tracker.update(file_name, callback)
 
     def get_nearest_position(
