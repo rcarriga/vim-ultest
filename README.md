@@ -75,7 +75,8 @@ Due to the differences between Vim and NeoVim and their RPC libraries, it is ine
 I primarily use NeoVim so I will catch issues in it myself.
 Please file bug reports for Vim if you find them!
 
-NeoVim >= 0.4.4 is supported for now, but once 0.5 is released support for earlier versions will be dropped due to added complexity from handling missing features.
+NeoVim >= 0.4.4 is supported for now, but only >= 0.5 will be supported in future due to added complexity from handling missing features.
+Please update your NeoVim version if you have not already.
 
 vim-ultest can be installed as usual with your favourite plugin manager.
 **Note:** NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.
@@ -129,10 +130,19 @@ let test#python#pytest#options = "--color=yes"
 let test#javascript#jest#options = "--color=always"
 ```
 
-Alternatively if you are using a nightly version of neovim you can enable PTY
+Alternatively if you are using a neovim >= 0.5 you can enable PTY
 usage which makes the process think it is in an interactive session
 ```vim
 let g:ultest_use_pty = 1
+```
+
+Because Ultest runs processes in an interactive way, test runners may wait for
+input or run in "watch" mode. To avoid this you have to pass a flag to your
+runner to disable this.
+
+For example with react-scripts
+```vim
+let test#javascript#reactscripts#options = "--watchAll=false"
 ```
 
 **Note**: The window to show results relies on the 'updatetime' setting which by default is 4 seconds.
