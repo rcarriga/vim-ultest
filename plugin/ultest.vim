@@ -332,12 +332,14 @@ command! UltestStop call ultest#stop_file()
 command! UltestStopNearest call ultest#stop_nearest()
 
 ""
-" Toggle the summary window between open and closed
-command! UltestSummary call ultest#summary#toggle()
+" Toggle the summary window between open and closed.
+" If [!] is given, jump to the window if opened
+command! -bang UltestSummary call ultest#summary#toggle(expand("<bang>") == "!")
 
 ""
-" Open the summary window
-command! UltestSummaryOpen call ultest#summary#open()
+" Open the summary window.
+" If [!] is given, jump to the window
+command! -bang UltestSummaryOpen call ultest#summary#open(expand("<bang>") == "!")
 
 ""
 " Close the summary window

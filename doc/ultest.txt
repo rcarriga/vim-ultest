@@ -235,11 +235,12 @@ COMMANDS                                                     *ultest-commands*
 :UltestStopNearest                                        *:UltestStopNearest*
   Stop any running jobs and results for the nearest position
 
-:UltestSummary                                                *:UltestSummary*
-  Toggle the summary window between open and closed
+:UltestSummary[!]                                             *:UltestSummary*
+  Toggle the summary window between open and closed If [!] is given, jump to
+  the window if opened
 
-:UltestSummaryOpen                                        *:UltestSummaryOpen*
-  Open the summary window
+:UltestSummaryOpen[!]                                     *:UltestSummaryOpen*
+  Open the summary window If [!] is given, jump to the window
 
 :UltestSummaryClose                                      *:UltestSummaryClose*
   Close the summary window

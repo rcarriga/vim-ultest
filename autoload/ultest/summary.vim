@@ -45,11 +45,15 @@ function! ultest#summary#close() abort
   endif
 endfunction
 
-function! ultest#summary#toggle() abort
+function! ultest#summary#toggle(jump) abort
   if s:IsOpen() 
     call ultest#summary#close()
   else
-    call ultest#summary#open()
+    if a:jump
+      call ultest#summary#jumpto()
+    else
+      call ultest#summary#open()
+    end
   endif
 endfunction
 

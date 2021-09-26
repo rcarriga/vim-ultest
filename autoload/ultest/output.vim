@@ -8,8 +8,8 @@ augroup END
 
 augroup UltestOutputMappings
   autocmd!
-  autocmd FileType UltestOutput tnoremap <buffer> q <C-\><C-N><C-W><C-K>
-  autocmd FileType UltestOutput nnoremap <buffer> q <C-W><C-K>
+  autocmd FileType UltestOutput tnoremap <buffer> q <C-\><C-N><C-W><C-P>
+  autocmd FileType UltestOutput nnoremap <buffer> q <C-W><C-P>
 augroup END
 
 function! ultest#output#open(test) abort
