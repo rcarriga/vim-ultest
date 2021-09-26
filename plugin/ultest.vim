@@ -298,6 +298,10 @@ command! Ultest call ultest#run_file({"pre_run": g:ultest_pre_run})
 command! UltestNearest call ultest#run_nearest({"pre_run": g:ultest_pre_run})
 
 ""
+" Run test(s) that were last ran
+command! UltestLast call ultest#handler#run_last()
+
+""
 " Debug the current file with nvim-dap
 command! UltestDebug call ultest#run_file({"pre_run": g:ultest_pre_run, "runner": "nvim-dap"})
 
@@ -349,6 +353,8 @@ command! UltestClear call ultest#handler#clear_results(expand("%:."))
 "
 " <Plug>(ultest-run-nearest)	 Run test closest to the cursor.
 "
+" <Plug>(ultest-run-last)	 Run test(s) that were last run.
+"
 " <Plug>(ultest-summary-toggle)	 Toggle the summary window between open and closed
 "
 " <Plug>(ultest-summary-jump)	 Jump to the summary window (opening if it isn't already)
@@ -371,6 +377,7 @@ nnoremap <silent><Plug>(ultest-next-fail) :call ultest#positions#next()<CR>
 nnoremap <silent><Plug>(ultest-prev-fail) :call ultest#positions#prev()<CR>
 nnoremap <silent><Plug>(ultest-run-file) :Ultest<CR>
 nnoremap <silent><Plug>(ultest-run-nearest) :UltestNearest<CR>
+nnoremap <silent><Plug>(ultest-run-last) :UltestLast<CR>
 nnoremap <silent><Plug>(ultest-summary-toggle) :UltestSummary<CR>
 nnoremap <silent><Plug>(ultest-summary-jump) :call ultest#summary#jumpto()<CR>
 nnoremap <silent><Plug>(ultest-output-show) :UltestOutput<CR>

@@ -43,6 +43,10 @@ function! ultest#handler#run_single(...) abort
   call s:Call('_ultest_run_single', a:000)
 endfunction
 
+function! ultest#handler#run_last(...) abort
+  call s:Call('_ultest_run_last', a:000)
+endfunction
+
 function! ultest#handler#update_positions(...) abort
   call s:Call('_ultest_update_positions', a:000)
 endfunction

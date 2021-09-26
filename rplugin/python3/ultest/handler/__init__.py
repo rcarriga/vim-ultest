@@ -40,6 +40,7 @@ class Handler:
         self._tracker = tracker
         self._prepare_env()
         self._show_on_run = self._vim.sync_eval("get(g:, 'ultest_output_on_run', 1)")
+        self._last_run = None
         logger.debug("Handler created")
 
     def _prepare_env(self):
@@ -145,6 +146,7 @@ class Handler:
         if not position:
             return
 
+        self._last_run = position.data
         self._runner.run(
             position,
             positions,
@@ -173,6 +175,7 @@ class Handler:
         if not match:
             return
 
+        self._last_run = match.data
         self._runner.run(
             match,
             positions,
@@ -181,6 +184,13 @@ class Handler:
             on_finish=self._on_test_finish,
             env=self._user_env,
         )
+
+    def run_last(self):
+        if not self._last_run:
+            logger.info("No tests run yet")
+            return
+
+        self.run_single(self._last_run.id, self._last_run.file)
 
     def update_positions(self, file_name: str, callback: Optional[Callable] = None):
         try:

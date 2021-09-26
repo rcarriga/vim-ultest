@@ -209,6 +209,9 @@ COMMANDS                                                     *ultest-commands*
   Run nearest position in the current file If no position is found it will
   attempt to run the entire file
 
+:UltestLast                                                      *:UltestLast*
+  Run test(s) that were last ran
+
 :UltestDebug                                                    *:UltestDebug*
   Debug the current file with nvim-dap
 
@@ -297,6 +300,8 @@ MAPPINGS                                                     *ultest-mappings*
 <Plug>(ultest-run-file)          Run all tests in a file.
 
 <Plug>(ultest-run-nearest)       Run test closest to the cursor.
+
+<Plug>(ultest-run-last)  Run test(s) that were last run.
 
 <Plug>(ultest-summary-toggle)    Toggle the summary window between open and
 closed

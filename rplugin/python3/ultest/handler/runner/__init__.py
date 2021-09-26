@@ -73,7 +73,7 @@ class PositionRunner:
         on_start: Callable[[Position], None],
     ):
         logger.finfo(
-            "Saving external stdout path '{output_path}' for test {process_id}"
+            "Saving external stdout path '{output_path}' for test {tree.data.id}"
         )
         self._external_outputs[tree.data.id] = output_path
         for pos in tree:
@@ -90,7 +90,7 @@ class PositionRunner:
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         path = self._external_outputs.pop(tree.data.id)
         logger.finfo(
-            "Saving external result for process '{process_id}' with exit code {code}"
+            "Saving external result for process '{tree.data.id}' with exit code {code}"
         )
         if not path:
             logger.error(f"No output path registered for position {tree.data.id}")
