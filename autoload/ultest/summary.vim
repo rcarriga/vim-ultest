@@ -60,7 +60,8 @@ function! ultest#summary#render(test) abort
 endfunction
 
 function! s:OpenNewWindow() abort
-  exec "botright vnew ".s:buffer_name." | vertical resize ".g:ultest_summary_width
+  exec g:ultest_summary_open
+  exec "edit ".s:buffer_name
   let buf_settings = {
         \ "buftype": "nofile",
         \ "bufhidden": "hide",

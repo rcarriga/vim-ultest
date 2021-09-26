@@ -127,6 +127,10 @@ Virtual text for passing tests (string) (default: g:ultest_icons?
                                                       *g:ultest_summary_width*
 Width of the summary window (default: 50)
 
+                                                       *g:ultest_summary_open*
+Command to open the summary window. (default: "botright vsplit | vertical
+resize ".g:ultest_summary_width)
+
                                                             *g:ultest_pre_run*
 A function name to call before running any tests in a file. Receives the
 relative file path as an argument.

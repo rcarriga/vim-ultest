@@ -175,6 +175,11 @@ let g:ultest_running_text = get(g:, "ultest_running_text", g:ultest_icons? "●"
 let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
 
 ""
+" Command to open the summary window.
+" (default: "botright vsplit | vertical resize ".g:ultest_summary_width)
+let g:ultest_summary_open = get(g:, "ultest_summary_open", "botright vsplit | vertical resize ".g:ultest_summary_width)
+
+""
 " A function name to call before running any tests in a file.
 " Receives the relative file path as an argument.
 let g:ultest_pre_run = get(g:, "ultest_pre_run")
