@@ -86,6 +86,10 @@ except ImportError:
         def _run_nearest(self, args):
             self.handler.run_nearest(*args)
 
+        @function("_ultest_run_single", allow_nested=True)
+        def _run_single(self, args):
+            self.handler.run_single(*args)
+
         @function("_ultest_run_last", allow_nested=True)
         def _run_last(self, args):
             self.handler.run_last(*args)
