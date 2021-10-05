@@ -33,9 +33,12 @@ function! ultest#summary#jumpto() abort
   call ultest#util#goToBuffer(s:buffer_name)
 endfunction
 
-function! ultest#summary#open() abort
+function! ultest#summary#open(jump = v:false) abort
   if !s:IsOpen() 
     call s:OpenNewWindow()
+    if a:jump
+      call ultest#summary#jumpto()
+   end
   endif
 endfunction
 
