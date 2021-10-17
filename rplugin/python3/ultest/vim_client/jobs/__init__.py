@@ -18,7 +18,6 @@ class JobManager:
         self._jobs: defaultdict[str, Dict[str, Event]] = defaultdict(dict)
         self._loop = asyncio.new_event_loop()
         self._thread = Thread(target=self._loop.run_forever, daemon=True)
-        self._sem = Semaphore(num_threads, loop=self._loop)
         self._thread.start()
         if sys.version_info < (3, 8):
             # Use the new default watcher from  >= 3.8, implemented locally
@@ -27,6 +26,9 @@ class JobManager:
 
             logger.info("Using local threaded child watcher")
             asyncio.set_child_watcher(ThreadedChildWatcher())
+            self._sem = Semaphore(num_threads, loop=self._loop)
+        else:
+            self._sem = Semaphore(num_threads)
 
     @property
     def semaphore(self) -> Semaphore:
