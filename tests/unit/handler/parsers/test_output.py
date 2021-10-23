@@ -8,23 +8,11 @@ class TestOutputParser(TestCase):
     def setUp(self) -> None:
         self.parser = OutputParser([])
 
-    def test_parse_pytest(self):
-        output = get_output("pytest")
-        failed = list(self.parser.parse_failed("python#pytest", output))
-        self.assertEqual(
-            failed,
-            [
-                ParseResult(name="test_d", namespaces=["TestMyClass"]),
-                ParseResult(name="test_parametrize", namespaces=[]),
-                ParseResult(name="test_a", namespaces=[]),
-            ],
-        )
-
     def test_parse_pyunit(self):
         output = get_output("pyunit")
         failed = list(self.parser.parse_failed("python#pyunit", output))
         self.assertEqual(
-            failed, [ParseResult(name="test_d", namespaces=["TestMyClass"])]
+            failed, [ParseResult(file="", name="test_d", namespaces=["TestMyClass"])]
         )
 
     def test_parse_gotest(self):
@@ -33,8 +21,8 @@ class TestOutputParser(TestCase):
         self.assertEqual(
             failed,
             [
-                ParseResult(name="TestA", namespaces=[]),
-                ParseResult(name="TestB", namespaces=[]),
+                ParseResult(file="", name="TestA", namespaces=[]),
+                ParseResult(file="", name="TestB", namespaces=[]),
             ],
         )
 
@@ -45,10 +33,11 @@ class TestOutputParser(TestCase):
             failed,
             [
                 ParseResult(
+                    file="",
                     name="it shouldn't pass",
                     namespaces=["First namespace", "Another namespace"],
                 ),
-                ParseResult(name="it shouldn't pass again", namespaces=[]),
+                ParseResult(file="", name="it shouldn't pass again", namespaces=[]),
             ],
         )
 
@@ -58,8 +47,8 @@ class TestOutputParser(TestCase):
         self.assertEqual(
             failed,
             [
-                ParseResult(name="the world", namespaces=[]),
-                ParseResult(name="greets the world", namespaces=[]),
+                ParseResult(file="", name="the world", namespaces=[]),
+                ParseResult(file="", name="greets the world", namespaces=[]),
             ],
         )
 
@@ -69,7 +58,7 @@ class TestOutputParser(TestCase):
         self.assertEqual(
             failed,
             [
-                ParseResult(name="TestA", namespaces=[]),
-                ParseResult(name="TestAAAB", namespaces=[]),
+                ParseResult(file="", name="TestA", namespaces=[]),
+                ParseResult(file="", name="TestAAAB", namespaces=[]),
             ],
         )

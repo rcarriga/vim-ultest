@@ -132,6 +132,10 @@ let g:ultest_output_cols = get(g:, "ultest_output_cols", 0)
 " (default: 1)
 let g:ultest_show_in_file = get(g:, "ultest_show_in_file", 1)
 
+"" Enable diagnostic error messages (NeoVim only)
+" (default: 1)
+let g:ultest_diagnostic_messages = get(g:, "ultest_diagnostic_messages", 1)
+
 ""
 " Use virtual text (if available) instead of signs to show test results in file.
 " (default: 0)
@@ -229,6 +233,13 @@ let g:ultest#processors = [
       \       "exit": "ultest#summary#render",
       \       "move": "ultest#summary#render",
       \       "replace": "ultest#summary#render"
+      \   },
+      \   {
+      \       "condition": has("nvim") && g:ultest_diagnostic_messages,
+      \       "lua": v:true,
+      \       "clear": "require('ultest.diagnostic').clear",
+      \       "exit": "require('ultest.diagnostic').exit",
+      \       "delete": "require('ultest.diagnostic').delete",
       \   },
       \] + get(g:, "ultest_custom_processors", [])
 

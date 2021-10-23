@@ -89,6 +89,10 @@ class ProcessIOHandle:
                             raise
                         # EIO means EOF on some systems
                         break
-                out_file.flush()
+                try:
+                    out_file.flush()
+                except ValueError:
+                    # File is closed
+                    ...
 
         Thread(target=forward).start()

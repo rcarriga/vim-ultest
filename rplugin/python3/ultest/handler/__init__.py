@@ -253,6 +253,7 @@ class Handler:
         positions = self._tracker.file_positions(file_name)
         if not positions:
             logger.error("Successfully cleared results for unknown file")
+            return
 
         for position in positions:
             if position.id in cleared:

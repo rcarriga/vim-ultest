@@ -28,37 +28,34 @@ local function dap_run_test(test, build_config)
   end
 
   local output_handler = function(_, body)
-    if vim.tbl_contains({"stdout", "stderr"}, body.category) then
+    if vim.tbl_contains({ "stdout", "stderr" }, body.category) then
       io.write(body.output)
       io.flush()
     end
   end
 
-  require("dap").run(
-    user_config.dap,
-    {
-      before = function(config)
-        local output_file = io.open(output_name, "w")
-        io.output(output_file)
-        vim.fn["ultest#handler#external_start"](test.id, test.file, output_name)
-        dap.listeners.after.event_output[handler_id] = output_handler
-        dap.listeners.before.event_terminated[handler_id] = terminated_handler
-        dap.listeners.after.event_exited[handler_id] = exit_handler
-        return config
-      end,
-      after = function()
-        dap.listeners.after.event_exited[handler_id] = nil
-        dap.listeners.before.event_terminated[handler_id] = nil
-        dap.listeners.after.event_output[handler_id] = nil
-      end
-    }
-  )
+  require("dap").run(user_config.dap, {
+    before = function(config)
+      local output_file = io.open(output_name, "w")
+      io.output(output_file)
+      vim.fn["ultest#handler#external_start"](test.id, test.file, output_name)
+      dap.listeners.after.event_output[handler_id] = output_handler
+      dap.listeners.before.event_terminated[handler_id] = terminated_handler
+      dap.listeners.after.event_exited[handler_id] = exit_handler
+      return config
+    end,
+    after = function()
+      dap.listeners.after.event_exited[handler_id] = nil
+      dap.listeners.before.event_terminated[handler_id] = nil
+      dap.listeners.after.event_output[handler_id] = nil
+    end,
+  })
 end
 
 local function get_builder(test, config)
-  local builder =
-    config.build_config or builders[vim.fn["ultest#adapter#get_runner"](test.file)] or
-    builders[vim.fn["getbufvar"](test.file, "&filetype")]
+  local builder = config.build_config
+    or builders[vim.fn["ultest#adapter#get_runner"](test.file)]
+    or builders[vim.fn["getbufvar"](test.file, "&filetype")]
 
   if builder == nil then
     print("Unsupported runner, need to provide a customer nvim-dap config builder")

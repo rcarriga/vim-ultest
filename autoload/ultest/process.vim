@@ -6,6 +6,19 @@ for processor in g:ultest#processors
   endif
 endfor
 
+function! s:CallProcessor(event, args) abort
+  for processor in g:ultest#active_processors
+    let func = get(processor, a:event, "")
+    if func != ""
+      if get(processor, "lua") 
+        call luaeval(func."(unpack(_A))", a:args)
+      else
+        call call(func, a:args)
+      endif
+    endif
+  endfor
+endfunction
+
 function ultest#process#new(test) abort
   call ultest#process#pre(a:test)
   if index(g:ultest_buffers, a:test.file) == -1
@@ -13,12 +26,7 @@ function ultest#process#new(test) abort
   endif
   let tests = getbufvar(a:test.file, "ultest_tests", {})
   let tests[a:test.id] = a:test
-  for processor in g:ultest#active_processors
-    let new = get(processor, "new", "")
-    if new != ""
-      call function(new)(a:test)
-    endif
-  endfor
+  call s:CallProcessor("new", [a:test])
 endfunction
 
 function ultest#process#start(test) abort
@@ -29,24 +37,14 @@ function ultest#process#start(test) abort
   if has_key(results, a:test.id)
     call remove(results, a:test.id)
   endif
-  for processor in g:ultest#active_processors
-    let start = get(processor, "start", "")
-    if start != ""
-      call function(start)(a:test)
-    endif
-  endfor
+  call s:CallProcessor("start", [a:test])
 endfunction
 
 function ultest#process#move(test) abort
   call ultest#process#pre(a:test)
   let tests = getbufvar(a:test.file, "ultest_tests")
   let tests[a:test.id] = a:test
-  for processor in g:ultest#active_processors
-    let start = get(processor, "move", "")
-    if start != ""
-      call function(start)(a:test)
-    endif
-  endfor
+  call s:CallProcessor("move", [a:test])
 endfunction
 
 function ultest#process#replace(test, result) abort
@@ -55,12 +53,7 @@ function ultest#process#replace(test, result) abort
   let tests[a:test.id] = a:test
   let results = getbufvar(a:result.file, "ultest_results")
   let results[a:result.id] = a:result
-  for processor in g:ultest#active_processors
-    let exit = get(processor, "replace", "")
-    if exit != ""
-      call function(exit)(a:result)
-    endif
-  endfor
+  call s:CallProcessor("replace", [a:result])
 endfunction
 
 function ultest#process#clear(test) abort
@@ -73,12 +66,7 @@ function ultest#process#clear(test) abort
   if has_key(results, a:test.id)
     call remove(results, a:test.id)
   endif
-  for processor in g:ultest#active_processors
-    let clear = get(processor, "clear", "")
-    if clear != ""
-      call function(clear)(a:test)
-    endif
-  endfor
+  call s:CallProcessor("clear", [a:test])
 endfunction
 
 function ultest#process#exit(test, result) abort
@@ -90,12 +78,7 @@ function ultest#process#exit(test, result) abort
   let tests[a:test.id] = a:test
   let results = getbufvar(a:result.file, "ultest_results")
   let results[a:result.id] = a:result
-  for processor in g:ultest#active_processors
-    let exit = get(processor, "exit", "")
-    if exit != ""
-      call function(exit)(a:result)
-    endif
-  endfor
+  call s:CallProcessor("exit", [a:result])
 endfunction
 
 function ultest#process#pre(test) abort

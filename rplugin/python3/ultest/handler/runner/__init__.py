@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, Optional, Set, Tuple
 
 from ...logging import get_logger
 from ...models import File, Namespace, Position, Result, Test, Tree
@@ -40,7 +40,7 @@ class PositionRunner:
     ):
 
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
-        if not self._output_parser.can_parse(runner) or len(tree) == 1:
+        if not self._output_parser.can_parse(runner):
             self._run_separately(tree, on_start, on_finish, env)
             return
         self._run_group(tree, file_tree, file_name, on_start, on_finish, env)
@@ -201,17 +201,32 @@ class PositionRunner:
             for position in file_tree
             if isinstance(position, Namespace)
         }
-        output = []
+        output = ""
         if code:
             with open(output_path, "r") as cmd_out:
-                output = cmd_out.readlines()
+                output = cmd_out.read()
 
-        parsed_failures = self._output_parser.parse_failed(runner, output)
-        failed = self._get_failed_set(parsed_failures, tree)
+        parsed_failures = (
+            self._output_parser.parse_failed(runner, output) if code else []
+        )
+        failed = {
+            (failed.name, *(failed.namespaces)): failed for failed in parsed_failures
+        }
 
         get_code = partial(self._get_exit_code, tree.data, code, failed, namespaces)
 
         for pos in tree:
+            pos_namespaces = [
+                namespaces[namespace_id].name for namespace_id in pos.namespaces
+            ]
+            if (pos.name, *pos_namespaces) in failed:
+                parsed_result = failed[(pos.name, *pos_namespaces)]
+                error_line = parsed_result.line
+                error_message = parsed_result.message
+            else:
+                error_line = None
+                error_message = None
+
             self._register_result(
                 pos,
                 Result(
@@ -219,6 +234,8 @@ class PositionRunner:
                     file=pos.file,
                     code=get_code(pos) if code else 0,
                     output=output_path,
+                    error_line=error_line,
+                    error_message=error_message,
                 ),
                 on_finish,
             )
@@ -227,7 +244,7 @@ class PositionRunner:
         self,
         root: Position,
         group_code: int,
-        failed: Set[Tuple[str, ...]],
+        failed: Dict[Tuple[str, ...], ParseResult],
         namespaces: Dict[str, Namespace],
         pos: Position,
     ):
@@ -257,31 +274,6 @@ class PositionRunner:
 
         return 0
 
-    def _get_failed_set(
-        self, parsed_failures: Iterator[ParseResult], tree: Tree[Position]
-    ) -> Set[Tuple[str, ...]]:
-        def from_root(namespaces: List[str]):
-            for index, namespace in enumerate(namespaces):
-                if namespace == tree.data.name:
-                    return namespaces[index:]
-
-            logger.warn(
-                f"No namespaces found from root {tree.data.name} in parsed result {namespaces}"
-            )
-            return []
-
-        return {
-            (
-                failed.name,
-                *(
-                    from_root(failed.namespaces)
-                    if not isinstance(tree.data, File)
-                    else failed.namespaces
-                ),
-            )
-            for failed in parsed_failures
-        }
-
     def _register_started(
         self, position: Position, on_start: Callable[[Position], None]
     ):
@@ -298,5 +290,6 @@ class PositionRunner:
     ):
         logger.fdebug("Registering {position.id} as exited with result {result}")
         self._results[position.file][position.id] = result
-        self._running.remove(position.id)
-        on_finish(position, result)
+        if position.id in self._running:
+            self._running.remove(position.id)
+            on_finish(position, result)
