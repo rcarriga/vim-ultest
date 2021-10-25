@@ -6,6 +6,7 @@ from ....logging import get_logger
 from .base import ParseResult
 from .parsec import ParseError
 from .python.pytest import pytest_output
+from .python.unittest import unittest_output
 
 
 @dataclass
@@ -17,10 +18,6 @@ class OutputPatterns:
 
 
 _BASE_PATTERNS = {
-    "python#pyunit": OutputPatterns(
-        failed_test=r"^FAIL: (?P<name>.*) \(.*?(?P<namespaces>\..+)\)",
-        namespace_separator=r"\.",
-    ),
     "go#gotest": OutputPatterns(failed_test=r"^.*--- FAIL: (?P<name>.+?) "),
     "go#richgo": OutputPatterns(
         failed_test=r"^FAIL\s\|\s(?P<name>.+?) \(.*\)",
@@ -43,7 +40,10 @@ logger = get_logger()
 
 class OutputParser:
     def __init__(self, disable_patterns: List[str]) -> None:
-        self._parsers = {"python#pytest": pytest_output}
+        self._parsers = {
+            "python#pytest": pytest_output,
+            "python#pyunit": unittest_output,
+        }
         self._patterns = {
             runner: patterns
             for runner, patterns in _BASE_PATTERNS.items()

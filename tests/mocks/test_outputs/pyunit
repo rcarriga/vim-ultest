@@ -1,13 +1,46 @@
-F.
+F3
+EF.F
 ======================================================================
-FAIL: test_d (test_a.TestMyClass)
+ERROR: test_c (test_a.TestClass)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/ronan/tests/test_a.py", line 9, in test_d
-    assert 33 == 3
+  File "/home/ronan/tests/test_a.py", line 37, in test_c
+    a_function()
+  File "/home/ronan/tests/tests/__init__.py", line 6, in a_function
+    raise Exception
+Exception
+
+======================================================================
+FAIL: test_b (test_a.TestClass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ronan/tests/test_a.py", line 34, in test_b
+    self.assertEqual({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 5, "c": 3, "d": 4})
+AssertionError: {'a': 1, 'b': 2, 'c': 3} != {'a': 1, 'b': 5, 'c': 3, 'd': 4}
+- {'a': 1, 'b': 2, 'c': 3}
+?               ^
+
++ {'a': 1, 'b': 5, 'c': 3, 'd': 4}
+?               ^        ++++++++
+
+
+======================================================================
+FAIL: test_a (test_b.AnotherClass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ronan/tests/test_b.py", line 7, in test_a
+    assert 2 == 3
+AssertionError
+
+======================================================================
+FAIL: test_thing (tests.test_c.TestStuff)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/ronan/tests/tests/test_c.py", line 6, in test_thing
+    assert False
 AssertionError
 
 ----------------------------------------------------------------------
-Ran 2 tests in 0.001s
+Ran 5 tests in 0.001s
 
-FAILED (failures=1)
+FAILED (failures=3, errors=1)

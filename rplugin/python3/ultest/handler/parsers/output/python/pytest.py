@@ -1,8 +1,7 @@
 from .. import parsec as p
 from ..base import ParsedOutput, ParseResult
 from ..parsec import generate
-
-join_chars = lambda chars: "".join(chars)
+from ..util import join_chars, until_eol
 
 
 @generate
@@ -105,19 +104,6 @@ def pytest_test_results_summary():
     summary = yield p.many(p.exclude(until_eol, pytest_failed_tests_title))
     yield pytest_failed_tests_title
     return summary
-
-
-@generate
-def eol():
-    new_line = yield p.string("\r\n") ^ p.string("\n")
-    return new_line
-
-
-@generate
-def until_eol():
-    text = yield p.many(p.exclude(p.any(), eol)).parsecmap(join_chars)
-    yield eol
-    return text
 
 
 @generate

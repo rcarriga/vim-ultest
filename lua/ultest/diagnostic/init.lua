@@ -79,7 +79,7 @@ local function draw_buffer(file)
   local results = api.nvim_buf_get_var(bufnr, "ultest_results")
 
   local valid_results = vim.tbl_filter(function(result)
-    return result.error_line and result.error_message
+    return type(result) == "table" and result.error_line and result.error_message
   end, results)
 
   local diagnostics = create_diagnostics(bufnr, valid_results)

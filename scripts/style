@@ -8,7 +8,7 @@ if [[ $1 == "-w" ]]; then
   black "${PYTHON_DIRS[@]}"
   isort "${PYTHON_DIRS[@]}"
   autoflake --remove-unused-variables --remove-all-unused-imports --ignore-init-module-imports --remove-duplicate-keys --recursive -i "${PYTHON_DIRS[@]}"
-  find -name \*.lua -print0 | xargs -0 luafmt -w replace -i 2
+  stylua .
 else
   black --check "${PYTHON_DIRS[@]}"
   isort --check "${PYTHON_DIRS[@]}"

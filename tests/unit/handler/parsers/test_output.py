@@ -8,13 +8,6 @@ class TestOutputParser(TestCase):
     def setUp(self) -> None:
         self.parser = OutputParser([])
 
-    def test_parse_pyunit(self):
-        output = get_output("pyunit")
-        failed = list(self.parser.parse_failed("python#pyunit", output))
-        self.assertEqual(
-            failed, [ParseResult(file="", name="test_d", namespaces=["TestMyClass"])]
-        )
-
     def test_parse_gotest(self):
         output = get_output("gotest")
         failed = list(self.parser.parse_failed("go#gotest", output))
