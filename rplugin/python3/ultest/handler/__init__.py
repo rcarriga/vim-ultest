@@ -99,13 +99,15 @@ class Handler:
             position, tree, exit_code, self._on_test_finish
         )
 
-    def _on_test_start(self, position: Position):
-        self._vim.call("ultest#process#start", position)
+    def _on_test_start(self, positions: List[Position]):
+        self._vim.call("ultest#process#start", positions)
 
-    def _on_test_finish(self, position: Position, result: Result):
-        self._vim.call("ultest#process#exit", position, result)
-        if self._show_on_run and result.code and result.output:
-            self._vim.schedule(self._present_output, result)
+    def _on_test_finish(self, results: List[Tuple[Position, Result]]):
+        self._vim.call("ultest#process#exit", results)
+        if self._show_on_run:
+            for _, result in results:
+                if result.code and result.output:
+                    self._vim.schedule(self._present_output, result)
 
     def _present_output(self, result):
         if result.code and self._vim.sync_call("expand", "%") == result.file:
@@ -255,11 +257,13 @@ class Handler:
             logger.error("Successfully cleared results for unknown file")
             return
 
+        cleared_positions = []
         for position in positions:
             if position.id in cleared:
                 position.running = 0
-                self._vim.sync_call("ultest#process#clear", position)
-                self._vim.sync_call("ultest#process#new", position)
+                cleared_positions.append(position)
+        self._vim.sync_call("ultest#process#clear", cleared_positions)
+        self._vim.sync_call("ultest#process#new", cleared_positions)
 
     def _parse_position(self, pos_dict: Dict) -> Optional[Position]:
         pos_type = pos_dict.get("type")

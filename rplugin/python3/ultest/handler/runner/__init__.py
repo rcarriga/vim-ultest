@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from typing import Callable, Dict, Iterable, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from ...logging import get_logger
 from ...models import File, Namespace, Position, Result, Test, Tree
@@ -34,8 +34,8 @@ class PositionRunner:
         tree: Tree[Position],
         file_tree: Tree[Position],
         file_name: str,
-        on_start: Callable[[Position], None],
-        on_finish: Callable[[Position, Result], None],
+        on_start: Callable[[List[Position]], None],
+        on_finish: Callable[[List[Tuple[Position, Result]]], None],
         env: Optional[Dict] = None,
     ):
 
@@ -70,21 +70,20 @@ class PositionRunner:
         tree: Tree[Position],
         file_tree: Tree[Position],
         output_path: str,
-        on_start: Callable[[Position], None],
+        on_start: Callable[[List[Position]], None],
     ):
         logger.finfo(
             "Saving external stdout path '{output_path}' for test {tree.data.id}"
         )
         self._external_outputs[tree.data.id] = output_path
-        for pos in tree:
-            self._register_started(pos, on_start)
+        self._register_started(list(tree), on_start)
 
     def register_external_result(
         self,
         tree: Tree[Position],
         file_tree: Tree[Position],
         code: int,
-        on_finish: Callable[[Position, Result], None],
+        on_finish: Callable[[List[Tuple[Position, Result]]], None],
     ):
         file_name = tree.data.file
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
@@ -96,12 +95,14 @@ class PositionRunner:
             logger.error(f"No output path registered for position {tree.data.id}")
             return
         if not self._output_parser.can_parse(runner):
-            for pos in tree:
-                self._register_result(
-                    pos,
-                    result=Result(id=pos.id, file=pos.file, code=code, output=path),
-                    on_finish=on_finish,
-                )
+            results = [
+                (pos, Result(id=pos.id, file=pos.file, code=code, output=path))
+                for pos in tree
+            ]
+            self._register_result(
+                results,
+                on_finish=on_finish,
+            )
             return
         self._process_results(
             tree=tree,
@@ -131,8 +132,8 @@ class PositionRunner:
     def _run_separately(
         self,
         tree: Tree[Position],
-        on_start: Callable[[Position], None],
-        on_finish: Callable[[Position, Result], None],
+        on_start: Callable[[List[Position]], None],
+        on_finish: Callable[[List[Tuple[Position, Result]]], None],
         env: Optional[Dict] = None,
     ):
         """
@@ -140,13 +141,10 @@ class PositionRunner:
         a separate thread.
         """
         root = self._get_cwd()
-        tests = []
-        for pos in tree:
-            if isinstance(pos, Test):
-                tests.append(pos)
+        tests = [pos for pos in tree if isinstance(pos, Test)]
 
+        self._register_started(tests, on_start)
         for test in tests:
-            self._register_started(test, on_start)
             cmd = self._vim.sync_call("ultest#adapter#build_cmd", test, "nearest")
 
             async def run(cmd=cmd, test=test):
@@ -154,8 +152,17 @@ class PositionRunner:
                     cmd, test.file, test.id, cwd=root, env=env
                 )
                 self._register_result(
-                    test,
-                    Result(id=test.id, file=test.file, code=code, output=output_path),
+                    [
+                        (
+                            test,
+                            Result(
+                                id=test.id,
+                                file=test.file,
+                                code=code,
+                                output=output_path,
+                            ),
+                        )
+                    ],
                     on_finish,
                 )
 
@@ -166,8 +173,8 @@ class PositionRunner:
         tree: Tree[Position],
         file_tree: Tree[Position],
         file_name: str,
-        on_start: Callable[[Position], None],
-        on_finish: Callable[[Position, Result], None],
+        on_start: Callable[[List[Position]], None],
+        on_finish: Callable[[List[Tuple[Position, Result]]], None],
         env: Optional[Dict] = None,
     ):
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
@@ -175,8 +182,7 @@ class PositionRunner:
         cmd = self._vim.sync_call("ultest#adapter#build_cmd", tree[0], scope)
         root = self._get_cwd()
 
-        for pos in tree:
-            self._register_started(pos, on_start)
+        self._register_started(list(tree), on_start)
 
         async def run(cmd=cmd):
             (code, output_path) = await self._processes.run(
@@ -193,7 +199,7 @@ class PositionRunner:
         code: int,
         output_path: str,
         runner: str,
-        on_finish: Callable[[Position, Result], None],
+        on_finish: Callable[[List[Tuple[Position, Result]]], None],
     ):
 
         namespaces = {
@@ -215,6 +221,7 @@ class PositionRunner:
 
         get_code = partial(self._get_exit_code, tree.data, code, failed, namespaces)
 
+        results = []
         for pos in tree:
             pos_namespaces = [
                 namespaces[namespace_id].name for namespace_id in pos.namespaces
@@ -227,18 +234,20 @@ class PositionRunner:
                 error_line = None
                 error_message = None
 
-            self._register_result(
-                pos,
-                Result(
-                    id=pos.id,
-                    file=pos.file,
-                    code=get_code(pos) if code else 0,
-                    output=output_path,
-                    error_line=error_line,
-                    error_message=error_message,
-                ),
-                on_finish,
+            results.append(
+                (
+                    pos,
+                    Result(
+                        id=pos.id,
+                        file=pos.file,
+                        code=get_code(pos) if code else 0,
+                        output=output_path,
+                        error_line=error_line,
+                        error_message=error_message,
+                    ),
+                )
             )
+        self._register_result(results, on_finish)
 
     def _get_exit_code(
         self,
@@ -275,21 +284,25 @@ class PositionRunner:
         return 0
 
     def _register_started(
-        self, position: Position, on_start: Callable[[Position], None]
+        self, positions: List[Position], on_start: Callable[[List[Position]], None]
     ):
-        logger.fdebug("Registering {position.id} as started")
-        position.running = 1
-        self._running.add(position.id)
-        on_start(position)
+        for pos in positions:
+            logger.fdebug("Registering {pos.id} as started")
+            pos.running = 1
+            self._running.add(pos.id)
+        on_start(positions)
 
     def _register_result(
         self,
-        position: Position,
-        result: Result,
-        on_finish: Callable[[Position, Result], None],
+        results: List[Tuple[Position, Result]],
+        on_finish: Callable[[List[Tuple[Position, Result]]], None],
     ):
-        logger.fdebug("Registering {position.id} as exited with result {result}")
-        self._results[position.file][position.id] = result
-        if position.id in self._running:
-            self._running.remove(position.id)
-            on_finish(position, result)
+        valid = []
+        for pos, result in results:
+            logger.fdebug("Registering {pos.id} as exited with result {result}")
+            self._results[pos.file][pos.id] = result
+            if pos.id in self._running:
+                self._running.remove(pos.id)
+                valid.append((pos, result))
+
+        on_finish(valid)

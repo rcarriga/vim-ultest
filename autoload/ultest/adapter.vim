@@ -17,7 +17,7 @@ function! ultest#adapter#build_cmd(test, scope) abort
     execute 'cd' g:test#project_root
   endif
   let a:test.file = fnamemodify(a:test.file, get(g:, "test#filename_modifier", ":."))
-  call ultest#process#pre(a:test)
+  call ultest#process#pre([a:test])
   let runner = test#determine_runner(a:test.file)
   let executable = test#base#executable(runner)
 

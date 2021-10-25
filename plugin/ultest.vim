@@ -200,17 +200,19 @@ let g:ultest_attach_width = get(g:, "ultest_attach_width", 0)
 " This is experimental and could change!
 " Receivers are dictionaries with any of the following keys:
 "
-" 'new': A function which takes a new position which has been discovered.
+" 'lua': If true, then all functions will be called as lua functions
 "
-" 'move': A function which takes a position which has been moved.
+" 'new': A function which takes a list of new positions which have been discovered.
 "
-" 'replace': A function which takes a position which has previously been cleared but has been replaced.
+" 'move': A function which takes a list of positions which have been moved.
 "
-" 'start': A function which takes a position which has been run.
+" 'replace': A function which takes a list of positions which have previously been cleared but has been replaced.
 "
-" 'exit': A function which takes a position result once it has completed.
+" 'start': A function which takes a list of positions which have been run.
 "
-" 'clear': A function which takes a position which has been removed for some
+" 'exit': A function which takes a list of positions result once it have completed.
+"
+" 'clear': A function which takes a list of positions which have been removed for some
 " reason.
 "
 " Positions can be either a file, namespace or test, distinguished with a
