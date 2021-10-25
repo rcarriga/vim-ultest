@@ -125,10 +125,12 @@ function! s:RenderSummary() abort
     let structure = getbufvar(test_file, "ultest_file_structure")
     let tests = getbufvar(test_file, "ultest_tests", {})
     let results = getbufvar(test_file, "ultest_results", {})
-    let state = {"lines": lines, "matches": matches, "tests": tests, "results": results }
-    call s:RenderGroup("", structure, 0, state)
-    if test_file != g:ultest_buffers[-1]
-      call add(lines, "")
+    if tests != {}
+      let state = {"lines": lines, "matches": matches, "tests": tests, "results": results }
+      call s:RenderGroup("", structure, 0, state)
+      if test_file != g:ultest_buffers[-1]
+        call add(lines, "")
+      endif
     endif
   endfor
   if has("nvim")
