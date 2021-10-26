@@ -2,7 +2,6 @@ import asyncio
 import sys
 import traceback
 from asyncio import CancelledError, Event, Semaphore
-from asyncio.events import AbstractEventLoop
 from collections import defaultdict
 from threading import Thread
 from typing import Coroutine, Dict
@@ -36,7 +35,7 @@ class JobManager:
 
     def run(self, cor: Coroutine, job_group: str):
         job_id = str(uuid4())
-        cancel_event = Event(loop=self._loop)
+        cancel_event = Event(loop=self._loop) if sys.version_info < (3, 8) else Event()
         wrapped_cor = self._handle_coroutine(
             cor, job_group=job_group, job_id=job_id, cancel_event=cancel_event
         )
