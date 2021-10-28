@@ -1,11 +1,9 @@
-from dataclasses import asdict
 from unittest import TestCase
 
 from rplugin.python3.ultest.handler.parsers.output import OutputParser
 from rplugin.python3.ultest.handler.parsers.output.python.pytest import (
     ParseResult,
     failed_test_section,
-    failed_test_section_code,
     failed_test_section_error_message,
     failed_test_section_title,
 )
@@ -86,6 +84,27 @@ class TestPytestParser(TestCase):
             ],
         )
 
+    def test_parse_hypothesis_file(self):
+        output = get_output("pytest_hypothesis")
+        parser = OutputParser([])
+        result = parser.parse_failed("python#pytest", output)
+        self.assertEqual(
+            result,
+            [
+                ParseResult(
+                    name="test_get_nearest_from_strict_match",
+                    namespaces=[],
+                    file="tests/unit/models/test_tree.py",
+                    message=[
+                        "AssertionError: assert Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test') != Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test')",
+                        "+  where Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test') = Tree(data=Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test'), children=[]).data",
+                    ],
+                    output=None,
+                    line=34,
+                )
+            ],
+        )
+
     def test_parse_failed_test_section_title(self):
         raw = "_____ MyClass.test_a ______"
         result = failed_test_section_title.parse(raw)
@@ -108,36 +127,6 @@ E       ?               ^        ++++++++
             "",
             "+ {'a': 1, 'b': 5, 'c': 3, 'd': 4}",
             "?               ^        ++++++++",
-        ]
-        self.assertEqual(expected, result)
-
-    def test_parse_failed_test_section_code(self):
-        self.maxDiff = None
-        raw = """self = <test_a.TestClass testMethod=test_b>
-
-    def test_b(self):
->       self.assertEqual({
-            "a": 1,
-         "b": 2,
-         "c": 3},
-         {"a": 1,
-         "b": 5,
-         "c": 3,
-         "d": 4})
-E This should not be parsed"""
-        result, _ = failed_test_section_code.parse_partial(raw)
-        expected = [
-            "self = <test_a.TestClass testMethod=test_b>",
-            "",
-            "    def test_b(self):",
-            ">       self.assertEqual({",
-            '            "a": 1,',
-            '         "b": 2,',
-            '         "c": 3},',
-            '         {"a": 1,',
-            '         "b": 5,',
-            '         "c": 3,',
-            '         "d": 4})',
         ]
         self.assertEqual(expected, result)
 
@@ -197,14 +186,61 @@ tests/__init__.py:6: Exception OH NO
 """
         result = failed_test_section.parse(raw)
         self.assertEqual(
-            asdict(result),
-            asdict(
-                ParseResult(
-                    file="test_a.py",
-                    name="test_c",
-                    namespaces=["TestClass"],
-                    message=["Exception: OH NO"],
-                    line=39,
-                )
+            result,
+            ParseResult(
+                file="test_a.py",
+                name="test_c",
+                namespaces=["TestClass"],
+                message=["Exception: OH NO"],
+                line=39,
+            ),
+        )
+
+    def test_parse_failed_test_with_code_below_trace_location(self):
+        raw = """__________________________________________ test_get_nearest_from_strict_match __________________________________________
+
+    @given(sorted_tests())
+>   def test_get_nearest_from_strict_match(tests: List[Union[Test, Namespace]]):
+
+tests/unit/models/test_tree.py:30:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/unit/models/test_tree.py:35: in test_get_nearest_from_strict_match
+    logging.warn("AAAAAAH")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+msg = 'AAAAAAH', args = (), kwargs = {}
+
+    def warn(msg, *args, **kwargs):
+>       warnings.warn("The 'warn' function is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+E       DeprecationWarning: The 'warn' function is deprecated, use 'warning' instead
+
+../../../.pyenv/versions/3.8.6/lib/python3.8/logging/__init__.py:2058: DeprecationWarning
+------------------------------------------------------ Hypothesis ------------------------------------------------------
+Falsifying example: test_get_nearest_from_strict_match(
+    tests=[Test(id='', name='', file='', line=2, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='0', file='', line=4, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=6, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=8, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=10, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=12, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=14, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=16, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=514, col=0, running=0, namespaces=[], type='test')],
+)"""
+
+        result = failed_test_section.parse(raw)
+        self.assertEqual(
+            result,
+            ParseResult(
+                name="test_get_nearest_from_strict_match",
+                namespaces=[],
+                file="tests/unit/models/test_tree.py",
+                message=[
+                    "DeprecationWarning: The 'warn' function is deprecated, use 'warning' instead"
+                ],
+                output=None,
+                line=35,
             ),
         )

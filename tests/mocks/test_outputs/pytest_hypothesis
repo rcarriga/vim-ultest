@@ -1,0 +1,46 @@
+[1m================================================= test session starts ==================================================[0m
+platform linux -- Python 3.8.6, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
+rootdir: /home/ronan/Dev/repos/vim-ultest, configfile: pyproject.toml
+plugins: asyncio-0.16.0, hypothesis-6.23.3, cov-3.0.0
+[1mcollecting ... [0m[1mcollected 4 items                                                                                                      [0m
+
+tests/unit/models/test_tree.py [31mF[0m[32m.[0m[32m.[0m[32m.[0m[31m                                                                              [100%][0m
+
+======================================================= FAILURES =======================================================
+[31m[1m__________________________________________ test_get_nearest_from_strict_match __________________________________________[0m
+
+    @given(sorted_tests())
+>   def test_get_nearest_from_strict_match(tests: List[Union[Test, Namespace]]):
+
+[1m[31mtests/unit/models/test_tree.py[0m:29: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tests = [Test(id='', name='', file='', line=2, col=0, running=0, namespaces=[], type='test'), Test(id='', name='', file='', li...namespaces=[], type='test'), Test(id='', name='', file='', line=12, col=0, running=0, namespaces=[], type='test'), ...]
+
+    @given(sorted_tests())
+    def test_get_nearest_from_strict_match(tests: List[Union[Test, Namespace]]):
+        test_i = int(random.random() * len(tests))
+        expected = tests[test_i]
+        tree = Tree[Position].from_list([File(file="", name="", id=""), *tests])
+        result = tree.sorted_search(expected.line, lambda test: test.line, strict=True)
+>       assert expected != result.data
+[1m[31mE       AssertionError: assert Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test') != Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test')[0m
+[1m[31mE        +  where Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test') = Tree(data=Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test'), children=[]).data[0m
+
+[1m[31mtests/unit/models/test_tree.py[0m:34: AssertionError
+------------------------------------------------------ Hypothesis ------------------------------------------------------
+Falsifying example: test_get_nearest_from_strict_match(
+    tests=[Test(id='', name='', file='', line=2, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=4, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=6, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=8, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=10, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=12, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=14, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=16, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=18, col=0, running=0, namespaces=[], type='test'),
+     Test(id='', name='', file='', line=20, col=0, running=0, namespaces=[], type='test')],
+)
+=============================================== short test summary info ================================================
+FAILED tests/unit/models/test_tree.py::test_get_nearest_from_strict_match - AssertionError: assert Test(id='', name='...
+[31m============================================= [31m[1m1 failed[0m, [32m3 passed[0m[31m in 20.07s[0m[31m =============================================[0m
