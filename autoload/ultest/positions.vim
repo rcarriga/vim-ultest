@@ -29,6 +29,6 @@ endfunction
 
 function! s:GoToTest(test) abort
   if a:test.type != "file"
-    exec "normal ".string(a:test.line)."G"
+    exec "normal! ".string(a:test.line)."G"
   endif
 endfunction

@@ -97,7 +97,7 @@ function! s:OpenNewWindow() abort
     " au CursorMoved <buffer> norm! 0
   augroup END
   call s:RenderSummary()
-  exec "norm \<C-w>p"
+  exec "norm! \<C-w>p"
 endfunction
 
 function! Render()
@@ -234,7 +234,7 @@ function! s:JumpToCurrent() abort
     let tests = getbufvar(cur_file, "ultest_tests", {})
     let test = get(tests, cur_test, {})
     if test != {}
-      exec "norm ".test["line"]."G"
+      exec "norm! ".test["line"]."G"
     endif
   endif
 endfunction
