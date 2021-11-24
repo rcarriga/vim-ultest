@@ -26,6 +26,8 @@ class PositionTracker:
         :param file_name: Name of file to clear results from.
         """
 
+        file_name = self._vim.sync_call("fnamemodify", file_name, ":p")
+
         if not os.path.isfile(file_name):
             return
 
@@ -88,9 +90,11 @@ class PositionTracker:
             callback()
 
     def file_positions(self, file: str) -> Optional[Tree[Position]]:
-        return self._stored_positions.get(file)
+        absolute_path = self._vim.sync_call("fnamemodify", file, ":p")
+        return self._stored_positions.get(absolute_path)
 
     def _init_test_file(self, file: str):
+        logger.info(f"Initialising test file {file}")
         self._vim.call("setbufvar", file, "ultest_results", {})
         self._vim.call("setbufvar", file, "ultest_tests", {})
         self._vim.call("setbufvar", file, "ultest_sorted_tests", [])
