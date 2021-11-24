@@ -121,6 +121,13 @@ class PositionRunner:
     def get_attach_script(self, process_id: str):
         return self._processes.create_attach_script(process_id)
 
+    def _get_cwd(self) -> Optional[str]:
+        return (
+            self._vim.sync_call("get", "g:", "test#project_root")
+            or self._vim.sync_call("getcwd")
+            or None
+        )
+
     def _run_separately(
         self,
         tree: Tree[Position],
@@ -132,7 +139,7 @@ class PositionRunner:
         Run a collection of tests. Each will be done in
         a separate thread.
         """
-        root = self._vim.sync_call("get", "g:", "test#project_root") or None
+        root = self._get_cwd()
         tests = []
         for pos in tree:
             if isinstance(pos, Test):
@@ -166,7 +173,7 @@ class PositionRunner:
         runner = self._vim.sync_call("ultest#adapter#get_runner", file_name)
         scope = "file" if isinstance(tree.data, File) else "nearest"
         cmd = self._vim.sync_call("ultest#adapter#build_cmd", tree[0], scope)
-        root = self._vim.sync_call("get", "g:", "test#project_root") or None
+        root = self._get_cwd()
 
         for pos in tree:
             self._register_started(pos, on_start)

@@ -12,7 +12,12 @@ let s:mappings = {
 
 call extend(s:mappings, g:ultest_summary_mappings)
 
-autocmd FileType UltestSummary call <SID>CreateMappings()
+augroup UltestSummaryAutocmds
+  au!
+  autocmd FileType UltestSummary call <SID>CreateMappings()
+  autocmd DirChanged * call ultest#summary#render()
+augroup END
+
 
 function! s:CreateMappings()
   exec "nnoremap <silent><buffer> ".s:mappings["run"]." :call <SID>RunCurrent()<CR>"
@@ -60,7 +65,7 @@ function! ultest#summary#toggle(jump) abort
   endif
 endfunction
 
-function! ultest#summary#render(test) abort
+function! ultest#summary#render(...) abort
   if s:IsOpen()
     call s:RenderSummary()
   endif
@@ -68,7 +73,12 @@ endfunction
 
 function! s:OpenNewWindow() abort
   exec g:ultest_summary_open
-  exec "edit ".s:buffer_name
+  let buf = bufnr(s:buffer_name)
+  if buf != -1
+    exec buf."bwipeout!"
+  endif
+  let buf = bufnr(s:buffer_name, 1)
+  exec "edit #".buf
   let buf_settings = {
         \ "buftype": "nofile",
         \ "bufhidden": "hide",
@@ -174,7 +184,7 @@ function! s:RenderPosition(prefix, test, result, group_state) abort
     let icon = a:test.running ? g:ultest_running_sign : g:ultest_not_run_sign
     let highlight = a:test.running ? "UltestRunning" : "UltestDefault"
   endif
-  let line = a:prefix..icon.." "..a:test.name
+  let line = a:prefix..icon.." "..(a:test.type == "file" ? fnamemodify(a:test.name, ":.") : a:test.name)
   call add(a:group_state.lines, line)
   call add(a:group_state.matches, [highlight, [len(a:group_state.lines), len(a:prefix) + 1, 1]])
   if a:test.type == "file"
