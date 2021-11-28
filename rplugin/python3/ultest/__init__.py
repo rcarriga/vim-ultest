@@ -82,11 +82,11 @@ except ImportError:
                 self._handler = HandlerFactory.create(self._vim)
             return self._handler
 
-        @function("_ultest_run_nearest", allow_nested=True)
+        @function("_ultest_run_nearest", sync=True)
         def _run_nearest(self, args):
             self.handler.run_nearest(*args)
 
-        @function("_ultest_run_single", allow_nested=True)
+        @function("_ultest_run_single", sync=True)
         def _run_single(self, args):
             self.handler.run_single(*args)
 
