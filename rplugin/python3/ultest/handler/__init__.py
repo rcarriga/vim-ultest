@@ -59,7 +59,9 @@ class Handler:
             logger.debug("Clearing COLUMNS value")
             os.environ.pop("COLUMNS")
 
-        self._user_env = self._vim.sync_call("get", "g:", "ultest_env") or None
+    @property
+    def _user_env(self):
+        return self._vim.sync_call("get", "g:", "ultest_env") or None
 
     def safe_split(self, cmd: Union[str, List[str]]) -> List[str]:
         # Some runner position builders in vim-test don't split args properly (e.g. go test)
