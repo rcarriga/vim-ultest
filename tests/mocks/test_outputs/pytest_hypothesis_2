@@ -1,0 +1,65 @@
+[1m================================================= test session starts ==================================================[0m
+platform linux -- Python 3.8.6, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
+rootdir: /home/ronan/Dev/repos/hypothesis, configfile: pytest.ini
+plugins: xdist-2.4.0, forked-1.3.0, hypothesis-6.24.0
+[1mcollecting ... [0m[1mcollected 1 item                                                                                                       [0m
+
+tests/numpy/test_from_dtype.py [31mF[0m[31m                                                                                 [100%][0m
+
+======================================================= FAILURES =======================================================
+[31m[1m______________________________________________ test_can_cast_for_scalars _______________________________________________[0m
+Traceback (most recent call last):
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/tests/numpy/test_from_dtype.py", line 80, in test_can_cast_for_scalars
+  def test_can_cast_for_scalars(data):
+    File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 1199, in wrapped_test
+    raise the_error_hypothesis_found
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 1168, in wrapped_test
+    state.run_engine()
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 780, in run_engine
+    runner.run()
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/engine.py", line 475, in run
+    self._run()
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/engine.py", line 877, in _run
+    self.generate_new_examples()
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/engine.py", line 609, in generate_new_examples
+    zero_data = self.cached_test_function(bytes(BUFFER_SIZE))
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/engine.py", line 1056, in cached_test_function
+    self.test_function(data)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/engine.py", line 213, in test_function
+    self.__stoppable_test_function(data)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/engine.py", line 189, in __stoppable_test_function
+    self._test_function(data)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 727, in _execute_once_for_engine
+    escalate_hypothesis_internal_error()
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 701, in _execute_once_for_engine
+    result = self.execute_once(data)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 639, in execute_once
+    result = self.test_runner(data, run)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/executors.py", line 52, in default_new_style_executor
+    return function(data)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 635, in run
+    return test(*args, **kwargs)
+    File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/tests/numpy/test_from_dtype.py", line 80, in test_can_cast_for_scalars
+    def test_can_cast_for_scalars(data):
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 577, in test
+  result = self.test(*args, **kwargs)
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/tests/numpy/test_from_dtype.py", line 87, in test_can_cast_for_scalars
+  result = data.draw(
+      File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/strategies/_internal/core.py", line 1692, in draw
+      result = self.conjecture_data.draw(strategy)
+      File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/internal/conjecture/data.py", line 866, in draw
+      strategy.validate()
+      File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/strategies/_internal/strategies.py", line 401, in validate
+      self.do_validate()
+      File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/strategies/_internal/lazy.py", line 134, in do_validate
+      assert isinstance(w, SearchStrategy), f"{self!r} returned non-strategy {w!r}"
+      AssertionError: arrays(dtype=dtype('int16'), shape=(), elements=from_dtype(dtype('bool'))) returned non-strategy []
+      ------------------------------------------------------ Hypothesis ------------------------------------------------------
+      You can add @seed(11024453522097809882419571698055639517) to this test or run pytest with --hypothesis-seed=11024453522097809882419571698055639517 to reproduce this failure.
+      ================================================= slowest 20 durations =================================================
+      0.01s setup    hypothesis-python/tests/numpy/test_from_dtype.py::test_can_cast_for_scalars
+
+      (2 durations < 0.005s hidden.  Use -vv to show these durations.)
+      =============================================== short test summary info ================================================
+      FAILED tests/numpy/test_from_dtype.py::test_can_cast_for_scalars - AssertionError: arrays(dtype=dtype('int16'), shape...
+        [31m================================================== [31m[1m1 failed[0m[31m in 0.06s[0m[31m ===================================================[0m

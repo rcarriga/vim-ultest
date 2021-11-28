@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+from logging import getLogger
 from typing import List, Optional
 
 from .. import parsec as p
 from ..base import ParsedOutput, ParseResult
 from ..parsec import generate
 from ..util import eol, join_chars, until_eol
+
+logger = getLogger(__name__)
 
 
 @dataclass
@@ -18,15 +21,41 @@ class PytestCodeTrace:
 @generate
 def pytest_output():
     yield pytest_test_results_summary
-    failed = yield p.many(failed_test_section)
-    yield pytest_summary_info
-    return ParsedOutput(results=failed)
+    parsed_outputs = yield p.many1(failed_test_section)
+    parsed_summary = yield pytest_summary_info
+    parsed_results = {
+        (r.file, r.name, *r.namespaces): r
+        for r in [*parsed_summary, *parsed_outputs]
+        if r
+    }
+    return ParsedOutput(results=list(parsed_results.values()))
 
 
 @generate
 def failed_test_section():
     namespaces, test_name = yield failed_test_section_title
     yield until_eol
+    raw_output_lines = yield p.many1(
+        p.exclude(until_eol, failed_test_section_title ^ pytest_summary_info_title)
+    )
+    output_text = "\n".join(raw_output_lines) + "\n"
+    try:
+
+        file, err_msg, err_line = failed_test_section_output.parse(output_text)
+        return ParseResult(
+            name=test_name,
+            namespaces=namespaces,
+            file=file,
+            message=err_msg,
+            line=err_line,
+        )
+    except Exception as e:
+        logger.debug(f"Failed to parse output: {e}\n----\n{output_text}\n----")
+        return None
+
+
+@generate
+def failed_test_section_output():
     traces: List[PytestCodeTrace]
     traces = yield failed_test_code_sections
     sections = yield failed_test_captured_output_sections
@@ -40,18 +69,16 @@ def failed_test_section():
     for trace in traces:
         if trace.message:
             error_message = trace.message
-    return ParseResult(
-        name=test_name,
-        namespaces=namespaces,
-        file=test_file,
-        message=error_message,
-        line=test_line_no,
+    return (
+        test_file,
+        error_message,
+        test_line_no,
     )
 
 
 @generate
 def failed_test_section_title():
-    yield p.many1(p.string("_")) >> p.space()
+    yield p.string("_") >> p.many1(p.string("_")) >> p.space()
     name_elements = (
         yield p.many1(p.none_of(" "))
         .parsecmap(join_chars)
@@ -59,7 +86,7 @@ def failed_test_section_title():
     )
     namespaces = name_elements[:-1]
     test_name = name_elements[-1]
-    yield p.space() >> p.many1(p.string("_"))
+    yield until_eol
     return (namespaces, test_name)
 
 
@@ -74,8 +101,7 @@ failed_test_section_sep = p.many1(p.one_of("_ ")) >> eol
 
 @generate
 def failed_test_code_sections():
-
-    sections = yield p.sepBy(failed_test_code_section, failed_test_section_sep)
+    sections = yield p.sepBy1(failed_test_code_section, failed_test_section_sep)
     return sections
 
 
@@ -126,10 +152,26 @@ def failed_test_error_message_line():
 
 
 @generate
+def pytest_summary_failed_test():
+    yield p.string("FAILED ")
+    names = yield p.sepBy1(
+        p.many1(p.none_of(": ")).parsecmap(join_chars), p.string("::")
+    )
+    file, *namespaces = names
+    yield until_eol
+    return ParseResult(
+        name=namespaces[-1],
+        namespaces=namespaces[:-1],
+        file=file,
+    )
+
+
+@generate
 def pytest_summary_info():
     yield pytest_summary_info_title
-    summary = yield p.many(until_eol)
-    return summary
+    parsed_summary = yield p.many1(pytest_summary_failed_test)
+    yield p.many(until_eol)
+    return parsed_summary
 
 
 @generate

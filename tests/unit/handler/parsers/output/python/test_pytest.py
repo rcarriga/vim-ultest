@@ -6,6 +6,7 @@ from rplugin.python3.ultest.handler.parsers.output.python.pytest import (
     failed_test_section,
     failed_test_section_error_message,
     failed_test_section_title,
+    pytest_summary_info,
 )
 from tests.mocks import get_output
 
@@ -105,13 +106,41 @@ class TestPytestParser(TestCase):
             ],
         )
 
+    def test_parse_summary_if_output_not_parsable(self):
+        raw = """
+================================================= test session starts ==================================================
+...
+
+======================================================= FAILURES =======================================================
+______________________________________________ test_can_cast_for_scalars _______________________________________________
+This is not parsable
+------------------------------------------------------ Hypothesis ------------------------------------------------------
+You can add @seed(11024453522097809882419571698055639517) to this test or run pytest with --hypothesis-seed=11024453522097809882419571698055639517 to reproduce this failure.
+================================================= slowest 20 durations =================================================
+0.01s setup    hypothesis-python/tests/numpy/test_from_dtype.py::test_can_cast_for_scalars
+
+(2 durations < 0.005s hidden.  Use -vv to show these durations.)
+=============================================== short test summary info ================================================
+FAILED tests/numpy/test_from_dtype.py::test_can_cast_for_scalars - AssertionError: arrays(dtype=dtype('int16'), shape...
+================================================== 1 failed in 0.06s ===================================================
+"""
+        expected = [
+            ParseResult(
+                name="test_can_cast_for_scalars",
+                namespaces=[],
+                file="tests/numpy/test_from_dtype.py",
+            )
+        ]
+        parser = OutputParser([])
+        result = parser.parse_failed("python#pytest", raw)
+        self.assertEqual(result, expected)
+
     def test_parse_failed_test_section_title(self):
-        raw = "_____ MyClass.test_a ______"
+        raw = "_____ MyClass.test_a ______\n"
         result = failed_test_section_title.parse(raw)
         self.assertEqual(result, (["MyClass"], "test_a"))
 
     def test_parse_failed_test_section_error(self):
-        self.maxDiff = None
         raw = """E       AssertionError: {'a': 1, 'b': 2, 'c': 3} != {'a': 1, 'b': 5, 'c': 3, 'd': 4}
 E       - {'a': 1, 'b': 2, 'c': 3}
 E       ?               ^
@@ -127,6 +156,69 @@ E       ?               ^        ++++++++
             "",
             "+ {'a': 1, 'b': 5, 'c': 3, 'd': 4}",
             "?               ^        ++++++++",
+        ]
+        self.assertEqual(expected, result)
+
+    def test_parse_failed_test_short_summary(self):
+        raw = """======================================================================================================================== short test summary info =========================================================================================================================
+FAILED test_a.py::test_b - Exception: OH NO
+FAILED test_a.py::TestClass::test_b - AssertionError: {'a': 1, 'b': 2, 'c': 3} != {'a': 1, 'b': 5, 'c': 3, 'd': 4}
+FAILED test_b.py::AnotherClass::test_a - AssertionError: assert 2 == 3
+FAILED test_b.py::test_d - assert 2 == 3
+FAILED subtests/test_c.py::TestStuff::test_thing_2 - AssertionError: assert False
+FAILED subtests/test_c.py::test_a - assert False
+====================================================================================================================== 6 failed, 5 passed in 0.39s =======================================================================================================================
+"""
+        result = pytest_summary_info.parse(raw)
+        expected = [
+            ParseResult(
+                name="test_b",
+                namespaces=[],
+                file="test_a.py",
+                message=None,
+                output=None,
+                line=None,
+            ),
+            ParseResult(
+                name="test_b",
+                namespaces=["TestClass"],
+                file="test_a.py",
+                message=None,
+                output=None,
+                line=None,
+            ),
+            ParseResult(
+                name="test_a",
+                namespaces=["AnotherClass"],
+                file="test_b.py",
+                message=None,
+                output=None,
+                line=None,
+            ),
+            ParseResult(
+                name="test_d",
+                namespaces=[],
+                file="test_b.py",
+                message=None,
+                output=None,
+                line=None,
+            ),
+            ParseResult(
+                name="test_thing_2",
+                namespaces=["TestStuff"],
+                file="subtests/test_c.py",
+                message=None,
+                output=None,
+                line=None,
+            ),
+            ParseResult(
+                name="test_a",
+                namespaces=[],
+                file="subtests/test_c.py",
+                message=None,
+                output=None,
+                line=None,
+            ),
         ]
         self.assertEqual(expected, result)
 
