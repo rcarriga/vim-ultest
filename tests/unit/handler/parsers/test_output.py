@@ -15,6 +15,7 @@ class TestOutputParser(TestCase):
             failed,
             [
                 ParseResult(name="test_d", namespaces=["TestMyClass"]),
+                ParseResult(name="test_parametrize", namespaces=[]),
                 ParseResult(name="test_a", namespaces=[]),
             ],
         )

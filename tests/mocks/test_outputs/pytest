@@ -29,5 +29,6 @@ self = <test_a.TestMyClass testMethod=test_d>
 [1m[31mtest_a.py[0m:7: AssertionError
 =========================== short test summary info ============================
 FAILED test_a.py::TestMyClass::test_d - AssertionError: assert 33 == 3
+FAILED test_a.py::test_parametrize[5] - assert 5 == 3
 ERROR test_a.py::test_a
 [31m===================== [31m[1m1 failed[0m, [32m1 passed[0m, [31m[1m1 error[0m[31m in 0.07s[0m[31m =====================[0m
