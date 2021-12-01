@@ -1,9 +1,7 @@
 import asyncio
-import sys
 import traceback
 from asyncio import CancelledError, Event, Semaphore
 from collections import defaultdict
-from threading import Thread
 from typing import Coroutine, Dict
 from uuid import uuid4
 
@@ -15,19 +13,8 @@ logger = get_logger()
 class JobManager:
     def __init__(self, num_threads: int = 2):
         self._jobs: defaultdict[str, Dict[str, Event]] = defaultdict(dict)
-        self._loop = asyncio.new_event_loop()
-        self._thread = Thread(target=self._loop.run_forever, daemon=True)
-        self._thread.start()
-        if sys.version_info < (3, 8):
-            # Use the new default watcher from  >= 3.8, implemented locally
-            # https://bugs.python.org/issue35621
-            from .watcher import ThreadedChildWatcher
-
-            logger.info("Using local threaded child watcher")
-            asyncio.set_child_watcher(ThreadedChildWatcher())
-            self._sem = Semaphore(num_threads, loop=self._loop)
-        else:
-            self._sem = Semaphore(num_threads)
+        self._loop = asyncio.get_event_loop()
+        self._sem = Semaphore(num_threads)
 
     @property
     def semaphore(self) -> Semaphore:
@@ -38,7 +25,7 @@ class JobManager:
         # loop parameter has been deprecated since version 3.8
         # and will be removed in version 3.10 but loop parameters
         # still required for python <3.10
-        cancel_event = Event(loop=self._loop) if sys.version_info < (3, 10) else Event()
+        cancel_event = Event()
         wrapped_cor = self._handle_coroutine(
             cor, job_group=job_group, job_id=job_id, cancel_event=cancel_event
         )
