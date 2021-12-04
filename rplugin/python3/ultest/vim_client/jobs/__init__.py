@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import traceback
 from asyncio import CancelledError, Event, Semaphore
 from collections import defaultdict
@@ -15,6 +16,16 @@ class JobManager:
         self._jobs: defaultdict[str, Dict[str, Event]] = defaultdict(dict)
         self._loop = asyncio.get_event_loop()
         self._sem = Semaphore(num_threads)
+        if sys.version_info < (3, 8):
+            # Use the new default watcher from  >= 3.8, implemented locally
+            # https://bugs.python.org/issue35621
+            from .watcher import ThreadedChildWatcher
+
+            logger.info("Using local threaded child watcher")
+            asyncio.set_child_watcher(ThreadedChildWatcher())
+            self._sem = Semaphore(num_threads, loop=self._loop)
+        else:
+            self._sem = Semaphore(num_threads)
 
     @property
     def semaphore(self) -> Semaphore:
