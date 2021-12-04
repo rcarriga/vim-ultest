@@ -8,6 +8,10 @@ class ErroredTestError(Exception):
     ...
 
 
+def parse_unittest(output: str, cwd: str = None):
+    return unittest_output.parse(output).results
+
+
 @generate
 def unittest_output():
     try:

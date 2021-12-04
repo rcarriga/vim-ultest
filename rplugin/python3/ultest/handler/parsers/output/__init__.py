@@ -5,8 +5,8 @@ from typing import Iterable, Iterator, List, Optional
 from ....logging import get_logger
 from .base import ParseResult
 from .parsec import ParseError
-from .python.pytest import pytest_output
-from .python.unittest import unittest_output
+from .python.pytest import parse_pytest
+from .python.unittest import parse_unittest
 
 
 @dataclass
@@ -41,8 +41,8 @@ logger = get_logger()
 class OutputParser:
     def __init__(self, disable_patterns: List[str]) -> None:
         self._parsers = {
-            "python#pytest": pytest_output,
-            "python#pyunit": unittest_output,
+            "python#pytest": parse_pytest,
+            "python#pyunit": parse_unittest,
         }
         self._patterns = {
             runner: patterns
@@ -53,10 +53,12 @@ class OutputParser:
     def can_parse(self, runner: str) -> bool:
         return runner in self._patterns or runner in self._parsers
 
-    def parse_failed(self, runner: str, output: str) -> Iterable[ParseResult]:
+    def parse_failed(self, runner: str, output: str, cwd=None) -> Iterable[ParseResult]:
         if runner in self._parsers:
             try:
-                return self._parsers[runner].parse(_ANSI_ESCAPE.sub("", output)).results
+                return self._parsers[runner](
+                    _ANSI_ESCAPE.sub("", output), cwd=cwd
+                ).results
             except ParseError:
                 return []
         return self._regex_parse_failed(runner, output.splitlines())

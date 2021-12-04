@@ -188,7 +188,9 @@ class PositionRunner:
             (code, output_path) = await self._processes.run(
                 cmd, tree.data.file, tree.data.id, cwd=root, env=env
             )
-            self._process_results(tree, file_tree, code, output_path, runner, on_finish)
+            self._process_results(
+                tree, file_tree, code, output_path, runner, on_finish, root
+            )
 
         self._vim.launch(run(), tree.data.id)
 
@@ -200,6 +202,7 @@ class PositionRunner:
         output_path: str,
         runner: str,
         on_finish: Callable[[List[Tuple[Position, Result]]], None],
+        cwd: Optional[str] = None,
     ):
 
         namespaces = {
@@ -213,7 +216,7 @@ class PositionRunner:
                 output = cmd_out.read()
 
         parsed_failures = (
-            self._output_parser.parse_failed(runner, output) if code else []
+            self._output_parser.parse_failed(runner, output, cwd) if code else []
         )
         failed = {
             (failed.name, *(failed.namespaces)): failed for failed in parsed_failures

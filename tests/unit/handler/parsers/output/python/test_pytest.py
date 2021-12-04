@@ -82,6 +82,14 @@ class TestPytestParser(TestCase):
                     output=None,
                     line=23,
                 ),
+                ParseResult(
+                    name="test_parametrize[5]",
+                    namespaces=[],
+                    file="test_a.py",
+                    message=None,
+                    output=None,
+                    line=None,
+                ),
             ],
         )
 
@@ -335,4 +343,53 @@ Falsifying example: test_get_nearest_from_strict_match(
                 output=None,
                 line=35,
             ),
+        )
+
+    def test_parse_collection_error(self):
+        raw = """================================================= test session starts ==================================================
+platform linux -- Python 3.8.12, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
+rootdir: /home/ronan/Dev/repos/hypothesis, configfile: pytest.ini
+plugins: xdist-2.4.0, forked-1.3.0, hypothesis-6.24.0
+collected 1 item
+
+examples/example_hypothesis_entrypoint/test_entrypoint.py F                                                      [100%]
+
+======================================================= FAILURES =======================================================
+___________________________________________ test_registered_from_entrypoint ____________________________________________
+Traceback (most recent call last):
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/examples/example_hypothesis_entrypoint/test_entrypoint.py", line 22, in test_registered_from_entrypoint
+    def test_registered_from_entrypoint(x):
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/src/hypothesis/core.py", line 1199, in wrapped_test
+    raise the_error_hypothesis_found
+  File "/home/ronan/Dev/repos/hypothesis/hypothesis-python/examples/example_hypothesis_entrypoint/example_hypothesis_entrypoint.py", line 25, in __init__
+    assert x >= 0, f"got {x}, but only positive numbers are allowed"
+AssertionError: got -1, but only positive numbers are allowed
+================================================= slowest 20 durations =================================================
+0.07s call     hypothesis-python/examples/example_hypothesis_entrypoint/test_entrypoint.py::test_registered_from_entrypoint
+
+(2 durations < 0.005s hidden.  Use -vv to show these durations.)
+=============================================== short test summary info ================================================
+FAILED examples/example_hypothesis_entrypoint/test_entrypoint.py::test_registered_from_entrypoint - AssertionError: g...
+================================================== 1 failed in 0.28s ===================================================
+
+"""
+        result = OutputParser([]).parse_failed(
+            "python#pytest",
+            raw,
+            cwd="/home/ronan/Dev/repos/hypothesis/hypothesis-python",
+        )
+        self.assertEqual(
+            [
+                ParseResult(
+                    name="test_registered_from_entrypoint",
+                    namespaces=[],
+                    file="/home/ronan/Dev/repos/hypothesis/hypothesis-python/examples/example_hypothesis_entrypoint/test_entrypoint.py",
+                    message=[
+                        "AssertionError: got -1, but only positive numbers are allowed"
+                    ],
+                    output=None,
+                    line=22,
+                )
+            ],
+            result,
         )

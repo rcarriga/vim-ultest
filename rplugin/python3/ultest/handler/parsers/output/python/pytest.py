@@ -1,5 +1,7 @@
+import os.path as path
 from dataclasses import dataclass
 from logging import getLogger
+from pathlib import Path
 from typing import List, Optional
 
 from .. import parsec as p
@@ -18,13 +20,16 @@ class PytestCodeTrace:
     message: Optional[List[str]] = None
 
 
-@generate
-def pytest_output():
-    yield pytest_test_results_summary
-    parsed_outputs = yield p.many1(failed_test_section)
-    parsed_summary = yield pytest_summary_info
+def parse_pytest(output: str, cwd: str = None):
+    parsed_outputs, parsed_summary = pytest_output.parse(output)
+
+    def convert_to_relative(file: str):
+        if not Path(file).is_absolute():
+            return file
+        return path.relpath(file, cwd)
+
     parsed_results = {
-        (r.file, r.name, *r.namespaces): r
+        (convert_to_relative(r.file), r.name, *r.namespaces): r
         for r in [*parsed_summary, *parsed_outputs]
         if r
     }
@@ -32,16 +37,25 @@ def pytest_output():
 
 
 @generate
+def pytest_output():
+    yield pytest_test_results_summary
+    parsed_outputs = yield p.many1(failed_test_section)
+    parsed_summary = yield pytest_summary_info
+    return parsed_outputs, parsed_summary
+
+
+@generate
 def failed_test_section():
     namespaces, test_name = yield failed_test_section_title
-    yield until_eol
     raw_output_lines = yield p.many1(
         p.exclude(until_eol, failed_test_section_title ^ pytest_summary_info_title)
     )
     output_text = "\n".join(raw_output_lines) + "\n"
     try:
 
-        file, err_msg, err_line = failed_test_section_output.parse(output_text)
+        file, err_msg, err_line = (
+            failed_test_section_output ^ failed_test_section_collection_error
+        ).parse(output_text)
         return ParseResult(
             name=test_name,
             namespaces=namespaces,
@@ -77,10 +91,33 @@ def failed_test_section_output():
 
 
 @generate
+def failed_test_section_collection_error():
+    yield p.string("Traceback") >> until_eol
+    test_file = (
+        yield p.many1(p.string(" "))
+        >> p.string('File "')
+        >> p.many1(p.none_of('"')).parsecmap(join_chars)
+        << p.string('", ')
+    )
+    test_line_no = (
+        yield p.string("line ")
+        >> p.many1(p.digit()).parsecmap(join_chars).parsecmap(int)
+        << until_eol
+    )
+    yield p.many1(p.string(" ") >> until_eol)
+    error_message = yield until_eol
+    return (
+        test_file,
+        [error_message],
+        test_line_no,
+    )
+
+
+@generate
 def failed_test_section_title():
     yield p.string("_") >> p.many1(p.string("_")) >> p.space()
     name_elements = (
-        yield p.many1(p.none_of(" "))
+        yield p.many1(p.none_of(" ["))
         .parsecmap(join_chars)
         .parsecmap(lambda elems: elems.split("."))
     )
