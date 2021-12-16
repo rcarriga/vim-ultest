@@ -96,11 +96,11 @@ call dein#add("rcarriga/vim-ultest")
 
 ```vim
 " Vim Only
-Plug "roxma/nvim-yarp"
-Plug "roxma/vim-hug-neovim-rpc"
+Plug 'roxma/nvim-yarp'
+Plug 'roxma/vim-hug-neovim-rpc'
 
-Plug "vim-test/vim-test"
-Plug "rcarriga/vim-ultest", { "do": ":UpdateRemotePlugins" }
+Plug 'vim-test/vim-test'
+Plug 'rcarriga/vim-ultest', { 'do': ':UpdateRemotePlugins' }
 ```
 
 [packer.nvim](https://github.com/wbthomason/packer.nvim)
