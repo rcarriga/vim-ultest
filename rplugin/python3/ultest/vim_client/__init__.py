@@ -143,4 +143,4 @@ class VimClient:
     def _needs_quotes(self, arg: str) -> bool:
         if not any(char in arg for char in "\"'("):
             return not (len(arg) == 2 and arg[1] == ":")
-        return False
+        return "://" in arg
