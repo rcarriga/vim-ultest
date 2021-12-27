@@ -347,7 +347,7 @@ command! UltestSummaryClose call ultest#summary#close()
 
 ""
 " Clear results from the current file
-command! UltestClear call ultest#handler#clear_results(expand("%:."))
+command! UltestClear call ultest#handler#clear_results(expand("%:p"))
 
 ""
 " @section Mappings
