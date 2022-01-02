@@ -395,12 +395,6 @@ nnoremap <silent><Plug>(ultest-stop-nearest) :UltestStop<CR>
 nnoremap <silent><Plug>(ultest-debug) :UltestDebug<CR>
 nnoremap <silent><Plug>(ultest-debug-nearest) :UltestDebugNearest<CR>
 
-if g:ultest_output_on_line
-  augroup UltestOutputOnLine
-    au!
-    au CursorHold * call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:true))
-  augroup END
-endif
 let s:monitored = {}
 
 function! s:MonitorFile(file) abort
@@ -419,6 +413,9 @@ function! s:MonitorFile(file) abort
   call ultest#handler#update_positions(a:file)
   exec 'au BufWrite <buffer='.buffer.'> call ultest#handler#update_positions("'.a:file.'")'
   exec 'au BufUnload <buffer='.buffer.'> au! * <buffer='.buffer'>'
+  if g:ultest_output_on_line
+    exec 'au CursorHold <buffer='.buffer.'> call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:true))'
+  endif
   let s:monitored[a:file] = v:true
 endfunction
 
