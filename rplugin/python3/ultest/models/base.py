@@ -16,7 +16,7 @@ class BasePosition:
 
     def __str__(self):
         props = self.dict()
-        props["name"] = [int(char) for char in self.name.encode()]
+        props["name"] = [ord(char) for char in self.name]
         return json.dumps(props)
 
     def dict(self):
