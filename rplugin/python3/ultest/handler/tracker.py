@@ -64,6 +64,9 @@ class PositionTracker:
             "ultest_sorted_tests",
             [test.id for test in tests],
         )
+        moved = []
+        replaced = []
+        new = []
         for test in tests:
             if test.id in recorded_tests:
                 recorded = recorded_tests.pop(test.id)
@@ -72,17 +75,21 @@ class PositionTracker:
                     logger.fdebug(
                         "Moving test {test.id} from {recorded.line} to {test.line} in {file_name}"
                     )
-                    self._vim.call("ultest#process#move", test)
+                    moved.append(test)
             else:
                 existing_result = self._runner.get_result(test.id, test.file)
                 if existing_result:
                     logger.fdebug(
                         "Replacing test {test.id} to {test.line} in {file_name}"
                     )
-                    self._vim.call("ultest#process#replace", test, existing_result)
+                    replaced.append((test, existing_result))
                 else:
                     logger.fdebug("New test {test.id} found in {file_name}")
-                    self._vim.call("ultest#process#new", test)
+                    new.append(test)
+
+        self._vim.call("ultest#process#new", new)
+        self._vim.call("ultest#process#replace", replaced)
+        self._vim.call("ultest#process#move", moved)
 
         self._remove_old_positions(recorded_tests)
         self._vim.command("doau User UltestPositionsUpdate")
@@ -120,10 +127,7 @@ class PositionTracker:
 
     def _remove_old_positions(self, positions: Dict[str, Position]):
         if positions:
-            logger.fdebug(
-                "Removing tests {[recorded for recorded in recorded_tests]} from {file_name}"
-            )
-            for removed in positions.values():
-                self._vim.call("ultest#process#clear", removed)
+            logger.fdebug("Removing tests {list(positions)}")
+            self._vim.call("ultest#process#clear", list(positions.values()))
         else:
             logger.fdebug("No tests removed")

@@ -1,14 +1,12 @@
 import re
 from dataclasses import dataclass
-from typing import Iterator, List, Optional
+from typing import Iterable, Iterator, List, Optional
 
-from ...logging import get_logger
-
-
-@dataclass(frozen=True)
-class ParseResult:
-    name: str
-    namespaces: List[str]
+from ....logging import get_logger
+from .base import ParseResult
+from .parsec import ParseError
+from .python.pytest import parse_pytest
+from .python.unittest import parse_unittest
 
 
 @dataclass
@@ -20,14 +18,6 @@ class OutputPatterns:
 
 
 _BASE_PATTERNS = {
-    "python#pytest": OutputPatterns(
-        failed_test=r"^(FAILED|ERROR) .+?::(?P<namespaces>.+::)?(?P<name>[^[\s]*)(.+])?( |$)",
-        namespace_separator="::",
-    ),
-    "python#pyunit": OutputPatterns(
-        failed_test=r"^FAIL: (?P<name>.*) \(.*?(?P<namespaces>\..+)\)",
-        namespace_separator=r"\.",
-    ),
     "go#gotest": OutputPatterns(failed_test=r"^.*--- FAIL: (?P<name>.+?) "),
     "go#richgo": OutputPatterns(
         failed_test=r"^FAIL\s\|\s(?P<name>.+?) \(.*\)",
@@ -50,6 +40,10 @@ logger = get_logger()
 
 class OutputParser:
     def __init__(self, disable_patterns: List[str]) -> None:
+        self._parsers = {
+            "python#pytest": parse_pytest,
+            "python#pyunit": parse_unittest,
+        }
         self._patterns = {
             runner: patterns
             for runner, patterns in _BASE_PATTERNS.items()
@@ -57,9 +51,21 @@ class OutputParser:
         }
 
     def can_parse(self, runner: str) -> bool:
-        return runner in self._patterns
+        return runner in self._patterns or runner in self._parsers
 
-    def parse_failed(self, runner: str, output: List[str]) -> Iterator[ParseResult]:
+    def parse_failed(self, runner: str, output: str, cwd=None) -> Iterable[ParseResult]:
+        if runner in self._parsers:
+            try:
+                return self._parsers[runner](
+                    _ANSI_ESCAPE.sub("", output), cwd=cwd
+                ).results
+            except ParseError:
+                return []
+        return self._regex_parse_failed(runner, output.splitlines())
+
+    def _regex_parse_failed(
+        self, runner: str, output: List[str]
+    ) -> Iterator[ParseResult]:
         pattern = self._patterns[runner]
         fail_pattern = re.compile(pattern.failed_test)
         for line in output:
@@ -86,4 +92,4 @@ class OutputParser:
                     if pattern.failed_name_prefix
                     else match["name"]
                 )
-                yield ParseResult(name=name, namespaces=namespaces)
+                yield ParseResult(name=name, namespaces=namespaces, file="")

@@ -1,36 +1,42 @@
-function! ultest#signs#move(test) abort
-  if (a:test.type != "test") | return | endif
-  let result = get(getbufvar(a:test.file, "ultest_results"), a:test.id, {})
-  if result != {}
-    call ultest#signs#process(result)
-  else
-    call ultest#signs#start(a:test)
-  endif
-endfunction
-
-function! ultest#signs#start(test) abort
-    if (a:test.type != "test") | return | endif
-    call ultest#signs#unplace(a:test)
-    if !a:test.running | return | endif
-    if s:UseVirtual()
-        call s:PlaceVirtualText(a:test, g:ultest_running_text, "UltestRunning")
+function! ultest#signs#move(tests) abort
+  for test in a:tests
+    if (test.type != "test") | continue | endif
+    let result = get(getbufvar(test.file, "ultest_results"), test.id, {})
+    if result != {}
+      call ultest#signs#process([result])
     else
-        call s:PlaceSign(a:test, "test_running")
+      call ultest#signs#start([test])
     endif
+  endfor
 endfunction
 
-function! ultest#signs#process(result) abort
-    let test = getbufvar(a:result.file, "ultest_tests")[a:result.id]
-    if (test.type != "test") | return | endif
-    call ultest#signs#unplace(test)
+function! ultest#signs#start(tests) abort
+  for test in a:tests
+    if (test.type != "test") | continue | endif
+    call ultest#signs#unplace([test])
+    if !test.running | continue | endif
     if s:UseVirtual()
-        let text_highlight = a:result.code ? "UltestFail" : "UltestPass"
-        let text = a:result.code ? g:ultest_fail_text : g:ultest_pass_text
+      call s:PlaceVirtualText(test, g:ultest_running_text, "UltestRunning")
+    else
+      call s:PlaceSign(test, "test_running")
+    endif
+  endfor
+endfunction
+
+function! ultest#signs#process(results) abort
+  for result in a:results
+    let test = getbufvar(result.file, "ultest_tests")[result.id]
+    if (test.type != "test") | continue | endif
+    call ultest#signs#unplace([test])
+    if s:UseVirtual()
+        let text_highlight = result.code ? "UltestFail" : "UltestPass"
+        let text = result.code ? g:ultest_fail_text : g:ultest_pass_text
         call s:PlaceVirtualText(test, text, text_highlight)
     else
-        let test_icon = a:result.code ? "test_fail" : "test_pass"
+        let test_icon = result.code ? "test_fail" : "test_pass"
         call s:PlaceSign(test, test_icon)
     endif
+  endfor
 endfunction
 
 function! s:UseVirtual() abort
@@ -48,15 +54,17 @@ function! s:PlaceVirtualText(test, text, highlight) abort
     call nvim_buf_set_virtual_text(buffer, namespace, str2nr(a:test.line) - 1, [[a:text, a:highlight]], {})
 endfunction
 
-function! ultest#signs#unplace(test)
-    if (a:test.type != "test") | return | endif
+function! ultest#signs#unplace(tests)
+  for test in a:tests
+    if (test.type != "test") | continue | endif
     if s:UseVirtual()
-        let namespace = s:GetNamespace(a:test)
+        let namespace = s:GetNamespace(test)
         call nvim_buf_clear_namespace(0, namespace, 0, -1)
     else
-        call sign_unplace(a:test.id, {"buffer": a:test.file})
+        call sign_unplace(test.id, {"buffer": test.file})
       redraw
     endif
+  endfor
 endfunction
 
 function! s:GetNamespace(test)

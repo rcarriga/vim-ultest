@@ -1,34 +1,123 @@
 [1m============================= test session starts ==============================[0m
-platform linux -- Python 3.9.2, pytest-6.2.3, py-1.10.0, pluggy-0.13.1
+platform linux -- Python 3.8.6, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
 rootdir: /home/ronan/tests
-plugins: cov-2.11.1
-collected 3 items
+collected 12 items
 
-test_a.py [31mF[0m[32m.[0m[31mE[0m[31m                                                            [100%][0m
+test_a.py 
+>>>>>>>>>>>>>>>>>>> PDB set_trace (IO-capturing turned off) >>>>>>>>>>>>>>>>>>>>
+> /home/ronan/tests/test_a.py(21)test_b()
+-> a[0] = 3
+(Pdb) 
+>>>>>>>>>>>>>>>>>>>>> PDB continue (IO-capturing resumed) >>>>>>>>>>>>>>>>>>>>>>
+[31mF[0m[31mF[0m[31mF[0m[31m                                                            [ 25%][0m
+test_b.py [31mF[0m[32m.[0m[31mF[0m[32m.[0m[31m                                                           [ 58%][0m
+test_x.py [31mF[0m[31m                                                              [ 66%][0m
+tests/test_c.py 
+>>>>>>>>>>>>>>>>>>> PDB set_trace (IO-capturing turned off) >>>>>>>>>>>>>>>>>>>>
+> /home/ronan/tests/tests/test_c.py(12)test_b22()
+-> print("hello")
+(Pdb) 
+>>>>>>>>>>>>>>>>>>>>> PDB continue (IO-capturing resumed) >>>>>>>>>>>>>>>>>>>>>>
+[32m.[0m[32m.[0m[31mF[0m[32m.[0m[31m                                                     [100%][0m
 
-==================================== ERRORS ====================================
-[31m[1m___________________________ ERROR at setup of test_a ___________________________[0m
-file /home/ronan/tests/test_a.py, line 17
-  def test_a(self):
-[31mE       fixture 'self' not found[0m
-[31m>       available fixtures: cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cov, doctest_namespace, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory[0m
-[31m>       use 'pytest --fixtures [testpath]' for help on them.[0m
-
-/home/ronan/tests/test_a.py:17
 =================================== FAILURES ===================================
-[31m[1m______________________________ TestMyClass.test_d ______________________________[0m
+[31m[1m____________________________________ test_b ____________________________________[0m
 
-self = <test_a.TestMyClass testMethod=test_d>
+    def test_b():
+        """
+        tests
+    
+        :param: b teststst
+        """
+        a = [[3, 1, 2, 3], 2, 4, 5]
+        breakpoint()
+>       a[0] = 3
+[1m[31mE       Exception: OH NO[0m
 
-    [94mdef[39;49;00m [92mtest_d[39;49;00m([96mself[39;49;00m): [90m# type: ignore[39;49;00m
-        [94mclass[39;49;00m [04m[92mMyClass[39;49;00m:
-            ...
->       [94massert[39;49;00m [94m33[39;49;00m == [94m3[39;49;00m
-[1m[31mE       AssertionError: assert 33 == 3[0m
+[1m[31mtest_a.py[0m:21: Exception
+----------------------------- Captured stdout call -----------------------------
+[3, 2, 4, 5]
+[3, 2, 4, 5]
+[31m[1m_______________________________ TestClass.test_b _______________________________[0m
 
-[1m[31mtest_a.py[0m:7: AssertionError
+self = <test_a.TestClass testMethod=test_b>
+
+    def test_b(self):
+>       self.assertEqual({
+            "a": 1,
+         "b": 2,
+         "c": 3},
+         {"a": 1,
+         "b": 5,
+         "c": 3,
+         "d": 4})
+[1m[31mE       AssertionError: {'a': 1, 'b': 2, 'c': 3} != {'a': 1, 'b': 5, 'c': 3, 'd': 4}[0m
+[1m[31mE       - {'a': 1, 'b': 2, 'c': 3}[0m
+[1m[31mE       ?               ^[0m
+[1m[31mE       [0m
+[1m[31mE       + {'a': 1, 'b': 5, 'c': 3, 'd': 4}[0m
+[1m[31mE       ?               ^        ++++++++[0m
+
+[1m[31mtest_a.py[0m:29: AssertionError
+[31m[1m_______________________________ TestClass.test_c _______________________________[0m
+
+self = <test_a.TestClass testMethod=test_c>
+
+    def test_c(self):
+>       a_function()
+
+[1m[31mtest_a.py[0m:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def a_function():
+        x = 3
+        print(x)
+>       raise Exception
+[1m[31mE       Exception[0m
+
+[1m[31mtests/__init__.py[0m:6: Exception
+----------------------------- Captured stdout call -----------------------------
+3
+[31m[1m____________________________________ test_a ____________________________________[0m
+
+    def test_a():
+>       assert 2 == 3
+[1m[31mE       assert 2 == 3[0m
+
+[1m[31mtest_b.py[0m:5: AssertionError
+[31m[1m____________________________________ test_d ____________________________________[0m
+
+    def test_d():
+>       assert 2 == 3
+[1m[31mE       assert 2 == 3[0m
+
+[1m[31mtest_b.py[0m:16: AssertionError
+[31m[1m____________________________________ test_a ____________________________________[0m
+
+    def test_a():
+        x = {}
+        x[1,2] = 2
+        print(x)
+>       assert False
+[1m[31mE       assert False[0m
+
+[1m[31mtest_x.py[0m:6: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{(1, 2): 2}
+[31m[1m___________________________________ test_a30 ___________________________________[0m
+
+    def test_a30():
+>       assert 2 == 3
+[1m[31mE       assert 2 == 3[0m
+
+[1m[31mtests/test_c.py[0m:23: AssertionError
 =========================== short test summary info ============================
-FAILED test_a.py::TestMyClass::test_d - AssertionError: assert 33 == 3
+FAILED test_a.py::test_b - Exception: OH NO
+FAILED test_a.py::TestClass::test_b - AssertionError: {'a': 1, 'b': 2, 'c': 3...
+FAILED test_a.py::TestClass::test_c - Exception
+FAILED test_b.py::test_a - assert 2 == 3
+FAILED test_b.py::test_d - assert 2 == 3
+FAILED test_x.py::test_a - assert False
+FAILED tests/test_c.py::test_a30 - assert 2 == 3
 FAILED test_a.py::test_parametrize[5] - assert 5 == 3
-ERROR test_a.py::test_a
-[31m===================== [31m[1m1 failed[0m, [32m1 passed[0m, [31m[1m1 error[0m[31m in 0.07s[0m[31m =====================[0m
+[31m========================= [31m[1m7 failed[0m, [32m5 passed[0m[31m in 3.74s[0m[31m ==========================[0m

@@ -138,6 +138,10 @@ class VimClient:
             return f"'{arg}'"
         if isinstance(arg, bool):
             arg = 1 if arg else 0
+        if isinstance(arg, list):
+            return f"[{','.join(self._convert_arg(elem) for elem in arg)}]"
+        if isinstance(arg, tuple):
+            return self._convert_arg(list(arg))
         return str(arg)
 
     def _needs_quotes(self, arg: str) -> bool:
