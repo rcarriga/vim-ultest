@@ -89,6 +89,7 @@ function! s:OpenNewWindow() abort
         \ "number": 0,
         \ "filetype": "UltestSummary",
         \ "foldmethod": "expr",
+        \ "foldlevel": 99, 
         \ }
   for [key, val] in items(buf_settings)
     call setbufvar(s:buffer_name, "&".key, val)
