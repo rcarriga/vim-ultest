@@ -42,7 +42,7 @@ _BASE_PATTERNS = {
     "elixir#exunit": OutputPatterns(failed_test=r"\s*\d\) test (?P<name>.*) \(.*\)$"),
     "php#phpunit": OutputPatterns(
         failed_test=r"\s*\d\)(?P<namespace>.*)::(?P<name>.*)",
-    )
+    ),
 }
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python

@@ -73,13 +73,11 @@ class TestOutputParser(TestCase):
                 ParseResult(name="TestAAAB", namespaces=[]),
             ],
         )
+
     def test_parse_phpunit(self):
         output = get_output("phpunit")
         failed = list(self.parser.parse_failed("php#phpunit", output))
         self.assertEqual(
             failed,
-            [
-                ParseResult(name="test_fake", namespaces=["Tests\\FakeTest"])
-            ],
+            [ParseResult(name="test_fake", namespaces=["Tests\\FakeTest"])],
         )
-     
