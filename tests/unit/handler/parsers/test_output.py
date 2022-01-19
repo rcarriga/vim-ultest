@@ -80,6 +80,6 @@ class TestOutputParser(TestCase):
             failed,
             [
                 ParseResult(name="test_fake", namespaces=["Tests\\FakeTest"])
-            ]
+            ],
         )
      
