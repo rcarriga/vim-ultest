@@ -20,7 +20,7 @@ function! s:Call(func, args) abort
     catch
       " Send twice because first one isn't shown if triggered during startup
       if s:update_warn_sent < 2 
-        echom "Error: vim-ultest encountered an unknown error on startup, check v:exception"
+        echom "Error: vim-ultest encountered an unknown error on startup ".v:exception
         let s:update_warn_sent += 1
       endif
     endtry
