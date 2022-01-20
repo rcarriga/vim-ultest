@@ -11,7 +11,7 @@ function! s:Call(func, args) abort
   if s:is_nvim
     try
       return call(a:func, a:args)
-    catch /.*Unknown function.*/
+    catch /.*E117.*/
       " Send twice because first one isn't shown if triggered during startup
       if s:update_warn_sent < 2 
         echom "Error: vim-ultest remote function not detected, try running :UpdateRemotePlugins on install/update"
