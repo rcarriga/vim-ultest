@@ -12,4 +12,4 @@ filterwarnings = [
     "ignore::pytest.PytestCollectionWarning",
     "ignore:::pynvim[.*]"
 ]
-
+asyncio_mode = "auto"
