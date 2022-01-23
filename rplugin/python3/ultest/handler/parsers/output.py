@@ -41,7 +41,8 @@ _BASE_PATTERNS = {
     ),
     "elixir#exunit": OutputPatterns(failed_test=r"\s*\d\) test (?P<name>.*) \(.*\)$"),
     "php#phpunit": OutputPatterns(
-        failed_test=r"\s*\d\)(?P<namespace>.*)::(?P<name>.*)",
+        failed_test=r"\s*\d\) (?P<namespaces>.*)::(?P<name>.*)",
+        namespace_separator=r"\\",
     ),
 }
 

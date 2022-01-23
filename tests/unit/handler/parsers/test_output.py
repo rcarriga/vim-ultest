@@ -79,5 +79,5 @@ class TestOutputParser(TestCase):
         failed = list(self.parser.parse_failed("php#phpunit", output))
         self.assertEqual(
             failed,
-            [ParseResult(name="test_fake", namespaces=[])],
+            [ParseResult(name="test_fake", namespaces=['Tests', 'FakeTest'])],
         )
