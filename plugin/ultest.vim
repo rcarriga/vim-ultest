@@ -427,6 +427,14 @@ augroup UltestPositionUpdater
   endif
 augroup END
 
+if !has("nvim")
+  augroup UltestDummyCommand
+    au!
+    au User UltestPositionsUpdate let <SID>dummy = 1
+    au User UltestOutputOpen let <SID>dummy = 1
+  augroup END
+endif
+
 if !has("vim_starting")
   " Avoids race condition https://github.com/neovim/pynvim/issues/341
   call ultest#handler#get_attach_script("")
