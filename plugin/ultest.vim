@@ -176,6 +176,17 @@ let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
 
 ""
 " Command to open the summary window.
+"
+" Opening in different positions:
+" 
+" Right: "botright vsplit | vertical resize " . g:ultest_summary_width
+"
+" Left: "topleft vsplit | vertical resize " . g:ultest_summary_width
+"
+" Top: "topleft split | resize " . g:ultest_summary_width
+"
+" Bottom: "botright split | resize " . g:ultest_summary_width
+"
 " (default: "botright vsplit | vertical resize ".g:ultest_summary_width)
 let g:ultest_summary_open = get(g:, "ultest_summary_open", "botright vsplit | vertical resize ".g:ultest_summary_width)
 

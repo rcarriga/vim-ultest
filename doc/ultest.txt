@@ -128,8 +128,19 @@ Virtual text for passing tests (string) (default: g:ultest_icons?
 Width of the summary window (default: 50)
 
                                                        *g:ultest_summary_open*
-Command to open the summary window. (default: "botright vsplit | vertical
-resize ".g:ultest_summary_width)
+Command to open the summary window.
+
+Opening in different positions:
+
+Right: "botright vsplit | vertical resize " . g:ultest_summary_width
+
+Left: "topleft vsplit | vertical resize " . g:ultest_summary_width
+
+Top: "topleft split | resize " . g:ultest_summary_width
+
+Bottom: "botright split | resize " . g:ultest_summary_width
+
+(default: "botright vsplit | vertical resize ".g:ultest_summary_width)
 
                                                             *g:ultest_pre_run*
 A function name to call before running any tests in a file. Receives the
@@ -236,11 +247,11 @@ COMMANDS                                                     *ultest-commands*
   Stop any running jobs and results for the nearest position
 
 :UltestSummary[!]                                             *:UltestSummary*
-  Toggle the summary window between open and closed If [!] is given, jump to
+  Toggle the summary window between open and closed. If [!] is given, jump to
   the window if opened
 
 :UltestSummaryOpen[!]                                     *:UltestSummaryOpen*
-  Open the summary window If [!] is given, jump to the window
+  Open the summary window. If [!] is given, jump to the window
 
 :UltestSummaryClose                                      *:UltestSummaryClose*
   Close the summary window
