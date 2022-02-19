@@ -89,8 +89,8 @@ function! s:CalculateBounds(path) abort
   let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".shellescape(a:path)." | wc -L"))[0])
   let height = str2nr(split(system("wc -l ".shellescape(a:path)))[0])
 
-  let height = min([max([height, g:ultest_output_min_height]), &lines, g:ultest_output_max_height ? g:ultest_output_max_height : 10000])
-  let width =  min([max([width, g:ultest_output_min_height]), &columns, g:ultest_output_max_width ? g:ultest_output_max_width : 10000])
+  let height = min([max([height, g:ultest_output_min_height]), g:ultest_output_max_height ? g:ultest_output_max_height : &lines])
+  let width =  min([max([width, g:ultest_output_min_width]), g:ultest_output_max_width ? g:ultest_output_max_width : &columns])
   return [width, height]
 endfunction
 
