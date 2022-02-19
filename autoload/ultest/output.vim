@@ -1,6 +1,3 @@
-let s:height_buffer = has("nvim") ? 2 : 0
-let s:width_buffer = has("nvim") ? 4 : 0
-
 augroup UltestOutputClose
   autocmd!
   autocmd User UltestOutputOpen  call ultest#output#close(v:false)
@@ -20,11 +17,7 @@ function! ultest#output#open(test) abort
   if output == "" | return | endif
   let [width, height] = s:CalculateBounds(output)
   if has("nvim")
-    if exists("*nvim_open_term")
-      let cmd = output
-    else
-      let cmd = ['less', "-R", "-Ps", shellescape(output)]
-    endif
+    let cmd = output
     call s:NvimOpenFloat(cmd, width, height, "UltestOutput")
     autocmd InsertEnter,CursorMoved * ++once  call ultest#output#close(v:false)
   else
@@ -96,8 +89,8 @@ function! s:CalculateBounds(path) abort
   let width = str2nr(split(system("sed 's/\x1b\[[0-9;]*m//g' ".shellescape(a:path)." | wc -L"))[0])
   let height = str2nr(split(system("wc -l ".shellescape(a:path)))[0])
 
-  let height = min([max([height + s:height_buffer, 20]), &lines - s:height_buffer])
-  let width =  min([max([width + s:width_buffer, 80]), &columns - s:width_buffer])
+  let height = min([max([height, g:ultest_output_min_height]), &lines, g:ultest_output_max_height ? g:ultest_output_max_height : 10000])
+  let width =  min([max([width, g:ultest_output_min_height]), &columns, g:ultest_output_max_width ? g:ultest_output_max_width : 10000])
   return [width, height]
 endfunction
 
@@ -129,24 +122,19 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
   let row = min([1, &lines - (lineNo + a:height)])
   let col = min([1, &columns - (colNo + a:width)])
 
-  let border_opts = {
+  let content_opts = {
         \ 'relative': 'cursor',
         \ 'row': row,
         \ 'col': col,
         \ 'anchor': vert_anchor.hor_anchor,
         \ 'width': a:width,
         \ 'height': a:height,
-        \ 'style': 'minimal'
+        \ 'style': 'minimal',
+        \ 'border': 'rounded'
         \ }
 
-  let content_opts = extend({
-        \ "row":  border_opts.row + 1,
-        \ "height": border_opts.height - 2,
-        \ "col": border_opts.col + 2,
-        \ "width": border_opts.width - 4
-        \ }, border_opts, "keep")
-
   let out_buffer = nvim_create_buf(v:false, v:true)
+  call nvim_buf_set_option(out_buffer, "filetype", a:filetype)
   let user_window = nvim_get_current_win()
   let output_window = nvim_open_win(out_buffer, v:true, content_opts)
   if type(a:cmd) == v:t_list
@@ -154,21 +142,8 @@ function! s:NvimOpenFloat(cmd, width, height, filetype) abort
   else
     exec 'lua vim.api.nvim_chan_send(vim.api.nvim_open_term(0, {}),(io.open("'.a:cmd.'", "r"):read("*a"):gsub("\n", "\r\n")))'
   endif
-  exec "setfiletype ".a:filetype
   call nvim_set_current_win(user_window)
-  let output_win_id = nvim_win_get_number(output_window)
-  call setwinvar(output_win_id, "&winhl", "Normal:Normal")
+  call nvim_win_set_option(output_window, "winhl", "Normal:Normal,FloatBorder:UltestBorder")
 
-  let top = "╭" . repeat("─", border_opts.width-2) . "╮"
-  let mid = "│" . repeat(" ", border_opts.width-2) . "│"
-  let bot = "╰" . repeat("─", border_opts.width-2) . "╯"
-  let lines = [top] + repeat([mid], a:height-2) + [bot]
-  let s:buf = nvim_create_buf(v:false, v:true)
-  call nvim_buf_set_lines(s:buf, 0, -1, v:true, lines)
-  let border_window = nvim_open_win(s:buf, v:false, border_opts)
-  let border_win_id = nvim_win_get_number(border_window)
-  call setwinvar(border_win_id, "&winhl", "Normal:Normal")
-  call matchadd("UltestBorder", ".*",100, -1, {"window": border_window})
-
-  let g:ultest#output_windows = [output_window, border_window]
+  let g:ultest#output_windows = [output_window]
 endfunction

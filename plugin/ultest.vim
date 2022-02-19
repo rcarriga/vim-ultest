@@ -128,6 +128,27 @@ let g:ultest_output_rows = get(g:, "ultest_output_rows", 0)
 " Note: It is up to the test runner to respect these bounds
 let g:ultest_output_cols = get(g:, "ultest_output_cols", 0)
 
+
+""
+" Max width of the output window
+" (default: 0)
+let g:ultest_output_max_width = get(g:, "ultest_output_max_width", 0)
+
+""
+" Max height of the output window
+" (default: 0)
+let g:ultest_output_max_height = get(g:, "ultest_output_max_height", 0)
+
+""
+" Min width of the output window
+" (default: 0)
+let g:ultest_output_min_width = get(g:, "ultest_output_min_width", 80)
+
+""
+" Min height of the output window
+" (default: 0)
+let g:ultest_output_min_height = get(g:, "ultest_output_min_height", 20)
+
 "" Enable sign/virtual text processor for tests.
 " (default: 1)
 let g:ultest_show_in_file = get(g:, "ultest_show_in_file", 1)

@@ -75,8 +75,7 @@ Due to the differences between Vim and NeoVim and their RPC libraries, it is ine
 I primarily use NeoVim so I will catch issues in it myself.
 Please file bug reports for Vim if you find them!
 
-NeoVim >= 0.4.4 is supported for now, but only >= 0.5 will be supported in future due to added complexity from handling missing features.
-Please update your NeoVim version if you have not already.
+NeoVim >= 0.5 is currently supported.
 
 vim-ultest can be installed as usual with your favourite plugin manager.
 **Note:** NeoVim users must run `:UpdateRemotePlugins` after install if they don't use a plugin manager that already does.

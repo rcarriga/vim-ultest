@@ -93,6 +93,18 @@ Number of columns for terminal size where tests are run (default: 0) Set to
 zero to not instruct runner on size of terminal. Note: It is up to the test
 runner to respect these bounds
 
+                                                   *g:ultest_output_max_width*
+Max width of the output window (default: 0)
+
+                                                  *g:ultest_output_max_height*
+Max height of the output window (default: 0)
+
+                                                   *g:ultest_output_min_width*
+Min width of the output window (default: 0)
+
+                                                  *g:ultest_output_min_height*
+Min height of the output window (default: 0)
+
                                                        *g:ultest_show_in_file*
 Enable sign/virtual text processor for tests. (default: 1)
 
