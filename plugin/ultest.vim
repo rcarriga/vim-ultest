@@ -462,8 +462,8 @@ augroup END
 if !has("nvim")
   augroup UltestDummyCommand
     au!
-    au User UltestPositionsUpdate let <SID>dummy = 1
-    au User UltestOutputOpen let <SID>dummy = 1
+    au User UltestPositionsUpdate let s:dummy = 1
+    au User UltestOutputOpen let sdummy = 1
   augroup END
 endif
 
