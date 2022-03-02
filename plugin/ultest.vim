@@ -459,11 +459,14 @@ augroup UltestPositionUpdater
   endif
 augroup END
 
+function! s:dummy()
+endfunction
+
 if !has("nvim")
   augroup UltestDummyCommand
     au!
-    au User UltestPositionsUpdate let <SID>dummy = 1
-    au User UltestOutputOpen let <SID>dummy = 1
+    au User UltestPositionsUpdate call s:dummy()
+    au User UltestOutputOpen call s:dummy()
   augroup END
 endif
 
