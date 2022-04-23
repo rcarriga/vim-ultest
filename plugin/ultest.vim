@@ -281,10 +281,10 @@ let g:ultest_custom_patterns = get(g:, "ultest_custom_patterns", {})
 
 let g:ultest_patterns = extend({
       \ "elixir#exunit": {
-        \ 'test': ["(?s)^\\s*test\\s+['\"](.+)['\"](,\\s+%{*.})*.+do", "(?s)^\\s*feature\\s+['\"](.+)['\"](,\\s+%{*.})*.+do"]
+        \ 'test': ["(?s)^.+test.+['\"](.+)['\"](.*,)", "(?s)^.+feature.+['\"](.+)['\"](.*,)",],
       \}
     \ }, g:ultest_custom_patterns)
-
+    
 ""
 " Key mappings for the summary window (dict)
 " Possible values:
