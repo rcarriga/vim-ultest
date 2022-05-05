@@ -285,8 +285,15 @@ endfunction
 function! s:JumpToFail(direction) abort
   let index = s:GetCurrentLine() + a:direction
   let fail = {}
-  while index > 0 && index < len(s:test_line_map)
-    let [cur_file, cur_test] = s:test_line_map[index]
+  
+  if has("nvim")
+    let line_count = nvim_buf_line_count(0)
+  else
+    let line_count = line("$")
+  endif
+
+  while index > 0 && index <= line_count
+    let [cur_file, cur_test] = s:GetAtLine(index)
     if cur_test != ""
       let result = get(getbufvar(cur_file, "ultest_results", {}), cur_test, {})
       if get(result, "code") > 0
