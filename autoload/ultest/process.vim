@@ -1,10 +1,25 @@
 let g:ultest#active_processors = []
 let g:ultest_buffers = []
+
 for processor in g:ultest#processors
   if get(processor, "condition", 1)
     call insert(g:ultest#active_processors, processor)
   endif
 endfor
+
+augroup UltestBufferTracking
+  au!
+  au BufDelete * call <SID>ClearBuffer(expand("<afile>"))
+augroup END
+
+function s:ClearBuffer(buf_name) abort
+  let path = fnamemodify(a:buf_name, ":p")
+  let buf_index = index(g:ultest_buffers, path)
+  if buf_index != -1
+    call remove(g:ultest_buffers, buf_index)
+  endif
+  call ultest#summary#render()
+endfunction
 
 function ultest#process#new(test) abort
   call ultest#process#pre(a:test)

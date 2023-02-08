@@ -195,6 +195,22 @@ let g:ultest_running_text = get(g:, "ultest_running_text", g:ultest_icons? "●"
 " (default: 50)
 let g:ultest_summary_width = get(g:, "ultest_summary_width", 50)
 
+let g:ultest_deprecation_notice = get(g:, "ultest_deprecation_notice", 1)
+
+if (g:ultest_deprecation_notice && has("nvim"))
+lua << EOF
+vim.notify([[vim-ultest is no longer maintained. 
+You can switch to using neotest (https://github.com/nvim-neotest/neotest) instead.
+
+To disable this message:
+```vim
+let g:ultest_deprecation_notice = 0
+```]], vim.log.levels.WARN, { title = "vim-ultest", on_open = function(win) 
+vim.api.nvim_buf_set_option(vim.api.nvim_win_get_buf(win), "filetype", "markdown")
+end})
+EOF
+endif
+
 ""
 " Command to open the summary window.
 "
@@ -281,7 +297,7 @@ let g:ultest_custom_patterns = get(g:, "ultest_custom_patterns", {})
 
 let g:ultest_patterns = extend({
       \ "elixir#exunit": {
-        \ 'test': ["^\\s*test\\s+['\"](.+)['\"](,\\s+%{.+})*\\s+do"],
+        \ 'test': ["^\\s*test\\s+['\"](.+)['\"](,\\s+%{.+})*\\s+do", "^\\s*feature\\s+['\"](.+)['\"](,\\s+%{.+})*\\s+do",],
       \}
     \ }, g:ultest_custom_patterns)
 

@@ -1,5 +1,12 @@
 # vim-ultest
 
+## Deprecation Warning
+
+This repo is no longer being actively worked on. I've moved my efforts into
+[Neotest](https://github.com/nvim-neotest/neotest). If you use NeoVim then I'd suggest switching to that as it will
+cover all features of vim-ultest. If you're a Vim user, this repo will still work and I will accept PRs but will no
+longer be adding features.
+
 1. [Introduction](#introduction)
 2. [Features](#features)
 3. [Installation](#installation)
