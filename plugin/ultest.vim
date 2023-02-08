@@ -460,7 +460,7 @@ function! s:MonitorFile(file) abort
   let buffer = bufnr(a:file)
   call ultest#handler#update_positions(a:file)
   exec 'au BufWrite <buffer='.buffer.'> call ultest#handler#update_positions("'.a:file.'")'
-  exec 'au BufUnload <buffer='.buffer.'> au! * <buffer='.buffer'>'
+  exec 'au BufUnload <buffer='.buffer.'> au! * <buffer='.buffer.'>'
   if g:ultest_output_on_line
     exec 'au CursorHold <buffer='.buffer.'> call ultest#output#open(ultest#handler#get_nearest_test(line("."), expand("%:."), v:true))'
   endif
